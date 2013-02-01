@@ -1,0 +1,87 @@
+//-
+//- @source: https://github.com/Quobis/QoffeeSIP
+//- Copyright (C) Quobis
+//- Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
+//-
+
+
+body(class="container")
+	header(id="logo",class="row-fluid")
+		img(src="img/logos/logo.png",class="span3")
+		.span1
+		div(id="register-info", class="well layer span8")
+
+	div(id="internal", class="row-fluid")
+
+		div(class="row-fluid")
+			div(class="span4 media")
+				div(id="media-remote", class="shadow")
+					video(id="remote", class="row-fluid", autoplay=true)
+				div(id="media-local", class="shadow")
+					video(id="local", class="row-fluid", autoplay=true)
+
+			div(class="span4")
+				//- div(class="vertical-margin row-fluid")
+				div(class="row-fluid")
+
+				div(id="conf", class="well layer row-fluid span12")
+					.row-fluid
+						div(class="label span12", id="status") Unregistered
+					.row-fluid.pagination-centered
+						div(id="flags-media", class="btn-group")
+							//- button(id="flag-audio", type="button", class="btn active")
+							//- 	i(class="icon-headphones")
+							button(id="flag-video", type="button", class="btn active")
+								i(class="icon-facetime-video")
+
+				div(class="row-fluid")
+
+				div(class="row-fluid")
+					div(id="form", class="well layer")
+						audio(id="sound-calling", class="sound", preload loop)
+							source(src="audio/calling.ogg", type="audio/ogg")
+							source(src="audio/calling.mp3", type="audio/mpeg")
+						audio(id="sound-ringing", class="sound")
+							source(src="audio/ringing.ogg", type="audio/ogg", preload loop)
+							source(src="audio/ringing.mp3", type="audio/mpeg")
+
+						form(id="form-register", class="slide row-fluid pagination-centered")
+							input(id="user-reg", class="input span12", type="text", placeholder="User", autofocus, required)
+							input(id="pass-reg", class="input span12", type="password", placeholder="Pass")
+							input(id="server-reg", class="input span12", type="text", placeholder="Server (ws://ip:port/path)", type="url")
+							input(type="submit",id="register", class="btn btn-info", value="Register")
+
+						form(id="form-call", class="slide row-fluid pagination-centered")
+							input(id="ext-call", class="input span12", type="text", placeholder="Extension", required)
+							div(class="btn-toolbar")
+								input(type="submit", id="call", class="btn btn-success", value="Call")
+
+						form(id="form-calling", class="slide row-fluid pagination-centered")
+							class(class="btn-group")
+								button(class="btn btn-danger", id="cancel") Hangup
+
+						form(id="form-incoming-call", class="slide row-fluid pagination-centered")
+							class(class="btn-group")
+								button(class="btn btn-success", id="answer") Answer
+								button(class="btn btn-danger", id="hangup") Hangup
+
+						form(id="form-established-call", class="slide row-fluid pagination-centered")
+							p(id="timer") 00:00:00
+							input(type="submit",id="hangout-established", class="btn btn-danger", value="End call")
+
+			div(class="span4")
+				div(id="chat")
+					div(class="messages shadow")
+					form(class="form-inline")
+						input(type="text", class="input-xlarge")
+						input(type="submit", value="Send", class="btn")
+
+		div(id="notifications", class='top-right')
+
+	footer(id="footer",class="row-fluid")
+		p Powered by
+			a(href="http://qoffeesip.quobis.com", target="_blank")
+				img(src="img/qoffeesip.png")
+			, a Javascript SIP stack developed by&nbsp
+			a(href="http://www.quobis.com", target="_blank") Quobis
+			.

@@ -1,0 +1,126 @@
+header {
+  margin-top: 32px;
+  margin-bottom: 16px;
+}
+button {
+  text-align: center;
+}
+legend {
+  font-size: 90%;
+}
+#ext-call::-webkit-input-placeholder {
+  font-weight: bold;
+}
+.media {
+  position: relative;
+}
+#media-local {
+  position: relative;
+  top: -84px;
+  float: right;
+  z-index: 10;
+  height: 100%;
+  margin-top: -90px;
+  opacity: 0;
+}
+#media-remote {
+  position: relative;
+  top: 0;
+  float: right;
+  height: 100%;
+  z-index: 1;
+  opacity: 0;
+}
+.add-on {
+  background-color: #fff;
+}
+.shadow {
+  padding: 8px;
+  z-index: 200;
+}
+.shadow video {
+  box-shadow: 0px 0px 8px 2px #888;
+}
+#status {
+  vertical-align: middle;
+  margin-bottom: 8px;
+  font-size: 0.8em;
+  padding: 8px;
+}
+#conf {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  margin-left: 0px;
+}
+#flags-media {
+  display: none;
+}
+.layer {
+  background-color: #fdfdfd;
+  box-shadow: 0px 0px 16px 0.5px #ccc;
+  transition: all 1s ease;
+  margin-bottom: 0px;
+  margin-left: 0px;
+}
+.vertical-margin {
+  height: 64px;
+}
+.messages {
+  overflow-y: auto;
+  height: 264px;
+  box-shadow: 0px 0px 16px 0.5px #ccc;
+}
+#form-call {
+  display: none;
+}
+#form-incoming-call {
+  display: none;
+}
+#form-calling {
+  display: none;
+}
+#form-established-call {
+  display: none;
+}
+#internal {
+  margin-left: -32px;
+  padding: 24px;
+  background-color: #eee;
+  box-shadow: inset 0px 0px 10px 2px #aaa;
+  border-radius: 8px;
+  zindex: 100;
+  font-weight: bold;
+}
+#register-info {
+  box-shadow: inset 0px 0px 10px 2px #aaa;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 90%;
+  display: none;
+  background-color: #eee;
+  display: none;
+}
+.well {
+  font-size: 120%;
+}
+#header .well {
+  text-align: center;
+  font-size: 20%;
+}
+#footer p {
+  margin-top: 8px;
+  text-align: right;
+  font-size: 90%;
+  font-weight: bold;
+  color: #000;
+}
+#footer img {
+  width: 80px;
+  padding-left: 5px;
+}
+#notifications {
+  margin-top: 32px;
+}
+#chat {
+  display: none;
+}
