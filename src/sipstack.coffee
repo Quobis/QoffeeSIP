@@ -485,7 +485,7 @@ class SipStack extends Spine.Controller
 		data += "Supported: path, outbound, gruu\r\n"
 
 		# User-Agent
-		data += "User-Agent: QoffeeSIP 0.3\r\n"
+		data += "User-Agent: QoffeeSIP 0.4\r\n"
 
 		# Contact
 		switch transaction.meth
