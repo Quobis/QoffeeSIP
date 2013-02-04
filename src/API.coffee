@@ -40,6 +40,7 @@ class API extends Spine.Controller
 		@sipStack.bind eventName, callback
 
 	off: (eventName, callback) =>
-		@sipStack.unbind eventName, callback
+		@sipStack.unbind eventName, callback if callback?
+		@sipStack.unbind eventName, callback if not callback?
 
 window.API = API
