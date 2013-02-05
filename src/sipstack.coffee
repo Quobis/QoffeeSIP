@@ -43,6 +43,34 @@ class SipStack extends Spine.Controller
 		console.log "[ERROR] " + message
 		@trigger "error", message, others
 
+	# TODO: Use constants instead of number and strings.
+	states:
+		["OFFLINE",
+		"REGISTERING (before challenge)",
+		"REGISTERING (after challenge)", 
+		"REGISTERED", "INCOMING CALL", 
+		"CALLING", "RINGING",
+		"CALL STABLISHED (caller)", 
+		"CALL STABLISHED (callee)",
+		"HANGING", 
+		"CANCELLING"]
+
+	responsePhrases:
+		100: "Trying"
+		180: "Ringing"
+		200: "OK"
+		202: "Accepted"
+		400: "Bad Request"
+		401: "Unauthorized"
+		403: "Forbidden"
+		404: "Not Found (User not found)"
+		407: "Proxy Authentication Required"
+		408: "Request Time Out"
+		481: "Call/Transaction Does Not Exists"
+		486: "Busy Here"
+		488: "Not acceptable here"
+		500: "Server Internal Error"
+		503: "Service Unavaliable"
 
 	# Arguments for SipStack constructor:
 	# - mediaElements :: {localMedia :: DOM Element, remoteMedia :: DOM Element}
@@ -61,17 +89,6 @@ class SipStack extends Spine.Controller
 		@path      = @server.path or ""
 		@transport = @server.transport or "ws"
 
-		# TODO: Use constants instead of number and strings.
-		@states = 
-			["OFFLINE",
-			"REGISTERING (before challenge)",
-			"REGISTERING (after challenge)", 
-			"REGISTERED", "INCOMING CALL", 
-			"CALLING", "RINGING",
-			"CALL STABLISHED (caller)", 
-			"CALL STABLISHED (callee)",
-			"HANGING", 
-			"CANCELLING"]
 
 		# Dictionay for transactions.
 		@_transactions    = {}
@@ -249,13 +266,17 @@ class SipStack extends Spine.Controller
 				when 5
 					switch message.type
 						when "response"
+							# If the message is a known response
+							if @responsePhrases[message.responseCode]
+								@info @responsePhrases[message.responseCode], message
+							else
+								@warning "Unexpected response", message
+								return
+
 							switch message.responseCode
 								when 180
-									@info "RINGING", message
+									# Update INVITE transaction's contact.
 									@getTransaction("INVITE").contact = message.contact
-
-								when 100
-									@info "Trying", message
 
 								when 200
 									@info "Establishing call", message
@@ -288,25 +309,17 @@ class SipStack extends Spine.Controller
 									# Send INVITE
 									message = @createMessage transaction
 									@sendWithSDP message, "offer", null
-
-								when 404
-									@info "User not found", message
-									@setState 3, message
-								
-								# TODO: Answer ACK or whatever.
-								when 408
-									@info "Request time out", message
-									@setState 3, message
-								when 486
-									@info "Busy", message
-									@setState 3, message
-
-								when 500
-									@info "Server internal error", message
-									@setState 3, message
-
 								else
-									@warning "Unexpected response", message
+									if 400 <= message.responseCode
+										# Send ACK.
+										# Omit "nonce" to avoid to put a authentication header in this ACK.
+										ack      = new SipTransaction _.omit message, "nonce"
+										ack.meth = "ACK"
+										ack.vias = message.vias
+										@send @createMessage ack
+										@setState 3
+										# Remove the current invite transaction.
+										delete @getTransaction("INVITE")
 
 						when "request"
 							switch message.meth
@@ -360,7 +373,7 @@ class SipStack extends Spine.Controller
 					@info "Call ended", message
 					@setState 3, message # Registered
 
-			# # End of FInite State Machine
+			# # End of Finite State Machine
 
 		# When websocket connection is closed.
 		@websocket.onclose = (evt) =>
@@ -371,14 +384,6 @@ class SipStack extends Spine.Controller
 		console.log transaction
 		ha1 = CryptoJS.MD5 "#{transaction.ext}:#{transaction.realm}:#{transaction.pass}"
 		ha2 = CryptoJS.MD5 "#{transaction.meth}:#{transaction.requestUri}"
-		console.log "ha1 (#{transaction.ext}:#{transaction.realm}:#{transaction.pass}): #{ha1}"
-		console.log "ha2 (#{transaction.meth}:#{transaction.requestUri}): #{ha2}"
-		# switch transaction.meth
-		# 	when "REGISTER"
-		# 		ha2 = CryptoJS.MD5 "#{transaction.meth}:sip:#{@sipServer}"
-		# 	when "INVITE", "MESSAGE"
-		# 		ha2 = CryptoJS.MD5 "#{transaction.meth}:#{transaction.uri2}"
-
 		sol = CryptoJS.MD5 "#{ha1}:#{transaction.nonce}:#{ha2}"
 		return sol
 

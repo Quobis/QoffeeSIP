@@ -691,6 +691,26 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
       return this.trigger("error", message, others);
     };
 
+    SipStack.prototype.states = ["OFFLINE", "REGISTERING (before challenge)", "REGISTERING (after challenge)", "REGISTERED", "INCOMING CALL", "CALLING", "RINGING", "CALL STABLISHED (caller)", "CALL STABLISHED (callee)", "HANGING", "CANCELLING"];
+
+    SipStack.prototype.responsePhrases = {
+      100: "Trying",
+      180: "Ringing",
+      200: "OK",
+      202: "Accepted",
+      400: "Bad Request",
+      401: "Unauthorized",
+      403: "Forbidden",
+      404: "Not Found (User not found)",
+      407: "Proxy Authentication Required",
+      408: "Request Time Out",
+      481: "Call/Transaction Does Not Exists",
+      486: "Busy Here",
+      488: "Not acceptable here",
+      500: "Server Internal Error",
+      503: "Service Unavaliable"
+    };
+
     function SipStack() {
       this.setState = __bind(this.setState, this);
 
@@ -734,7 +754,6 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
       this.port = this.server.port;
       this.path = this.server.path || "";
       this.transport = this.server.transport || "ws";
-      this.states = ["OFFLINE", "REGISTERING (before challenge)", "REGISTERING (after challenge)", "REGISTERED", "INCOMING CALL", "CALLING", "RINGING", "CALL STABLISHED (caller)", "CALL STABLISHED (callee)", "HANGING", "CANCELLING"];
       this._transactions = {};
       this._instantMessages = {};
       this.setState(0);
@@ -875,12 +894,15 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
           case 5:
             switch (message.type) {
               case "response":
+                if (_this.responsePhrases[message.responseCode]) {
+                  _this.info(_this.responsePhrases[message.responseCode], message);
+                } else {
+                  _this.warning("Unexpected response", message);
+                  return;
+                }
                 switch (message.responseCode) {
                   case 180:
-                    _this.info("RINGING", message);
                     return _this.getTransaction("INVITE").contact = message.contact;
-                  case 100:
-                    return _this.info("Trying", message);
                   case 200:
                     _this.info("Establishing call", message);
                     _this.rtc.receiveAnswer(message.content);
@@ -910,20 +932,15 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
                     console.log(transaction);
                     message = _this.createMessage(transaction);
                     return _this.sendWithSDP(message, "offer", null);
-                  case 404:
-                    _this.info("User not found", message);
-                    return _this.setState(3, message);
-                  case 408:
-                    _this.info("Request time out", message);
-                    return _this.setState(3, message);
-                  case 486:
-                    _this.info("Busy", message);
-                    return _this.setState(3, message);
-                  case 500:
-                    _this.info("Server internal error", message);
-                    return _this.setState(3, message);
                   default:
-                    return _this.warning("Unexpected response", message);
+                    if (400 <= message.responseCode) {
+                      ack = new SipTransaction(_.omit(message, "nonce"));
+                      ack.meth = "ACK";
+                      ack.vias = message.vias;
+                      _this.send(_this.createMessage(ack));
+                      _this.setState(3);
+                      return delete _this.getTransaction("INVITE");
+                    }
                 }
                 break;
               case "request":
@@ -986,8 +1003,6 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
       console.log(transaction);
       ha1 = CryptoJS.MD5("" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass);
       ha2 = CryptoJS.MD5("" + transaction.meth + ":" + transaction.requestUri);
-      console.log("ha1 (" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass + "): " + ha1);
-      console.log("ha2 (" + transaction.meth + ":" + transaction.requestUri + "): " + ha2);
       sol = CryptoJS.MD5("" + ha1 + ":" + transaction.nonce + ":" + ha2);
       return sol;
     };
@@ -1088,7 +1103,7 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
         data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n";
       }
       data += "Supported: path, outbound, gruu\r\n";
-      data += "User-Agent: QoffeeSIP 0.3\r\n";
+      data += "User-Agent: QoffeeSIP 0.4\r\n";
       switch (transaction.meth) {
         case "Ringing":
           if (this.gruu) {
@@ -1175,7 +1190,7 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
         meth: "REGISTER",
         ext: this.ext,
         domain: this.domain,
-        pass: this.pass
+        pass: this.pass || ""
       });
       this.addTransaction(transaction);
       this.setState(1, transaction);
@@ -1401,7 +1416,12 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
     };
 
     API.prototype.off = function(eventName, callback) {
-      return this.sipStack.unbind(eventName, callback);
+      if (callback != null) {
+        this.sipStack.unbind(eventName, callback);
+      }
+      if (!(callback != null)) {
+        return this.sipStack.unbind(eventName, callback);
+      }
     };
 
     return API;
