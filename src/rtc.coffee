@@ -33,7 +33,7 @@ class RTC extends Spine.Controller
 				return if not $dom?
 				console.log "[INFO] attachStream"
 				$d = $($dom.find("video")[0])
-				$d.attr 'mozSrcObject', stream
+				$d.attr 'src', window.URL.createObjectURL stream
 				$d.get(0).play()
 				$d.parent().css {opacity: 1}
 
@@ -74,7 +74,7 @@ class RTC extends Spine.Controller
 
 	start: () =>
 		# Firefox does not provide *onicecandidate* callback.
-		@noMoreCandidates = false or @browser is "firefox"
+		@noMoreCandidates = false or (@browser is "firefox")
 		@createPeerConnection()
 
 	createPeerConnection: =>
