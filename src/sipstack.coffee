@@ -617,7 +617,7 @@ class SipStack extends Spine.Controller
 				bye = new SipTransaction
 					meth: "BYE"
 					ext : (@getTransaction "REGISTER").ext
-					ext2 : ext2
+					ext2 : invite.ext2
 				_.extend bye, _.pick invite, "callId", "contact", "fromTag", "toTag", "from", "to", "cseq"
 				@send @createMessage bye
 				@addTransaction bye
