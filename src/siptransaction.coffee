@@ -29,8 +29,9 @@ class SipTransaction
 		# This variables are common for all transactions.
 		# If domainName or IP or branchPad does not exist, create them.
 		@domainName ?= "#{@randomString 12}.invalid"
-		@IP ?= @randomIP()
-		@branchPad ?= @randomString 30
+		# IP is used when SipStack.hackViaTCP is true.
+		@IP         ?= @randomIP()
+		@branchPad  ?= @randomString 30
 
 		# Some variables must be asgined to random values
 		# if they are not filled yet.

@@ -97,6 +97,12 @@ class SipStack extends Spine.Controller
 		# Set initial state of the FSM to 0.
 		@setState 0
 
+		# Hacks
+		# Some SIP servers need TCP as via transport instead of WS/WSS.
+		hackViaTCP    = false
+		# Some SIP server try to resolve our random domain. Use a random IP.
+		hackIpContact = false
+
 		# A new websocket connection is created.
 		@websocket = new WebSocket("#{@transport}://#{@sipServer}:#{@port}#{@path}", "sip")
 		console.log("#{@transport}://#{@sipServer}:#{@port}#{@path}")
@@ -448,7 +454,8 @@ class SipStack extends Spine.Controller
 		if _.isArray(transaction.vias)# and transaction.meth isnt "ACK"
 			data += (transaction.vias.join "\r\n") + "\r\n"
 		else
-			data += "Via: SIP/2.0/#{@transport.toUpperCase()} #{transaction.domainName};branch=z9hG4bK#{transaction.branchPad}\r\n"
+			# If hack for use TCP in via is true, use TCP.
+			data += "Via: SIP/2.0/#{(@hackViaTCP and "TCP") or @transport.toUpperCase()} #{transaction.domainName};branch=z9hG4bK#{transaction.branchPad}\r\n"
 
 		# From
 		data += "From: #{transaction.uri};tag=#{transaction.fromTag}\r\n"
@@ -493,25 +500,27 @@ class SipStack extends Spine.Controller
 		data += "User-Agent: QoffeeSIP 0.4\r\n"
 
 		# Contact
+		# Addres is a randomIP when hackIpContact is true, else, a randomDomain.
+		address = (@hackIpContact and transaction.IP) or transaction.domainName
 		switch transaction.meth
 			when "Ringing"
 				if @gruu
-					data += "Contact: <sip:#{transaction.ext2}@#{transaction.domainName};gr=urn:uuid:#{transaction.uuid}>\r\n"
+					data += "Contact: <sip:#{transaction.ext2}@#{address};gr=urn:uuid:#{transaction.uuid}>\r\n"
 				else
-					data += "Contact: <sip:#{transaction.ext2}@#{transaction.domainName};transport=ws>\r\n"
+					data += "Contact: <sip:#{transaction.ext2}@#{address};transport=ws>\r\n"
 			when "OK"
 				if transaction.cseq.meth is "INVITE"
 					if @gruu
-						data += "Contact: <sip:#{transaction.ext2}@#{transaction.domainName};gr=urn:uuid:#{transaction.uuid}>\r\n"
+						data += "Contact: <sip:#{transaction.ext2}@#{address};gr=urn:uuid:#{transaction.uuid}>\r\n"
 					else
-						data += "Contact: <sip:#{transaction.ext2}@#{transaction.domainName};transport=ws>\r\n"
+						data += "Contact: <sip:#{transaction.ext2}@#{address};transport=ws>\r\n"
 			when "REGISTER"
-				data += "Contact: <sip:#{transaction.ext}@#{transaction.domainName};transport=ws>"
+				data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws>"
 			when "INVITE"
 				if @gruu
 					data += "Contact: <#{@gruu};ob>\r\n"
 				else
-					data += "Contact: <sip:#{transaction.ext}@#{transaction.domainName};transport=ws;ob>\r\n"
+					data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws;ob>\r\n"
 		switch transaction.meth
 			when "REGISTER"
 				data += ";reg-id=#{transaction.regid}"
