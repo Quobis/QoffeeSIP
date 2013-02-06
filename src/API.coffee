@@ -11,6 +11,8 @@ class API extends Spine.Controller
 		super
 		args = 
 			server: @server
+			hackViaTCP: @hackViaTCP
+			hackIpContact: @hackIpContact
 			mediaConstraints: @mediaConstraints
 			mediaElements: @mediaElements
 			onopen: @onopen or -> false
