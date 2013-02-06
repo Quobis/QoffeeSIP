@@ -99,9 +99,9 @@ class SipStack extends Spine.Controller
 
 		# Hacks
 		# Some SIP servers need TCP as via transport instead of WS/WSS.
-		hackViaTCP    = false
+		hackViaTCP    ?= false
 		# Some SIP server try to resolve our random domain. Use a random IP.
-		hackIpContact = false
+		hackIpContact ?= false
 
 		# A new websocket connection is created.
 		@websocket = new WebSocket("#{@transport}://#{@sipServer}:#{@port}#{@path}", "sip")

@@ -169,7 +169,7 @@ class RTC extends Spine.Controller
 		success = =>
 			console.log "[INFO] setLocalDescription successed"
 			# If we have all ice candidates and local description set, sdp is ready.
-			@triggerSDP() # if @noMoreCandidates
+			@triggerSDP() if @noMoreCandidates
 				
 		fail = => @trigger "error", "setLocalDescription", sessionDescription
 		# success and fail are callbacks that will be called on success or fail cases.
