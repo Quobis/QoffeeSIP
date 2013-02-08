@@ -3,10 +3,11 @@ testBrowser = ->
 		$.browser.safari = $.browser.webkit and not(/chrome/.test(navigator.userAgent.toLowerCase()));
 		# We need the major version of the browser to compare
 		majorVersion= parseInt($.browser.version, 10);
-		supported = $.browser.chrome and majorVersion >= 23 or $.browser.mozilla and majorVersion >= 19
-		if supported
+		if $.browser.chrome and majorVersion >= 23
 			# $( "Browser: Google Chrome \(" + $.browser.version + "\)" ).append($('.footer'));
 			msg = "Browser: Google Chrome (" + $.browser.version + ")"
+		else if $.browser.mozilla and majorVersion >= 19
+			msg = "Browser: Firefox (" + $.browser.version + ")"
 		else if $.browser.chrome
 			msg = "Browser not supported for now!: Google Chrome ( #{$.browser.version})"
 		else if $.browser.safari
