@@ -6,8 +6,10 @@ testBrowser = ->
 		if $.browser.chrome and majorVersion >= 23
 			# $( "Browser: Google Chrome \(" + $.browser.version + "\)" ).append($('.footer'));
 			msg = "Browser: Google Chrome (" + $.browser.version + ")"
+			supported = true
 		else if $.browser.mozilla and majorVersion >= 19
 			msg = "Browser: Firefox (" + $.browser.version + ")"
+			supported = true
 		else if $.browser.chrome
 			msg = "Browser not supported for now!: Google Chrome ( #{$.browser.version})"
 		else if $.browser.safari
@@ -23,7 +25,7 @@ testBrowser = ->
 
 		args = message: {text: msg}
 		
-		if not supported
+		if supported? and not supported
 			_.extend args, {type: "danger"}, {fadeOut: {enabled: false}}
 		
 		$('#notifications').notify(args).show()
