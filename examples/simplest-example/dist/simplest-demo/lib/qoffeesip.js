@@ -64,21 +64,23 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
       } else {
         this.$dom1 = this.$dom2 = null;
       }
-      this.browserSupport();
       if ((_ref = this.mediaConstraints) == null) {
         this.mediaConstraints = {
           audio: true,
           video: true
         };
       }
+      this.browserSupport();
       this.start();
     }
 
     RTC.prototype.browserSupport = function() {
       var _this = this;
       if (navigator.mozGetUserMedia) {
+        this.browser = "firefox";
         this.getUserMedia = navigator.mozGetUserMedia.bind(navigator);
         this.PeerConnection = mozRTCPeerConnection;
+        this.RTCSessionDescription = mozRTCSessionDescription;
         this.attachStream = function($dom, stream) {
           var $d;
           if (!($dom != null)) {
@@ -86,17 +88,25 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
           }
           console.log("[INFO] attachStream");
           $d = $($dom.find("video")[0]);
-          $d.attr('mozSrcObject', stream);
+          $d.attr('src', window.URL.createObjectURL(stream));
           $d.get(0).play();
           return $d.parent().css({
             opacity: 1
           });
         };
+        MediaStream.prototype.getVideoTracks = function() {
+          return [];
+        };
+        MediaStream.prototype.getAudioTracks = function() {
+          return [];
+        };
       }
       if (navigator.webkitGetUserMedia) {
+        this.browser = "chrome";
         this.getUserMedia = navigator.webkitGetUserMedia.bind(navigator);
         this.PeerConnection = webkitRTCPeerConnection;
-        return this.attachStream = function($dom, stream) {
+        this.RTCSessionDescription = RTCSessionDescription;
+        this.attachStream = function($dom, stream) {
           var $d, url;
           if (!($dom != null)) {
             return;
@@ -119,11 +129,19 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
             };
           }
         };
+        if (!webkitRTCPeerConnection.prototype.getLocalStreams) {
+          webkitRTCPeerConnection.prototype.getLocalStreams = function() {
+            return this.localStreams;
+          };
+          return webkitRTCPeerConnection.prototype.getRemoteStreams = function() {
+            return this.remoteStreams;
+          };
+        }
       }
     };
 
     RTC.prototype.start = function() {
-      this.noMoreCandidates = false;
+      this.noMoreCandidates = false || (this.browser === "firefox");
       return this.createPeerConnection();
     };
 
@@ -133,7 +151,7 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
       this.pc = new this.PeerConnection({
         "iceServers": [
           {
-            "url": "stun:stun.l.google.com:19302"
+            "url": "stun:74.125.132.127:19302"
           }
         ]
       });
@@ -163,18 +181,20 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
           }
         }
       };
-      this.pc.onicechange = function(event) {
-        return console.log("[INFO] icestate changed -> " + _this.pc.iceState);
-      };
-      this.pc.onstatechange = function(event) {
-        return console.log("[INFO] peerconnectionstate changed -> " + _this.pc.readyState);
-      };
-      this.pc.onopen = function() {
-        return console.log("[MEDIA] peerconnection opened");
-      };
-      this.pc.onclose = function() {
-        return console.log("[INFO] peerconnection closed");
-      };
+      if (this.browser === "chrome") {
+        this.pc.onicechange = function(event) {
+          return console.log("[INFO] icestate changed -> " + _this.pc.iceState);
+        };
+        this.pc.onstatechange = function(event) {
+          return console.log("[INFO] peerconnectionstate changed -> " + _this.pc.readyState);
+        };
+        this.pc.onopen = function() {
+          return console.log("[MEDIA] peerconnection opened");
+        };
+        this.pc.onclose = function() {
+          return console.log("[INFO] peerconnection closed");
+        };
+      }
       return this.createStream();
     };
 
@@ -190,14 +210,17 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
         gumSuccess = function(stream) {
           _this.localstream = stream;
           console.log("[INFO] getUserMedia successed");
+          console.log(stream);
           _this.pc.addStream(_this.localstream);
           _this.attachStream(_this.$dom1, _this.localstream);
           return _this.trigger("info", "localstream");
         };
-        gumFail = function() {
+        gumFail = function(error) {
+          console.log(error);
+          console.log("GetUserMedia error");
           return _this.trigger("error", "getUserMedia");
         };
-        return navigator.webkitGetUserMedia(this.mediaConstraints, gumSuccess, gumFail);
+        return this.getUserMedia(this.mediaConstraints, gumSuccess, gumFail);
       }
     };
 
@@ -259,7 +282,7 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
         console.log(_this.pc.remoteDescription);
         return callback();
       };
-      description = new RTCSessionDescription({
+      description = new this.RTCSessionDescription({
         type: type,
         sdp: sdp
       });
@@ -691,6 +714,26 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
       return this.trigger("error", message, others);
     };
 
+    SipStack.prototype.states = ["OFFLINE", "REGISTERING (before challenge)", "REGISTERING (after challenge)", "REGISTERED", "INCOMING CALL", "CALLING", "RINGING", "CALL STABLISHED (caller)", "CALL STABLISHED (callee)", "HANGING", "CANCELLING"];
+
+    SipStack.prototype.responsePhrases = {
+      100: "Trying",
+      180: "Ringing",
+      200: "OK",
+      202: "Accepted",
+      400: "Bad Request",
+      401: "Unauthorized",
+      403: "Forbidden",
+      404: "Not Found (User not found)",
+      407: "Proxy Authentication Required",
+      408: "Request Time Out",
+      481: "Call/Transaction Does Not Exists",
+      486: "Busy Here",
+      488: "Not acceptable here",
+      500: "Server Internal Error",
+      503: "Service Unavaliable"
+    };
+
     function SipStack() {
       this.setState = __bind(this.setState, this);
 
@@ -724,7 +767,8 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
 
       this.addTransaction = __bind(this.addTransaction, this);
 
-      var _this = this;
+      var _ref, _ref1,
+        _this = this;
       SipStack.__super__.constructor.apply(this, arguments);
       this.rtc = new RTC({
         mediaElements: this.mediaElements,
@@ -734,10 +778,15 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
       this.port = this.server.port;
       this.path = this.server.path || "";
       this.transport = this.server.transport || "ws";
-      this.states = ["OFFLINE", "REGISTERING (before challenge)", "REGISTERING (after challenge)", "REGISTERED", "INCOMING CALL", "CALLING", "RINGING", "CALL STABLISHED (caller)", "CALL STABLISHED (callee)", "HANGING", "CANCELLING"];
       this._transactions = {};
       this._instantMessages = {};
       this.setState(0);
+      if ((_ref = this.hackViaTCP) == null) {
+        this.hackViaTCP = false;
+      }
+      if ((_ref1 = this.hackIpContact) == null) {
+        this.hackIpContact = false;
+      }
       this.websocket = new WebSocket("" + this.transport + "://" + this.sipServer + ":" + this.port + this.path, "sip");
       console.log("" + this.transport + "://" + this.sipServer + ":" + this.port + this.path);
       this.info("websocket created");
@@ -746,7 +795,7 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
         return _this.onopen();
       };
       this.websocket.onmessage = function(evt) {
-        var ack, busy, instantMessage, message, ok, register, ringing, transaction, _ref;
+        var ack, busy, instantMessage, message, ok, register, ringing, transaction, _ref2;
         message = Parser.parse(evt.data);
         _this.info("Input message", message);
         if ((_this.state > 2) && (message.cseq.meth === "REGISTER")) {
@@ -790,7 +839,7 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
           }
           return;
         }
-        if ((3 < (_ref = _this.state) && _ref < 9)) {
+        if ((3 < (_ref2 = _this.state) && _ref2 < 9)) {
           if (message.meth === "INVITE") {
             _this.info("Another incoming call (BUSY)", message);
             busy = _.clone(message);
@@ -875,12 +924,15 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
           case 5:
             switch (message.type) {
               case "response":
+                if (_this.responsePhrases[message.responseCode]) {
+                  _this.info(_this.responsePhrases[message.responseCode], message);
+                } else {
+                  _this.warning("Unexpected response", message);
+                  return;
+                }
                 switch (message.responseCode) {
                   case 180:
-                    _this.info("RINGING", message);
                     return _this.getTransaction("INVITE").contact = message.contact;
-                  case 100:
-                    return _this.info("Trying", message);
                   case 200:
                     _this.info("Establishing call", message);
                     _this.rtc.receiveAnswer(message.content);
@@ -910,20 +962,15 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
                     console.log(transaction);
                     message = _this.createMessage(transaction);
                     return _this.sendWithSDP(message, "offer", null);
-                  case 404:
-                    _this.info("User not found", message);
-                    return _this.setState(3, message);
-                  case 408:
-                    _this.info("Request time out", message);
-                    return _this.setState(3, message);
-                  case 486:
-                    _this.info("Busy", message);
-                    return _this.setState(3, message);
-                  case 500:
-                    _this.info("Server internal error", message);
-                    return _this.setState(3, message);
                   default:
-                    return _this.warning("Unexpected response", message);
+                    if (400 <= message.responseCode) {
+                      ack = new SipTransaction(_.omit(message, "nonce"));
+                      ack.meth = "ACK";
+                      ack.vias = message.vias;
+                      _this.send(_this.createMessage(ack));
+                      _this.setState(3);
+                      return delete _this.getTransaction("INVITE");
+                    }
                 }
                 break;
               case "request":
@@ -986,14 +1033,12 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
       console.log(transaction);
       ha1 = CryptoJS.MD5("" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass);
       ha2 = CryptoJS.MD5("" + transaction.meth + ":" + transaction.requestUri);
-      console.log("ha1 (" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass + "): " + ha1);
-      console.log("ha2 (" + transaction.meth + ":" + transaction.requestUri + "): " + ha2);
       sol = CryptoJS.MD5("" + ha1 + ":" + transaction.nonce + ":" + ha2);
       return sol;
     };
 
     SipStack.prototype.createMessage = function(transaction) {
-      var authUri, data, opaque, rr, _i, _len, _ref;
+      var address, authUri, data, opaque, rr, _i, _len, _ref;
       transaction = new SipTransaction(transaction);
       transaction.uri = "sip:" + transaction.ext + "@" + (this.domain || this.sipServer);
       transaction.uri2 = "sip:" + transaction.ext2 + "@" + (transaction.domain2 || this.sipServer);
@@ -1051,7 +1096,7 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
       if (_.isArray(transaction.vias)) {
         data += (transaction.vias.join("\r\n")) + "\r\n";
       } else {
-        data += "Via: SIP/2.0/" + (this.transport.toUpperCase()) + " " + transaction.domainName + ";branch=z9hG4bK" + transaction.branchPad + "\r\n";
+        data += "Via: SIP/2.0/" + ((this.hackViaTCP && "TCP") || this.transport.toUpperCase()) + " " + transaction.domainName + ";branch=z9hG4bK" + transaction.branchPad + "\r\n";
       }
       data += "From: " + transaction.uri + ";tag=" + transaction.fromTag + "\r\n";
       switch (transaction.meth) {
@@ -1088,32 +1133,33 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
         data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n";
       }
       data += "Supported: path, outbound, gruu\r\n";
-      data += "User-Agent: QoffeeSIP 0.3\r\n";
+      data += "User-Agent: QoffeeSIP 0.4\r\n";
+      address = (this.hackIpContact && transaction.IP) || transaction.domainName;
       switch (transaction.meth) {
         case "Ringing":
           if (this.gruu) {
-            data += "Contact: <sip:" + transaction.ext2 + "@" + transaction.domainName + ";gr=urn:uuid:" + transaction.uuid + ">\r\n";
+            data += "Contact: <sip:" + transaction.ext2 + "@" + address + ";gr=urn:uuid:" + transaction.uuid + ">\r\n";
           } else {
-            data += "Contact: <sip:" + transaction.ext2 + "@" + transaction.domainName + ";transport=ws>\r\n";
+            data += "Contact: <sip:" + transaction.ext2 + "@" + address + ";transport=ws>\r\n";
           }
           break;
         case "OK":
           if (transaction.cseq.meth === "INVITE") {
             if (this.gruu) {
-              data += "Contact: <sip:" + transaction.ext2 + "@" + transaction.domainName + ";gr=urn:uuid:" + transaction.uuid + ">\r\n";
+              data += "Contact: <sip:" + transaction.ext2 + "@" + address + ";gr=urn:uuid:" + transaction.uuid + ">\r\n";
             } else {
-              data += "Contact: <sip:" + transaction.ext2 + "@" + transaction.domainName + ";transport=ws>\r\n";
+              data += "Contact: <sip:" + transaction.ext2 + "@" + address + ";transport=ws>\r\n";
             }
           }
           break;
         case "REGISTER":
-          data += "Contact: <sip:" + transaction.ext + "@" + transaction.domainName + ";transport=ws>";
+          data += "Contact: <sip:" + transaction.ext + "@" + address + ";transport=ws>";
           break;
         case "INVITE":
           if (this.gruu) {
             data += "Contact: <" + this.gruu + ";ob>\r\n";
           } else {
-            data += "Contact: <sip:" + transaction.ext + "@" + transaction.domainName + ";transport=ws;ob>\r\n";
+            data += "Contact: <sip:" + transaction.ext + "@" + address + ";transport=ws;ob>\r\n";
           }
       }
       switch (transaction.meth) {
@@ -1175,7 +1221,7 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
         meth: "REGISTER",
         ext: this.ext,
         domain: this.domain,
-        pass: this.pass
+        pass: this.pass || ""
       });
       this.addTransaction(transaction);
       this.setState(1, transaction);
@@ -1237,7 +1283,7 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
           bye = new SipTransaction({
             meth: "BYE",
             ext: (this.getTransaction("REGISTER")).ext,
-            ext2: ext2
+            ext2: invite.ext2
           });
           _.extend(bye, _.pick(invite, "callId", "contact", "fromTag", "toTag", "from", "to", "cseq"));
           this.send(this.createMessage(bye));
@@ -1363,6 +1409,8 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
       API.__super__.constructor.apply(this, arguments);
       args = {
         server: this.server,
+        hackViaTCP: this.hackViaTCP,
+        hackIpContact: this.hackIpContact,
         mediaConstraints: this.mediaConstraints,
         mediaElements: this.mediaElements,
         onopen: this.onopen || function() {
@@ -1401,7 +1449,12 @@ m(c,d,g,i,b[f+(3*a+5)%16],4,h[a]),i=m(i,c,d,g,b[f+(3*a+8)%16],11,h[a+1]),g=m(g,i
     };
 
     API.prototype.off = function(eventName, callback) {
-      return this.sipStack.unbind(eventName, callback);
+      if (callback != null) {
+        this.sipStack.unbind(eventName, callback);
+      }
+      if (!(callback != null)) {
+        return this.sipStack.unbind(eventName, callback);
+      }
     };
 
     return API;

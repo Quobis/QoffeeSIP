@@ -156,7 +156,10 @@ class UI extends Spine.Controller
 			@api.register @register.ext, @register.pass, @register.domain
 			@$registerButton.addClass "disabled"
 
+		# Both video and audio on, let to true what you need
 		@api = new API {server: @server, mediaElements: @mediaElements, onopen: onopen, mediaConstraints: {audio: true, video: true}}
+		# Non-compliant parameters needed to work with Asterisk, at this moment only audio is supported (still problems)
+		#@api = new API {server: @server, hackViaTCP: false, hackIpContact: true, @mediaElements, onopen: onopen, mediaConstraints: {audio: true, video: false}}
 		false
 
 	callSubmit: (e) =>

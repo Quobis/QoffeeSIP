@@ -2,7 +2,7 @@ testBrowser = ->
 		# browser.safari is deprecated, here a trick, NOT TESTED
 		$.browser.safari = $.browser.webkit and not(/chrome/.test(navigator.userAgent.toLowerCase()));
 		# We need the major version of the browser to compare
-		majorVersion= parseInt($.browser.version, 10);
+		majorVersion = parseInt($.browser.version, 10)
 		if $.browser.chrome and majorVersion >= 23
 			# $( "Browser: Google Chrome \(" + $.browser.version + "\)" ).append($('.footer'));
 			msg = "Browser: Google Chrome (" + $.browser.version + ")"
