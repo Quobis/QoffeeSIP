@@ -16,9 +16,9 @@ body(class="container")
 		div(class="row-fluid")
 			div(class="span4 media")
 				div(id="media-remote", class="shadow")
-					video(id="remote", class="row-fluid", autoplay=true)
+					video(id="remote", class="row-fluid", autoplay=true, controls=false)
 				div(id="media-local", class="shadow")
-					video(id="local", class="row-fluid", autoplay=true)
+					video(id="local", class="row-fluid", autoplay=true, controls=false)
 
 			div(class="span4")
 				//- div(class="vertical-margin row-fluid")
@@ -56,18 +56,22 @@ body(class="container")
 							div(class="btn-toolbar")
 								input(type="submit", id="call", class="btn btn-success", value="Call")
 
-						form(id="form-calling", class="slide row-fluid pagination-centered")
+						div(id="form-calling", class="slide row-fluid pagination-centered")
 							class(class="btn-group")
 								button(class="btn btn-danger", id="cancel") Hangup
 
-						form(id="form-incoming-call", class="slide row-fluid pagination-centered")
+						div(id="form-incoming-call", class="slide row-fluid pagination-centered")
 							class(class="btn-group")
 								button(class="btn btn-success", id="answer") Answer
 								button(class="btn btn-danger", id="hangup") Hangup
 
-						form(id="form-established-call", class="slide row-fluid pagination-centered")
+						div(id="form-established-call", class="slide row-fluid pagination-centered")
 							p(id="timer") 00:00:00
-							input(type="submit",id="hangout-established", class="btn btn-danger", value="End call")
+							p
+								button(id="fullscreen")
+									i(class="icon-fullscreen")
+							p
+								button(id="hangup-established", class="btn btn-danger") End call
 
 			div(class="span4")
 				div(id="chat")

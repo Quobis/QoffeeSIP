@@ -5,10 +5,11 @@ class UI extends Spine.Controller
 		"submit #form-register": "registerSubmit"
 		"submit #form-call": "callSubmit"
 		"click #answer": "answerClick"
-		"submit #form-calling": "hangupClick"
-		"submit #form-established-call": "hangupClick"
+		"click #cancel": "hangupClick"
+		"click #hangup-established": "hangupClick"
 		"click #hangup": "hangupClick"
 		"click #flags-media": "selectMedia"
+		"click #fullscreen": "fullscreen"
 
 	elements:
 		"#form-register": "$formRegister"
@@ -94,6 +95,9 @@ class UI extends Spine.Controller
 
 	warningManager: (error, message) =>
 		@notify error, "danger"
+
+	fullscreen: () =>
+		$("#remote").fullscreen(true)
 
 	# Not used until Chrome stable supports OfferToReceiveVideo/Audio.
 	selectMedia: (e) =>
