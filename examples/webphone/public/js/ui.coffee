@@ -8,9 +8,10 @@ class UI extends Spine.Controller
 		"click #cancel": "hangupClick"
 		"click #hangup-established": "hangupClick"
 		"click #hangup": "hangupClick"
-		"click #flags-media": "selectMedia"
 		"click #fullscreen": "fullscreen"
-		"click #call-conf button": "toggleActiveClass"
+		"click #call-conf > button": "toggleActiveClass"
+		"click #call-conf > button > i": "toggleActiveClass"
+		"click #toggleMuteAudio": "toggleMuteAudio"
 
 	elements:
 		"#form-register": "$formRegister"
@@ -101,28 +102,15 @@ class UI extends Spine.Controller
 		$("#remote").fullscreen(true)
 
 	toggleActiveClass: (e) =>
-		$(e.target).toggleClass "active"
-
-	# Not used until Chrome stable supports OfferToReceiveVideo/Audio.
-	selectMedia: (e) =>
-		$d = $(e.target)
-		# If the child of the button was the target...
-		if e.target.nodeName is "I"
-			$d = $d.parent()			
-		$d.toggleClass "active"
-
-		av =
-			audio: true #@$flagAudio.hasClass "active"
-			video: @$flagVideo.hasClass "active"
-
-		$d = $(@$videos[0]).parent().parent()
-		if av.video
-			$d.animate opacity: 1
+		console.log e
+		$el = $(e.target)
+		if $el.hasClass "btn"
+			$el.toggleClass "active"
 		else
-			$d.animate opacity: 0
+			$el.parent().toggleClass "active"
 
-		# If APi has been created, set its media constraints.
-		@api.setMediaConstraints av if @api
+	toggleMuteAudio: () =>
+		@api.toggleMuteAudio()
 
 	# Prevent page reloading on form submits.
 	submitForm: (e) =>
