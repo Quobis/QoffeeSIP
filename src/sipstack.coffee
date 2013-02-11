@@ -525,8 +525,8 @@ class SipStack extends Spine.Controller
 			when "REGISTER"
 				data += ";reg-id=#{transaction.regid}"
 				data += ";+sip.instance=\"<urn:uuid:#{transaction.uuid}>\""
-				if transaction.exp
-					data += ";expires=\"#{transaction.exp}\""
+				if transaction.expires?
+					data += ";expires=#{transaction.expires}"
 				data +="\r\n"
 
 		# Challenge
@@ -651,10 +651,11 @@ class SipStack extends Spine.Controller
 		@send @createMessage @getTransaction "REGISTER"
 
 	# An un-register petition is created (as proposed in RFC 3261) and sent.
-	unRegister: () =>
+	unregister: () =>
+		console.log "[INFO] unregistering"
 		transaction = @getTransaction "REGISTER"
 		transaction.expires = 0
-		clearInterval(t);
+		clearInterval(@t);
 		message = @createMessage transaction
 		@send message
 		@setState 0, message # Offline

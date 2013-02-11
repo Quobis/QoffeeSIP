@@ -60,12 +60,12 @@ class RTC extends Spine.Controller
 
 			# The representation of tracks in a stream is changed in M26.
 			# Unify them for earlier Chrome versions in the coexisting period.
-			 if not webkitMediaStream.prototype.getVideoTracks
-			    webkitMediaStream.prototype.getVideoTracks = () ->
-			      return this.videoTracks;
-			 if not webkitMediaStream.prototype.getAudioTracks
-			    webkitMediaStream.prototype.getAudioTracks = () ->
-			      return this.audioTracks;
+			if not webkitMediaStream.prototype.getVideoTracks
+				webkitMediaStream.prototype.getVideoTracks = () ->
+				return this.videoTracks;
+			if not webkitMediaStream.prototype.getAudioTracks
+				webkitMediaStream.prototype.getAudioTracks = () ->
+				return this.audioTracks;
 
 			# New syntax of getXXXStreams method in M26.
 			if not webkitRTCPeerConnection.prototype.getLocalStreams
@@ -231,6 +231,44 @@ class RTC extends Spine.Controller
 		finally
 			@pc = null
 			@start()
+
+	toggleMuteAudio: () =>
+		# Call the getAudioTracks method via adapter.js.
+		audioTracks = @localStream.getAudioTracks()
+
+		if audioTracks.length is 0
+			console.log "[MEDIA] No local audio available."
+			return
+
+		if @isAudioMuted
+			bool = true
+			console.log "Audio unmuted."
+		else
+			bool = false
+			console.log "Audio muted."
+
+		@localstream.audioTracks[i].enabled = bool for i in [0..audioTracks.length]
+		@isAudioMuted = not bool;
+
+
+	toggleMuteVideo: () =>
+		# Call the getAudioTracks method via adapter.js.
+		videoTracks = @localStream.getVideoTracks();
+
+		if videoTracks.length is 0
+			console.log "[MEDIA] No local audio available."
+			return
+
+		if @isVideoMuted
+			bool = true
+			console.log("Video unmuted.");
+		else
+			bool = false
+			console.log("Video muted.");
+
+		@localstream.videoTracks[i].enabled = bool for i in [0..videoTracks.length]
+		@isVideoMuted = not bool;
+
 
 	# # options :: {audio, video}
 	# setMediaConstraints: (options) =>

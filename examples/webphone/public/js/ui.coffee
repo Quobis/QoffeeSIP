@@ -10,6 +10,7 @@ class UI extends Spine.Controller
 		"click #hangup": "hangupClick"
 		"click #flags-media": "selectMedia"
 		"click #fullscreen": "fullscreen"
+		"click #call-conf button": "toggleActiveClass"
 
 	elements:
 		"#form-register": "$formRegister"
@@ -98,6 +99,9 @@ class UI extends Spine.Controller
 
 	fullscreen: () =>
 		$("#remote").fullscreen(true)
+
+	toggleActiveClass: (e) =>
+		$(e.target).toggleClass "active"
 
 	# Not used until Chrome stable supports OfferToReceiveVideo/Audio.
 	selectMedia: (e) =>
@@ -227,6 +231,10 @@ class UI extends Spine.Controller
 		console.log "[STATE] #{@state}"
 		switch @state
 			when 3
+				# Unregister on closing.
+				$(window).bind "beforeunload", => 
+					@api.unregister()
+					return
 				@stopTimer()
 				@$media.css opacity: 1
 				if 7 <= @previousState <= 9

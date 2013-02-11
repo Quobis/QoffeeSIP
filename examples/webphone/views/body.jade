@@ -25,14 +25,7 @@ body(class="container")
 				div(class="row-fluid")
 
 				div(id="conf", class="well layer row-fluid span12")
-					.row-fluid
-						div(class="label span12", id="status") Unregistered
-					.row-fluid.pagination-centered
-						div(id="flags-media", class="btn-group")
-							//- button(id="flag-audio", type="button", class="btn active")
-							//- 	i(class="icon-headphones")
-							button(id="flag-video", type="button", class="btn active")
-								i(class="icon-facetime-video")
+					div(class="label span12", id="status") Unregistered
 
 				div(class="row-fluid")
 
@@ -68,8 +61,13 @@ body(class="container")
 						div(id="form-established-call", class="slide row-fluid pagination-centered")
 							p(id="timer") 00:00:00
 							p
-								button(id="fullscreen")
-									i(class="icon-fullscreen")
+								div(class="btn-group",id="call-conf")
+									button(id="toggleMuteAudio", class="btn active")
+										i(class="icon-headphones")
+									button(id="toggleMuteVideo", type="button", class="btn active")
+										i(class="icon-facetime-video")
+									button(id="fullscreen",class="btn")
+										i(class="icon-fullscreen")
 							p
 								button(id="hangup-established", class="btn btn-danger") End call
 

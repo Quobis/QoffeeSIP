@@ -33,7 +33,7 @@ class API extends Spine.Controller
 		@sipStack.hangup()
 
 	unregister: () =>
-		@sipStack.hangup()
+		@sipStack.unregister()
 
 	chat: (ext, content) =>
 		@sipStack.sendInstantMessage ext, content
@@ -44,5 +44,11 @@ class API extends Spine.Controller
 	off: (eventName, callback) =>
 		@sipStack.unbind eventName, callback if callback?
 		@sipStack.unbind eventName, callback if not callback?
+
+	toggleMuteVideo: =>
+		@sipStack.rtc.toggleMuteVideo()
+
+	toggleMuteAudio: =>
+		@sipStack.rtc.toggleMuteAudio()		
 
 window.API = API
