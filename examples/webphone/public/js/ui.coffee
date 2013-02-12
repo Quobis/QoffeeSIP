@@ -9,9 +9,8 @@ class UI extends Spine.Controller
 		"click #hangup-established": "hangupClick"
 		"click #hangup": "hangupClick"
 		"click #fullscreen": "fullscreen"
-		"click #call-conf > button": "toggleActiveClass"
-		"click #call-conf > button > i": "toggleActiveClass"
-		"click #toggleMuteAudio": "toggleMuteAudio"
+		"click .toggleMuteAudio": "toggleMuteAudio"
+		"click .toggleMuteVideo": "toggleMuteVideo"
 
 	elements:
 		"#form-register": "$formRegister"
@@ -101,16 +100,13 @@ class UI extends Spine.Controller
 	fullscreen: () =>
 		$("#remote").fullscreen(true)
 
-	toggleActiveClass: (e) =>
-		console.log e
-		$el = $(e.target)
-		if $el.hasClass "btn"
-			$el.toggleClass "active"
-		else
-			$el.parent().toggleClass "active"
-
 	toggleMuteAudio: () =>
+		console.log "[MEDIA] toggleMuteAudio"
 		@api.toggleMuteAudio()
+
+	toggleMuteVideo: () =>
+		console.log "[MEDIA] toggleMuteVideo"
+		@api.toggleMuteVideo()
 
 	# Prevent page reloading on form submits.
 	submitForm: (e) =>

@@ -3,7 +3,7 @@ all: watch deploy
 
 # compile automatically each time the user save a file
 watch:
-	node_modules/coffee-script/bin/coffee -c -w public/js/*.coffee  &
+	node_modules/coffee-script/bin/coffee -c -b -w public/js/*.coffee  &
 	node_modules/stylus/bin/stylus -w public/css/*.styl &
 	node_modules/jade/bin/jade -P -w views/*.jade &
 
@@ -21,7 +21,7 @@ clean:
 
 # compile all modules (used to build)
 compile:
-	node_modules/coffee-script/bin/coffee -c public/js/*.coffee &
+	node_modules/coffee-script/bin/coffee -c -b public/js/*.coffee &
 	node_modules/stylus/bin/stylus -c public/css/*.styl &
 	node_modules/jade/bin/jade -w views/*.jade &
 

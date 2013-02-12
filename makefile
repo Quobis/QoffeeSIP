@@ -27,4 +27,4 @@ doc:
 
 # compile all modules (used to build)
 compile:
-	node_modules/coffee-script/bin/coffee -c -l src/*.coffee
+	node_modules/coffee-script/bin/coffee -b -c -l src/*.coffee

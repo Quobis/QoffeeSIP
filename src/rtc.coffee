@@ -38,8 +38,8 @@ class RTC extends Spine.Controller
 				$d.parent().css {opacity: 1}
 
 			# Fake get{Video,Audio}Tracks
-			MediaStream.prototype.getVideoTracks = () -> return []
-			MediaStream.prototype.getAudioTracks = () -> return []
+			MediaStream::getVideoTracks = () -> return []
+			MediaStream::getAudioTracks = () -> return []
 
 		if navigator.webkitGetUserMedia
 			# Browser name			
@@ -60,17 +60,15 @@ class RTC extends Spine.Controller
 
 			# The representation of tracks in a stream is changed in M26.
 			# Unify them for earlier Chrome versions in the coexisting period.
-			if not webkitMediaStream.prototype.getVideoTracks
-				webkitMediaStream.prototype.getVideoTracks = () ->
-				return this.videoTracks;
-			if not webkitMediaStream.prototype.getAudioTracks
-				webkitMediaStream.prototype.getAudioTracks = () ->
-				return this.audioTracks;
+			if not webkitMediaStream::getVideoTracks
+				webkitMediaStream::getVideoTracks = () -> @videoTracks;
+			if not webkitMediaStream::getAudioTracks
+				webkitMediaStream::getAudioTracks = () -> @audioTracks;
 
 			# New syntax of getXXXStreams method in M26.
-			if not webkitRTCPeerConnection.prototype.getLocalStreams
-				webkitRTCPeerConnection.prototype.getLocalStreams  = -> return this.localStreams;
-				webkitRTCPeerConnection.prototype.getRemoteStreams = -> return this.remoteStreams;
+			if not webkitRTCPeerConnection::getLocalStreams
+				webkitRTCPeerConnection::getLocalStreams  = -> @localStreams
+				webkitRTCPeerConnection::getRemoteStreams = -> @remoteStreams
 
 	start: () =>
 		# Firefox does not provide *onicecandidate* callback.
@@ -147,17 +145,6 @@ class RTC extends Spine.Controller
 			# gumSuccess and gumFail are callbacks that will be executed under getUserMedia success and failure executions.
 			@getUserMedia @mediaConstraints, gumSuccess, gumFail	
 
-	# # Add a stream to the DOM video.
-	# attachStream: ($dom, stream) =>
-	# 	return if not $dom?
-	# 	console.log "[INFO] attachStream"
-	# 	$d = $($dom.find("video")[0])
-	# 	# Builds a URL from a stream to be able to attach it to the DOM element
-	# 	# passed as parameter.
-	# 	url =  (@URL.createObjectURL stream)
-	# 	$d.attr 'src', url
-	# 	$d.parent().css {opacity: 1}
-
 	# Gets localDescription and trigger it in the "sdp" event.
 	triggerSDP: () =>
 		console.log "[MEDIA]"
@@ -201,10 +188,8 @@ class RTC extends Spine.Controller
 			console.log @pc.remoteDescription	
 			callback()
 
-
 		description = (new @RTCSessionDescription type: type, sdp: sdp)
 		@pc.setRemoteDescription description, success, => @trigger "error", "setRemoteDescription", description
-
 
 	# Receive SDP offer.
 	# Set remoteDescription.
@@ -233,8 +218,9 @@ class RTC extends Spine.Controller
 			@start()
 
 	toggleMuteAudio: () =>
-		# Call the getAudioTracks method via adapter.js.
-		audioTracks = @localStream.getAudioTracks()
+		# Call the getAudioTracks method via "adapter.js".
+		audioTracks = @localstream.getAudioTracks()
+		console.log audioTracks
 
 		if audioTracks.length is 0
 			console.log "[MEDIA] No local audio available."
@@ -242,18 +228,18 @@ class RTC extends Spine.Controller
 
 		if @isAudioMuted
 			bool = true
-			console.log "Audio unmuted."
+			console.log "[MEDIA] Audio unmuted."
 		else
 			bool = false
-			console.log "Audio muted."
+			console.log "[MEDIA] Audio muted."
 
-		@localstream.audioTracks[i].enabled = bool for i in [0..audioTracks.length]
+		audioTrack.enabled = bool for audioTrack in audioTracks
 		@isAudioMuted = not bool;
 
-
 	toggleMuteVideo: () =>
-		# Call the getAudioTracks method via adapter.js.
-		videoTracks = @localStream.getVideoTracks();
+		# Call the getVideoTracks method via "adapter.js".
+		videoTracks = @localstream.getVideoTracks()
+		console.log videoTracks
 
 		if videoTracks.length is 0
 			console.log "[MEDIA] No local audio available."
@@ -266,18 +252,8 @@ class RTC extends Spine.Controller
 			bool = false
 			console.log("Video muted.");
 
-		@localstream.videoTracks[i].enabled = bool for i in [0..videoTracks.length]
+		videoTrack.enabled = bool for videoTrack in videoTracks
 		@isVideoMuted = not bool;
 
-
-	# # options :: {audio, video}
-	# setMediaConstraints: (options) =>
-	# 	console.log "[MEDIA]"
-	# 	console.log options
-
-	# 	@mediaConstraints =
-	# 		mandatory:
-	# 			'OfferToReceiveAudio': options.audio
-	# 			'OfferToReceiveVideo': options.video
 
 window.RTC = RTC
