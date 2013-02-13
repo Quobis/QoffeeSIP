@@ -576,7 +576,7 @@ class SipStack extends Spine.Controller
 			ext: register.ext,
 			pass : register.pass,
 			ext2 : ext2
-			domain2: domain2
+			domain2: domain2 or @domain
 		@addTransaction transaction
 		@setState 5, transaction
 		message = @createMessage transaction
