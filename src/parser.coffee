@@ -70,13 +70,7 @@ class Parser
 			methodRE   = /(\w+)/
 			meth       = methodRE.exec(firstLine)[0]
 			requestUri = firstLine.split(" ")[1].split(";")[0]
-			console.log "!!!!!!!!" + requestUri
 			return {meth: meth, type: "request"}
-
-		
-		# TODO: fire and event here.
-		console.log "[WARNING] Bad request "
-		return {}
 
 	@parseVias: (pkt) ->
 		viaRE = /Via\:/i

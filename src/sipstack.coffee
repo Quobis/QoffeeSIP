@@ -20,6 +20,10 @@ class SipStack extends Spine.Controller
 	getTransaction: (meth) =>
 		@_transactions[meth]
 
+	# meth :: String
+	deleteTransaction: (meth) =>
+		@_transactions = _.omit @_transactions, meth
+
 	# MESSAGE id is the CSeq number.
 	# This function stores a sent MESSAGE.
 	addInstantMessage: (message) =>
@@ -28,6 +32,9 @@ class SipStack extends Spine.Controller
 	# This functions returns the MESSAGE with CSeq == cseq parameter.
 	getInstantMessage: (cseq) =>
 		@_instantMessages[cseq]
+
+	deleteInstantMessage: (cseq) =>
+		@_instantMessages = _.omit @instantMessage, cseq
 
 	# ## Events
 	# Every one of these 3 methods trigger and event with a name, 
@@ -161,7 +168,7 @@ class SipStack extends Spine.Controller
 					when "OK"
 						console.log "[MESSAGE] OK"
 						# After receiving a 200 OK we don't need the instant message anymore.
-						delete @getInstantMessage message.cseq
+						@deleteInstantMessage message.cseq
 					else
 						instantMessage = @getInstantMessage message.cseq
 						_.extend instantMessage, _.pick message, "realm", "nonce", "toTag"
@@ -327,7 +334,7 @@ class SipStack extends Spine.Controller
 										@send @createMessage ack
 										@setState 3
 										# Remove the current invite transaction.
-										delete @getTransaction("INVITE")
+										@deleteTransaction "INVITE"
 
 						when "request"
 							switch message.meth

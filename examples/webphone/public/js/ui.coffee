@@ -71,6 +71,13 @@ class UI extends Spine.Controller
 
 		return replacedText
 
+	emoticonify: (inputText) ->
+		patterns =
+			happy: /:\)/
+			sad: /:\(/
+			tongue: /:P|p/
+
+
 	# Put a chat message in the chat and scroll to the bottom.
 	# TODO: We should take care of HTML content in the message, for example a script tag.
 	renderInstantMessage: (message) =>
