@@ -1,3 +1,11 @@
+##
+# Copyright (C) Quobis
+# Project site: https://github.com/Quobis/QoffeeSIP
+# 
+# Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
+##
+
+
 # Defines to execute init function when webpage is loaded.
 $ ->
     console.log "Ready!"

@@ -1,3 +1,11 @@
+##
+# Copyright (C) Quobis
+# Project site: https://github.com/Quobis/QoffeeSIP
+# 
+# Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
+##
+
+
 testBrowser = ->
 		# browser.safari is deprecated, here a trick, NOT TESTED
 		$.browser.safari = $.browser.webkit and not(/chrome/.test(navigator.userAgent.toLowerCase()));
