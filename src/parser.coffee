@@ -1,8 +1,10 @@
 ##
-# @source: https://github.com/Quobis/QoffeeSIP
 # Copyright (C) Quobis
+# Project site: https://github.com/Quobis/QoffeeSIP
+# 
 # Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 ##
+
 
 # Abtract class. It contains abstract methods that receives SIP
 # packages and extract some data from them.

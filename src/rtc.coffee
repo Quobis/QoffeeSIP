@@ -1,8 +1,10 @@
 ##
-# @source: https://github.com/Quobis/QoffeeSIP
 # Copyright (C) Quobis
+# Project site: https://github.com/Quobis/QoffeeSIP
+# 
 # Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 ##
+
 
 # In this class we use WebRTC API described here: http://dev.w3.org/2011/webrtc/editor/webrtc.html
 class RTC extends Spine.Controller
