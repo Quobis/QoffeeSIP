@@ -63,7 +63,7 @@ class SipTransaction
 
 		array  = _.shuffle string.split("")
 		string = ""
-		string += char for char in array
+		string += character for character in array
 		limit  = Math.min string.length, n
 		string = string[0...limit]
 		# Recursiveness.

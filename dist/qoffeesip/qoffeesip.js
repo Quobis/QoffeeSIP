@@ -655,7 +655,7 @@ SipTransaction = (function() {
   };
 
   SipTransaction.prototype.randomString = function(n, hex) {
-    var array, char, limit, string, _i, _len;
+    var array, character, limit, string, _i, _len;
     if (hex == null) {
       hex = false;
     }
@@ -668,8 +668,8 @@ SipTransaction = (function() {
     array = _.shuffle(string.split(""));
     string = "";
     for (_i = 0, _len = array.length; _i < _len; _i++) {
-      char = array[_i];
-      string += char;
+      character = array[_i];
+      string += character;
     }
     limit = Math.min(string.length, n);
     string = string.slice(0, limit);
@@ -1275,7 +1275,7 @@ SipStack = (function(_super) {
       ext: register.ext,
       pass: register.pass,
       ext2: ext2,
-      domain2: domain2
+      domain2: domain2 || this.domain
     });
     this.addTransaction(transaction);
     this.setState(5, transaction);
