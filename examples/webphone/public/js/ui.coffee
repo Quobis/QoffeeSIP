@@ -45,7 +45,7 @@ class UI extends Spine.Controller
 		message: (message, type) ->
 			console.log message
 			"""
-			<p>
+			<p class="chat-m">
 				<span class="label #{type}">#{message.from} says</span> #{message.content}
 			</p>
 			"""
@@ -72,16 +72,25 @@ class UI extends Spine.Controller
 		return replacedText
 
 	emoticonify: (inputText) ->
-		patterns =
-			happy: /:\)/
-			sad: /:\(/
-			tongue: /:P|p/
+		substitutions =
+			happy: /:\)/gim
+			sad: /:\(/gim
+			tongue: /:(P|p)/gim
+
+		replacedText = inputText
+		for key, pattern of substitutions
+			console.log key
+			replacedText = replacedText.replace pattern, "<img class='emoticon' src='img/emoticons/#{key}.svg'/>"
+
+		console.log replacedText
+		replacedText
 
 
 	# Put a chat message in the chat and scroll to the bottom.
 	# TODO: We should take care of HTML content in the message, for example a script tag.
 	renderInstantMessage: (message) =>
 		message.content = @linkify message.content
+		message.content = @emoticonify message.content
 		# If sending message...
 		if message.from is @register.ext
 			contact = message.to

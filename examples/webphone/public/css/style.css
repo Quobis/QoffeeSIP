@@ -124,3 +124,6 @@ legend {
 #chat {
   display: none;
 }
+.emoticon {
+  width: 20px;
+}
