@@ -73,13 +73,22 @@ class UI extends Spine.Controller
 
 	emoticonify: (inputText) ->
 		substitutions =
-			happy: /:\)/gim
-			sad: /:\(/gim
-			tongue: /:(P|p)/gim
+			angry:		/X\-?\(/gim				# :(
+			blink:		/;-?\)/gim				# ;)
+			blush:		/:-?\$/gim				# :$
+			cheerful:	/(:-?D)|(\^\^)/gim		# :D ^^
+			confused:	/:-?S/gim				# :S
+			cry:		/;-?\(/gim				# ;)
+			happy: 		/:-?\)/gim				# :)
+			laugh:		/X-?D/gim				# XD
+			sad: 		/:-?\(/gim				# :(
+			serious:	/:-?\|/gim				# :|
+			sunglasses: /B-?\)/gim				# B)
+			surprised:	/:-?O/gim				# :O
+			tongue: 	/:-?P/gim				# :P
 
 		replacedText = inputText
 		for key, pattern of substitutions
-			console.log key
 			replacedText = replacedText.replace pattern, "<img class='emoticon' src='img/emoticons/#{key}.svg'/>"
 
 		console.log replacedText

@@ -615,7 +615,9 @@ class SipStack extends Spine.Controller
 				cancel = new SipTransaction
 					meth: "CANCEL",
 					ext : (@getTransaction "REGISTER").ext
+					domain : (@getTransaction "REGISTER").domain
 					ext2 : invite.ext2
+					domain2: invite.domain2
 
 				_.extend cancel, _.pick invite, "callId", "fromTag", "from", "to", "cseq", "domainName", "branchPad"
 				@send @createMessage cancel
