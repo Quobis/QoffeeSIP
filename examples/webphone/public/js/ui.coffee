@@ -294,7 +294,7 @@ class UI extends Spine.Controller
 				@startTimer()
 				@nextForm "form-established-call"
 				if window.autoanswering
-					setTimeout (-> $("#hangout-established").click()), 15000
+					setTimeout (-> $("#hangup-established").click()), 15000
 				@$chat.show()
 				@$chat.find("form").submit =>
 					message =

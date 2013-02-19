@@ -36,6 +36,20 @@ class SipStack extends Spine.Controller
 	deleteInstantMessage: (cseq) =>
 		@_instantMessages = _.omit @instantMessage, cseq
 
+	checkDialog: (transaction) =>
+		# Call-ID, tags
+		return _.find @_transactions, (tr) => 
+			tr.callId is transaction.callId
+			# Here, we just check that one of the tags matches another one.
+			# We should check both, taking care of transactions that does not have toTag.
+			not _.isEmpty _.intersection [transaction.fromTag, transaction.toTag], [tr.fromTag, tr.toTag]
+
+	checkTransaction: (transaction) =>
+		# checkDialog + branch
+		return false if not @checkDialog transaction
+		return _.find @_transactions, (tr) => 
+			transaction.branch is tr.branch
+
 	# ## Events
 	# Every one of these 3 methods trigger and event with a name, 
 	# the message that has triggered the event,
@@ -134,6 +148,7 @@ class SipStack extends Spine.Controller
 
 			# Re-register manager. 
 			if (@state > 2) and (message.cseq.meth is "REGISTER")
+				return if not @checkTransaction message
 				switch message.responseCode
 					# Here we receive a 200 OK for a REGISTER we sent.
 					when 200
@@ -170,6 +185,8 @@ class SipStack extends Spine.Controller
 						# After receiving a 200 OK we don't need the instant message anymore.
 						@deleteInstantMessage message.cseq
 					else
+						return if not @checkTransaction message
+						return if not message.respose code in [401,407]
 						instantMessage = @getInstantMessage message.cseq
 						_.extend instantMessage, _.pick message, "realm", "nonce", "toTag"
 						instantMessage.proxyAuth = message.responseCode is 407
@@ -193,8 +210,10 @@ class SipStack extends Spine.Controller
 			switch @state
 				# ### REGISTERING (before challenging).
 				when 1
+					return if not @checkTransaction message
 					# We get the original REGISTER which originated the transaction.
 					transaction = @getTransaction "REGISTER"
+
 					# We add the vias of the new message to the original REGISTER.
 					transaction.vias = message.vias
 
@@ -221,6 +240,7 @@ class SipStack extends Spine.Controller
 
 				# ### REGISTERING (after challenging)
 				when 2
+					return if not @checkTransaction message
 					transaction = @getTransaction "REGISTER"
 					transaction.vias = message.vias
 
@@ -267,6 +287,7 @@ class SipStack extends Spine.Controller
 
 				# ### incoming CALLING
 				when 4
+					return if not @checkTransaction message
 					# TODO: Manage CANCELs and 480 (remote user press hang out)
 					switch message.meth
 						when "CANCEL"
@@ -279,6 +300,7 @@ class SipStack extends Spine.Controller
 
 				# ### CALLING
 				when 5
+					return if not @checkTransaction message
 					switch message.type
 						when "response"
 							# If the message is a known response
@@ -350,6 +372,7 @@ class SipStack extends Spine.Controller
 
 				# ### RINGING
 				when 6
+					return if not @checkTransaction message
 					@info "RINGING", message
 					switch message.meth
 						when "CANCEL"
@@ -362,6 +385,7 @@ class SipStack extends Spine.Controller
 				# ### CALL ESTABLISHED
 				# TODO: We don't manage ACKs after BUSYs.
 				when 7, 8
+					return if not @checkTransaction message
 					@info "CALL ESTABLISHED", message
 					switch message.meth
 						when "BYE"
@@ -378,12 +402,14 @@ class SipStack extends Spine.Controller
 				# ### HANGING UP
 				# TODO: Timers for states 9 and 10.
 				when 9
+					return if not @checkTransaction message
 					@info "HANGING UP", message
 					@info "Call ended", message
 					@rtc.close()
 					@setState 3, message # Registered
 
 				when 10
+					return if not @checkTransaction message
 					@info "HANGING UP", message
 					@info "Call ended", message
 					@setState 3, message # Registered
@@ -464,7 +490,7 @@ class SipStack extends Spine.Controller
 			data += (transaction.vias.join "\r\n") + "\r\n"
 		else
 			# If hack for use TCP in via is true, use TCP.
-			data += "Via: SIP/2.0/#{(@hackViaTCP and "TCP") or @transport.toUpperCase()} #{transaction.domainName};branch=z9hG4bK#{transaction.branchPad}\r\n"
+			data += "Via: SIP/2.0/#{(@hackViaTCP and "TCP") or @transport.toUpperCase()} #{transaction.domainName};branch=#{transaction.branch}\r\n"
 
 		# From
 		data += "From: #{transaction.uri};tag=#{transaction.fromTag}\r\n"
@@ -619,7 +645,7 @@ class SipStack extends Spine.Controller
 					ext2 : invite.ext2
 					domain2: invite.domain2
 
-				_.extend cancel, _.pick invite, "callId", "fromTag", "from", "to", "cseq", "domainName", "branchPad"
+				_.extend cancel, _.pick invite, "callId", "fromTag", "from", "to", "cseq", "domainName", "branch"
 				@send @createMessage cancel
 				@setState 10
 
@@ -629,7 +655,7 @@ class SipStack extends Spine.Controller
 					ext : (@getTransaction "REGISTER").ext
 					ext2 : invite.ext
 
-				_.extend busy, _.pick invite, "callId", "fromTag", "from", "to", "cseq", "domainName", "branchPad", "vias"
+				_.extend busy, _.pick invite, "callId", "fromTag", "from", "to", "cseq", "domainName", "branch", "vias"
 				@send @createMessage busy
 				@setState 9, busy
 

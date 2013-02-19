@@ -29,11 +29,11 @@ class SipTransaction
 		@set args
 
 		# This variables are common for all transactions.
-		# If domainName or IP or branchPad does not exist, create them.
+		# If domainName or IP or branch does not exist, create them.
 		@domainName ?= "#{@randomString 12}.invalid"
 		# IP is used when SipStack.hackViaTCP is true.
 		@IP         ?= @randomIP()
-		@branchPad  ?= @randomString 30
+		@branch 	?= "z9hG4bK" + @randomString(30)
 
 		# Some variables must be asgined to random values
 		# if they are not filled yet.
