@@ -534,7 +534,7 @@ class SipStack extends Spine.Controller
 		data += "Supported: path, outbound, gruu\r\n"
 
 		# User-Agent
-		data += "User-Agent: QoffeeSIP 0.4\r\n"
+		data += "User-Agent: QoffeeSIP 0.5\r\n"
 
 		# Contact
 		# Addres is a randomIP when hackIpContact is true, else, a randomDomain.
