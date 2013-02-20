@@ -12,6 +12,8 @@ class API extends Spine.Controller
 		super
 		args = 
 			server: @server
+			hackViaTCP: @hackViaTCP
+			hackIpContact: @hackIpContact
 			mediaConstraints: @mediaConstraints
 			mediaElements: @mediaElements
 			onopen: @onopen or -> false
@@ -32,7 +34,7 @@ class API extends Spine.Controller
 		@sipStack.hangup()
 
 	unregister: () =>
-		@sipStack.hangup()
+		@sipStack.unregister()
 
 	chat: (ext, content) =>
 		@sipStack.sendInstantMessage ext, content
@@ -41,6 +43,13 @@ class API extends Spine.Controller
 		@sipStack.bind eventName, callback
 
 	off: (eventName, callback) =>
-		@sipStack.unbind eventName, callback
+		@sipStack.unbind eventName, callback if callback?
+		@sipStack.unbind eventName, callback if not callback?
+
+	toggleMuteVideo: =>
+		@sipStack.rtc.toggleMuteVideo()
+
+	toggleMuteAudio: =>
+		@sipStack.rtc.toggleMuteAudio()		
 
 window.API = API

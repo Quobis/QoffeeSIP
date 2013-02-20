@@ -16,24 +16,17 @@ body(class="container")
 
 		div(class="row-fluid")
 			div(class="span4 media")
-				div(id="media-remote", class="shadow")
-					video(id="remote", class="row-fluid", autoplay=true)
-				div(id="media-local", class="shadow")
-					video(id="local", class="row-fluid", autoplay=true)
+				div(id="media-remote", class="shadow row-fluid")
+					video(id="remote", class="span12", autoplay=true, controls=false)
+				div(id="media-local", class="shadow row-fluid")
+					video(id="local", class="span12", autoplay=true, controls=false)
 
 			div(class="span4")
 				//- div(class="vertical-margin row-fluid")
 				div(class="row-fluid")
 
 				div(id="conf", class="well layer row-fluid span12")
-					.row-fluid
-						div(class="label span12", id="status") Unregistered
-					.row-fluid.pagination-centered
-						div(id="flags-media", class="btn-group")
-							//- button(id="flag-audio", type="button", class="btn active")
-							//- 	i(class="icon-headphones")
-							button(id="flag-video", type="button", class="btn active")
-								i(class="icon-facetime-video")
+					div(class="label span12", id="status") Unregistered
 
 				div(class="row-fluid")
 
@@ -47,8 +40,8 @@ body(class="container")
 							source(src="audio/ringing.mp3", type="audio/mpeg")
 
 						form(id="form-register", class="slide row-fluid pagination-centered")
-							input(id="user-reg", class="input span12", type="text", placeholder="User", autofocus, required)
-							input(id="pass-reg", class="input span12", type="password", placeholder="Pass")
+							input(id="user-reg", name="user", class="input span12", type="text", placeholder="User", autofocus, required, autocomplete)
+							input(id="pass-reg", name="pass", class="input span12", type="password", placeholder="Pass", autocomplete)
 							input(id="server-reg", class="input span12", type="text", placeholder="Server (ws://ip:port/path)", type="url")
 							input(type="submit",id="register", class="btn btn-info", value="Register")
 
@@ -57,18 +50,27 @@ body(class="container")
 							div(class="btn-toolbar")
 								input(type="submit", id="call", class="btn btn-success", value="Call")
 
-						form(id="form-calling", class="slide row-fluid pagination-centered")
+						div(id="form-calling", class="slide row-fluid pagination-centered")
 							class(class="btn-group")
 								button(class="btn btn-danger", id="cancel") Hangup
 
-						form(id="form-incoming-call", class="slide row-fluid pagination-centered")
+						div(id="form-incoming-call", class="slide row-fluid pagination-centered")
 							class(class="btn-group")
 								button(class="btn btn-success", id="answer") Answer
 								button(class="btn btn-danger", id="hangup") Hangup
 
-						form(id="form-established-call", class="slide row-fluid pagination-centered")
+						div(id="form-established-call", class="slide row-fluid pagination-centered")
 							p(id="timer") 00:00:00
-							input(type="submit",id="hangout-established", class="btn btn-danger", value="End call")
+							p
+								div(class="btn-group",id="call-conf")
+									button(class="toggleMuteAudio", data-toggle="button", class="btn active")
+										i(class="toggleMuteAudio icon-headphones")
+									button(class="toggleMuteVideo", data-toggle="button", type="button", class="btn active")
+										i(class="toggleMuteVideo icon-facetime-video")
+									button(id="fullscreen",class="btn")
+										i(class="icon-fullscreen")
+							p
+								button(id="hangup-established", class="btn btn-danger") End call
 
 			div(class="span4")
 				div(id="chat")

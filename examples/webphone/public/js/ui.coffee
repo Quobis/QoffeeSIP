@@ -13,10 +13,12 @@ class UI extends Spine.Controller
 		"submit #form-register": "registerSubmit"
 		"submit #form-call": "callSubmit"
 		"click #answer": "answerClick"
-		"submit #form-calling": "hangupClick"
-		"submit #form-established-call": "hangupClick"
+		"click #cancel": "hangupClick"
+		"click #hangup-established": "hangupClick"
 		"click #hangup": "hangupClick"
-		"click #flags-media": "selectMedia"
+		"click #fullscreen": "fullscreen"
+		"click .toggleMuteAudio": "toggleMuteAudio"
+		"click .toggleMuteVideo": "toggleMuteVideo"
 
 	elements:
 		"#form-register": "$formRegister"
@@ -43,7 +45,7 @@ class UI extends Spine.Controller
 		message: (message, type) ->
 			console.log message
 			"""
-			<p>
+			<p class="chat-m">
 				<span class="label #{type}">#{message.from} says</span> #{message.content}
 			</p>
 			"""
@@ -69,10 +71,35 @@ class UI extends Spine.Controller
 
 		return replacedText
 
+	emoticonify: (inputText) ->
+		substitutions =
+			angry:		/X\-?\(/gim				# :(
+			blink:		/;-?\)/gim				# ;)
+			blush:		/:-?\$/gim				# :$
+			cheerful:	/(:-?D)|(\^\^)/gim		# :D ^^
+			confused:	/:-?S/gim				# :S
+			cry:		/;-?\(/gim				# ;)
+			happy: 		/:-?\)/gim				# :)
+			laugh:		/X-?D/gim				# XD
+			sad: 		/:-?\(/gim				# :(
+			serious:	/:-?\|/gim				# :|
+			sunglasses: /B-?\)/gim				# B)
+			surprised:	/:-?O/gim				# :O
+			tongue: 	/:-?P/gim				# :P
+
+		replacedText = inputText
+		for key, pattern of substitutions
+			replacedText = replacedText.replace pattern, "<img class='emoticon' src='img/emoticons/#{key}.svg'/>"
+
+		console.log replacedText
+		replacedText
+
+
 	# Put a chat message in the chat and scroll to the bottom.
 	# TODO: We should take care of HTML content in the message, for example a script tag.
 	renderInstantMessage: (message) =>
 		message.content = @linkify message.content
+		message.content = @emoticonify message.content
 		# If sending message...
 		if message.from is @register.ext
 			contact = message.to
@@ -103,26 +130,16 @@ class UI extends Spine.Controller
 	warningManager: (error, message) =>
 		@notify error, "danger"
 
-	# Not used until Chrome stable supports OfferToReceiveVideo/Audio.
-	selectMedia: (e) =>
-		$d = $(e.target)
-		# If the child of the button was the target...
-		if e.target.nodeName is "I"
-			$d = $d.parent()			
-		$d.toggleClass "active"
+	fullscreen: () =>
+		$("#remote").fullscreen(true)
 
-		av =
-			audio: true #@$flagAudio.hasClass "active"
-			video: @$flagVideo.hasClass "active"
+	toggleMuteAudio: () =>
+		console.log "[MEDIA] toggleMuteAudio"
+		@api.toggleMuteAudio()
 
-		$d = $(@$videos[0]).parent().parent()
-		if av.video
-			$d.animate opacity: 1
-		else
-			$d.animate opacity: 0
-
-		# If APi has been created, set its media constraints.
-		@api.setMediaConstraints av if @api
+	toggleMuteVideo: () =>
+		console.log "[MEDIA] toggleMuteVideo"
+		@api.toggleMuteVideo()
 
 	# Prevent page reloading on form submits.
 	submitForm: (e) =>
@@ -164,7 +181,10 @@ class UI extends Spine.Controller
 			@api.register @register.ext, @register.pass, @register.domain
 			@$registerButton.addClass "disabled"
 
+		# Both video and audio on, let to true what you need
 		@api = new API {server: @server, mediaElements: @mediaElements, onopen: onopen, mediaConstraints: {audio: true, video: true}}
+		# Non-compliant parameters needed to work with Asterisk, at this moment only audio is supported (still problems)
+		#@api = new API {server: @server, hackViaTCP: false, hackIpContact: true, @mediaElements, onopen: onopen, mediaConstraints: {audio: true, video: false}}
 		false
 
 	callSubmit: (e) =>
@@ -228,6 +248,10 @@ class UI extends Spine.Controller
 		console.log "[STATE] #{@state}"
 		switch @state
 			when 3
+				# Unregister on closing.
+				$(window).bind "beforeunload", => 
+					@api.unregister()
+					return
 				@stopTimer()
 				@$media.css opacity: 1
 				if 7 <= @previousState <= 9
@@ -270,7 +294,7 @@ class UI extends Spine.Controller
 				@startTimer()
 				@nextForm "form-established-call"
 				if window.autoanswering
-					setTimeout (-> $("#hangout-established").click()), 15000
+					setTimeout (-> $("#hangup-established").click()), 15000
 				@$chat.show()
 				@$chat.find("form").submit =>
 					message =

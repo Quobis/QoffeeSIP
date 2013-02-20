@@ -5,6 +5,7 @@
 # Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 ##
 
+
 # This class contain all variables needed in one transaction.
 class SipTransaction
 	# Next variables are unique for each transaction.
@@ -28,10 +29,11 @@ class SipTransaction
 		@set args
 
 		# This variables are common for all transactions.
-		# If domainName or IP or branchPad does not exist, create them.
+		# If domainName or IP or branch does not exist, create them.
 		@domainName ?= "#{@randomString 12}.invalid"
-		@IP ?= @randomIP()
-		@branchPad ?= @randomString 30
+		# IP is used when SipStack.hackViaTCP is true.
+		@IP         ?= @randomIP()
+		@branch 	?= "z9hG4bK" + @randomString(30)
 
 		# Some variables must be asgined to random values
 		# if they are not filled yet.
@@ -61,7 +63,7 @@ class SipTransaction
 
 		array  = _.shuffle string.split("")
 		string = ""
-		string += char for char in array
+		string += character for character in array
 		limit  = Math.min string.length, n
 		string = string[0...limit]
 		# Recursiveness.
