@@ -287,15 +287,14 @@ class SipStack extends Spine.Controller
 
 				# ### incoming CALLING
 				when 4
+					return if not @checkDialog message
 					# TODO: Manage CANCELs and 480 (remote user press hang out)
 					switch message.meth
 						when "CANCEL"
-							return if not @checkTransaction message
 							@info "Call ended"
 							@setState 3, message
 						when "ACK"
 							 # An ACK as response to a 200 OK is a new transaction of the same dialog.
-							return if not @checkDialog message
 							@setState 8, message
 						else
 							@warning "Unexpected message", message
@@ -374,7 +373,7 @@ class SipStack extends Spine.Controller
 
 				# ### RINGING
 				when 6
-					return if not @checkTransaction message
+					return if not @checkDialog message
 					@info "RINGING", message
 					switch message.meth
 						when "CANCEL"

@@ -131,7 +131,7 @@ class UI extends Spine.Controller
 		@notify error, "danger"
 
 	fullscreen: () =>
-		$("#remote").fullscreen(true)
+		$("#media-remote").fullscreen(true)
 
 	toggleMuteAudio: () =>
 		console.log "[MEDIA] toggleMuteAudio"
@@ -219,9 +219,9 @@ class UI extends Spine.Controller
 
 	nextForm: (id) =>
 		$(".disabled").removeClass "disabled"
-		@$slides.hide()
-		$("##{id}").fadeIn 200, =>
-			$("##{id} > input:first").focus()
+		@$slides.addClass "hidden"
+		$("##{id}").removeClass "hidden"
+		$("##{id} > input:first").focus()
 
 	startTimer: () =>
 		seconds = minutes = hours = 0
@@ -253,10 +253,10 @@ class UI extends Spine.Controller
 					@api.unregister()
 					return
 				@stopTimer()
-				@$media.css opacity: 1
-				if 7 <= @previousState <= 9
-					$("#media-local").css {top: "-196px", width: "100%", opacity: 1, display: "block", zIndex: "1000"}
-				$("#media-remote").css {opacity: 0}
+				$("#media-remote, #media-local").removeClass "active"
+				# if 7 <= @previousState <= 9
+				# 	$("#media-local").css {top: "-196px", width: "100%", opacity: 1, display: "block", zIndex: "1000"}
+				# $("#media-remote").css {opacity: 0}
 				# Remove .message to clear all previous messages.
 				@$messages.children().remove()
 				@$chat.hide()
@@ -285,8 +285,9 @@ class UI extends Spine.Controller
 			when 7, 8
 				console.log @api.sipStack.rtc.pc
 				console.log @api.sipStack.rtc.mediaConstraints
-				$("#media-local").css {top: "0", width: "25%", opacity: 0.8}
-				$("#media-remote").css {opacity: 1}
+				$("#media-local, #media-remote").addClass "active"
+				h = $("#media-local").height()
+				$("#media-local").css {marginTop: "-#{h}px"}
 
 				@updateStatus "Call established with #{@ext2}"
 				$("#remote-legend").text "Remote extension is #{@ext2}"

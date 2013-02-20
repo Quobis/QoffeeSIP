@@ -31,13 +31,12 @@ class RTC extends Spine.Controller
 			@getUserMedia          = navigator.mozGetUserMedia.bind navigator
 			@PeerConnection        = mozRTCPeerConnection
 			@RTCSessionDescription = mozRTCSessionDescription
-			@attachStream          = ($dom, stream) ->
-				return if not $dom?
+			@attachStream          = ($d, stream) ->
+				return if not $d?
 				console.log "[INFO] attachStream"
-				$d = $($dom.find("video")[0])
 				$d.attr 'src', window.URL.createObjectURL stream
 				$d.get(0).play()
-				$d.parent().css {opacity: 1}
+				$d.removeClass "hidden"
 
 			# Fake get{Video,Audio}Tracks
 			MediaStream::getVideoTracks = () -> return []
@@ -50,15 +49,14 @@ class RTC extends Spine.Controller
 			@getUserMedia          = navigator.webkitGetUserMedia.bind navigator
 			@PeerConnection        = webkitRTCPeerConnection
 			@RTCSessionDescription = RTCSessionDescription
-			@attachStream          = ($dom, stream) =>
-				return if not $dom?
+			@attachStream          = ($d, stream) =>
+				return if not $d?
 				console.log "[INFO] attachStream"
-				$d = $($dom.find("video")[0])
 				# Builds a URL from a stream to be able to attach it to the DOM element
 				# passed as parameter.
 				url =  webkitURL.createObjectURL stream
 				$d.attr 'src', url
-				$d.parent().css {opacity: 1}
+				$d.removeClass "hidden"
 
 			# The representation of tracks in a stream is changed in M26.
 			# Unify them for earlier Chrome versions in the coexisting period.
@@ -208,7 +206,7 @@ class RTC extends Spine.Controller
 	# Close PeerConnection and reset it with *start*.
 	close: () =>
 		# Hide remote video.
-		@$dom2.animate opacity: 0 if @$dom2?
+		@$dom2.addClass "hidden"
 		# Closing PeerConnection fails if the PeerConnection is not opened.
 		try
 			@pc.close()

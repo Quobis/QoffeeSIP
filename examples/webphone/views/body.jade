@@ -7,19 +7,16 @@
 
 
 body(class="container")
-	header(id="logo",class="row-fluid")
+	header(id="logo",class="row-fluid header")
 		img(src="img/logos/logo.png",class="span3")
 		.span1
 		div(id="register-info", class="well layer span8")
 
-	div(id="internal", class="row-fluid")
-
+	div(id="internal", class="row-fluid shadow-inset-big")
 		div(class="row-fluid")
-			div(class="span4 media")
-				div(id="media-remote", class="shadow row-fluid")
-					video(id="remote", class="span12", autoplay=true, controls=false)
-				div(id="media-local", class="shadow row-fluid")
-					video(id="local", class="span12", autoplay=true, controls=false)
+			div(class="span4")
+				video(id="media-remote", class="span12 hidden video", autoplay=true, controls=false)
+				video(id="media-local",  class="span12 hidden video", autoplay=true, controls=false)
 
 			div(class="span4")
 				//- div(class="vertical-margin row-fluid")
@@ -45,21 +42,21 @@ body(class="container")
 							input(id="server-reg", class="input span12", type="text", placeholder="Server (ws://ip:port/path)", type="url")
 							input(type="submit",id="register", class="btn btn-info", value="Register")
 
-						form(id="form-call", class="slide row-fluid pagination-centered")
+						form(id="form-call", class="slide row-fluid pagination-centered hidden")
 							input(id="ext-call", class="input span12", type="text", placeholder="Extension", required)
 							div(class="btn-toolbar")
 								input(type="submit", id="call", class="btn btn-success", value="Call")
 
-						div(id="form-calling", class="slide row-fluid pagination-centered")
+						div(id="form-calling", class="slide row-fluid pagination-centered hidden")
 							class(class="btn-group")
 								button(class="btn btn-danger", id="cancel") Hangup
 
-						div(id="form-incoming-call", class="slide row-fluid pagination-centered")
+						div(id="form-incoming-call", class="slide row-fluid pagination-centered hidden")
 							class(class="btn-group")
 								button(class="btn btn-success", id="answer") Answer
 								button(class="btn btn-danger", id="hangup") Hangup
 
-						div(id="form-established-call", class="slide row-fluid pagination-centered")
+						div(id="form-established-call", class="slide row-fluid pagination-centered hidden")
 							p(id="timer") 00:00:00
 							p
 								div(class="btn-group",id="call-conf")
@@ -74,10 +71,9 @@ body(class="container")
 
 			div(class="span4")
 				div(id="chat")
-					div(class="messages shadow")
-					form(class="form-inline")
-						input(type="text", class="input-xlarge")
-						input(type="submit", value="Send", class="btn")
+					div(class="messages shadow row-fluid span12")
+					form(class="form-inline input-append row-fluid")
+						input(type="text", class="input-xlarge", placeholder="Type any text here", class="span12")
 
 		div(id="notifications", class='top-right')
 
