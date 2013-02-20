@@ -73,12 +73,14 @@ class Parser
 			return {meth: meth, type: "request"}
 
 	@parseVias: (pkt) ->
-		viaRE = /Via\:\s+SIP\/2\.0\/[A-Z]+\s+([A-z0-9\.\:]+);(branch=([^;\s]+))?/
+		viaRE = /Via\:\s+SIP\/2\.0\/[A-Z]+\s+([A-z0-9\.\:]+)/
 		tmp  = _.filter pkt.split("\r\n"), (line) -> viaRE.test line
 		vias = _.map tmp, (via) ->  via.replace /;received=[A-z0-9\.\:]+/, ""
 		console.log vias
 		if vias.length > 0
-			ret = @getRegExprResult vias[0], viaRE, {sentBy: 1, branch: 3}
+			ret = @getRegExprResult vias[0], viaRE, sentBy: 1
+			branchRE = /branch=([^;\s]+)/
+			ret = @getRegExprResult vias[0], branchRE, branch: 1
 			# branchRE = /branch=([^;\r\n]+)/
 			# tmp      = branchRE.exec vias[0]
 			# branch   = tmp[1] if tmp.length >= 1

@@ -38,17 +38,17 @@ class SipStack extends Spine.Controller
 
 	checkDialog: (transaction) =>
 		# Call-ID, tags
-		return _.find @_transactions, (tr) => 
-			tr.callId is transaction.callId
+		return not _.isEmpty _.find @_transactions, (tr) => 
+			check = tr.callId is transaction.callId
 			# Here, we just check that one of the tags matches another one.
 			# We should check both, taking care of transactions that does not have toTag.
-			not _.isEmpty _.intersection [transaction.fromTag, transaction.toTag], [tr.fromTag, tr.toTag]
+			# check and= not _.isEmpty _.intersection [transaction.fromTag, transaction.toTag], [tr.fromTag, tr.toTag]
 
 	checkTransaction: (transaction) =>
-		# checkDialog + branch
-		return false if not @checkDialog transaction
-		return _.find @_transactions, (tr) => 
-			transaction.branch is tr.branch
+		check = @checkDialog(transaction)
+		check and= not _.isUndefined _.find @_transactions, (tr) => transaction.branch is tr.branch
+		check or console.log "[INFO] New message does not match any transaction"
+		return check
 
 	# ## Events
 	# Every one of these 3 methods trigger and event with a name, 
@@ -287,13 +287,15 @@ class SipStack extends Spine.Controller
 
 				# ### incoming CALLING
 				when 4
-					return if not @checkTransaction message
 					# TODO: Manage CANCELs and 480 (remote user press hang out)
 					switch message.meth
 						when "CANCEL"
+							return if not @checkTransaction message
 							@info "Call ended"
 							@setState 3, message
 						when "ACK"
+							 # An ACK as response to a 200 OK is a new transaction of the same dialog.
+							return if not @checkDialog message
 							@setState 8, message
 						else
 							@warning "Unexpected message", message
