@@ -202,7 +202,7 @@ class UI extends Spine.Controller
 		@api = new API
 			server: sipServer
 			turnServer: turnServer
-			stunServer: stunServer # or {"url": "stun:74.125.132.127:19302"}
+			stunServer: stunServer or {"url": "stun:74.125.132.127:19302"}
 			mediaElements: @mediaElements
 			onopen: onopen
 			mediaConstraints: {audio: true, video: not onlyAudio}
