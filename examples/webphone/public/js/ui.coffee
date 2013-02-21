@@ -168,6 +168,10 @@ class UI extends Spine.Controller
 		turnServer     = 
 			url: "turn:" + $("#turn-server").val()
 			credential: $("#turn-server-credential").val()
+
+		if stunServer.url is "stun:"
+			stunServer = {"url": "stun:74.125.132.127:19302"}
+
 		
 		serverRE = ///
 			(wss?)://
@@ -202,7 +206,7 @@ class UI extends Spine.Controller
 		@api = new API
 			server: sipServer
 			turnServer: turnServer
-			stunServer: stunServer or {"url": "stun:74.125.132.127:19302"}
+			stunServer: stunServer
 			mediaElements: @mediaElements
 			onopen: onopen
 			mediaConstraints: {audio: true, video: not onlyAudio}

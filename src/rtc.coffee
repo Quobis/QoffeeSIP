@@ -84,6 +84,8 @@ class RTC extends Spine.Controller
 		console.log "[INFO] createPeerConnection"
 		# We must provide at least one stun/turn server as parameter. 
 		# If the server is not reacheable by browser, peerconnection can only get host candidates.
+		console.log "[MEDIA] ICE servers"
+		console.log @iceServers
 		@pc = new @PeerConnection "iceServers": @iceServers
 		
 		# When we receive remote media (RTP from the other peer), attach it to the DOM element.

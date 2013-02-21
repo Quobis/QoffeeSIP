@@ -13,6 +13,8 @@ class API extends Spine.Controller
 
 		@sipStack = new SipStack
 			server: @server
+			stunServer: @stunServer
+			turnServer: @turnServer
 			hackViaTCP: @hackViaTCP
 			hackIpContact: @hackIpContact
 			mediaConstraints: @mediaConstraints
