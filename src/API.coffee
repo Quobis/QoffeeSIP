@@ -10,14 +10,14 @@ class API extends Spine.Controller
 	# Options must be an object with {server, mediaElements, onopen?}
 	constructor: (options) ->
 		super
-		args = 
+
+		@sipStack = new SipStack
 			server: @server
 			hackViaTCP: @hackViaTCP
 			hackIpContact: @hackIpContact
 			mediaConstraints: @mediaConstraints
 			mediaElements: @mediaElements
 			onopen: @onopen or -> false
-		@sipStack = new SipStack args
 
 	# domain is opcional
 	register: (ext, pass, domain) =>

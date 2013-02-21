@@ -100,12 +100,13 @@ class SipStack extends Spine.Controller
 	# - mediaContraints :: {audio: bool, video: bool}
 	# - server :: {ip: string, port: number, path:: string, transport :: string}
 	# - onopen :: function
-	# TODO: allow server to be a string like ws://ip:port/path
 	constructor: () ->
 		super
 		@rtc       = new RTC
 			mediaElements: @mediaElements
 			mediaConstraints: @mediaConstraints
+			turnServer: @turnServer
+			stunServer: @stunServer
 
 		@sipServer = @server.ip
 		@port      = @server.port

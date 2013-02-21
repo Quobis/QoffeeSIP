@@ -13,12 +13,14 @@ class UI extends Spine.Controller
 		"submit #form-register": "registerSubmit"
 		"submit #form-call": "callSubmit"
 		"click #answer": "answerClick"
+		"click #answer": "answerClick"
 		"click #cancel": "hangupClick"
 		"click #hangup-established": "hangupClick"
 		"click #hangup": "hangupClick"
 		"click #fullscreen": "fullscreen"
 		"click .toggleMuteAudio": "toggleMuteAudio"
 		"click .toggleMuteVideo": "toggleMuteVideo"
+		"click #expert": "toggleExpertMode"
 
 	elements:
 		"#form-register": "$formRegister"
@@ -42,6 +44,8 @@ class UI extends Spine.Controller
 		".media": "$media"
 		"#sound-ringing": "$soundRinging"
 		"#sound-calling": "$soundCalling"
+		"#expert": "$expert"
+		"#expert-options": "$expertOptions"
 
 	templates:
 		message: (message, type) ->
@@ -147,13 +151,23 @@ class UI extends Spine.Controller
 	submitForm: (e) =>
 		e.preventDefault()
 		false
-	   
+
+	toggleExpertMode: () =>
+		tmp = @$expert.text()
+		@$expert.text @$expert.data "toggle-text"
+		@$expert.data "toggle-text", tmp
+		@$expertOptions.toggleClass "hidden"
+
 	registerSubmit: (e) =>
 		[@register.ext, @register.domain] = $("#user-reg").val().split "@"
 		# Trick to speed up tests.
 		@register.pass = $("#pass-reg").val() or @register.ext
 		server         = $("#server-reg").val()
-		@server        = {}
+		onlyAudio      = $("#only-audio").is(":checked")
+		stunServer     = url: "stun:" + $("#stun-server").val()
+		turnServer     = 
+			url: "turn:" + $("#turn-server").val()
+			credential: $("#turn-server-credential").val()
 		
 		serverRE = ///
 			(wss?)://
@@ -163,16 +177,17 @@ class UI extends Spine.Controller
 			///
 
 		line = serverRE.exec server
+		sipServer        = {}
 		if line?
-			@server.transport = line[1]
-			@server.ip        = line[2]
-			@server.port      = line[4]
-			@server.path      = line[5] or ""
+			sipServer.transport = line[1]
+			sipServer.ip        = line[2]
+			sipServer.port      = line[4]
+			sipServer.path      = line[5] or ""
 		else
-			@server.ip   = "212.145.159.109"
-			@server.port = "80"
-			@server.path = ""
-			@server.transport = "ws"
+			sipServer.ip        = "10.1.20.40"
+			sipServer.port      = "8080"
+			sipServer.path      = ""
+			sipServer.transport = "ws"
 
 		onopen = =>
 			@api.on "new-state", @newState
@@ -184,10 +199,18 @@ class UI extends Spine.Controller
 			@$registerButton.addClass "disabled"
 
 		# Both video and audio on, let to true what you need
-		@api = new API {server: @server, mediaElements: @mediaElements, onopen: onopen, mediaConstraints: {audio: true, video: true}}
+		@api = new API
+			server: sipServer
+			turnServer: turnServer
+			stunServer: stunServer # or {"url": "stun:74.125.132.127:19302"}
+			mediaElements: @mediaElements
+			onopen: onopen
+			mediaConstraints: {audio: true, video: not onlyAudio}
+
 		# Non-compliant parameters needed to work with Asterisk, at this moment only audio is supported (still problems)
 		#@api = new API {server: @server, hackViaTCP: false, hackIpContact: true, @mediaElements, onopen: onopen, mediaConstraints: {audio: true, video: false}}
 		false
+
 
 	callSubmit: (e) =>
 		# Get extension and domain to call.

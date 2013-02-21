@@ -19,6 +19,9 @@ class RTC extends Spine.Controller
 
 		@mediaConstraints ?= {audio: true, video: true}
 		@browserSupport()
+		@iceServers = []
+		@iceServers.push @stunServer if @stunServer?
+		@iceServers.push @turnServer if @stunServer?
 		@start()
 
 	# Set some object attributes dependeing on browser.
@@ -36,7 +39,8 @@ class RTC extends Spine.Controller
 				console.log "[INFO] attachStream"
 				$d.attr 'src', window.URL.createObjectURL stream
 				$d.get(0).play()
-				$d.removeClass "hidden"
+				if @mediaConstraints.video
+					$d.removeClass "hidden"
 
 			# Fake get{Video,Audio}Tracks
 			MediaStream::getVideoTracks = () -> return []
@@ -56,7 +60,8 @@ class RTC extends Spine.Controller
 				# passed as parameter.
 				url =  webkitURL.createObjectURL stream
 				$d.attr 'src', url
-				$d.removeClass "hidden"
+				if @mediaConstraints.video
+					$d.removeClass "hidden"
 
 			# The representation of tracks in a stream is changed in M26.
 			# Unify them for earlier Chrome versions in the coexisting period.
@@ -79,7 +84,7 @@ class RTC extends Spine.Controller
 		console.log "[INFO] createPeerConnection"
 		# We must provide at least one stun/turn server as parameter. 
 		# If the server is not reacheable by browser, peerconnection can only get host candidates.
-		@pc = new @PeerConnection "iceServers": ["url": "stun:74.125.132.127:19302"]
+		@pc = new @PeerConnection "iceServers": @iceServers
 		
 		# When we receive remote media (RTP from the other peer), attach it to the DOM element.
 		@pc.onaddstream = (event) =>
