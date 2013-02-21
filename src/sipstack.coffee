@@ -386,7 +386,7 @@ class SipStack extends Spine.Controller
 				# ### CALL ESTABLISHED
 				# TODO: We don't manage ACKs after BUSYs.
 				when 7, 8
-					return if not @checkTransaction message
+					return if not @checkDialog message
 					@info "CALL ESTABLISHED", message
 					switch message.meth
 						when "BYE"

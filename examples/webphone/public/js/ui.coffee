@@ -22,12 +22,12 @@ class UI extends Spine.Controller
 
 	elements:
 		"#form-register": "$formRegister"
-		"#form-call": "formCall"
-		"#form-incoming-call": "$formincomingCall"
+		"#form-call": "$formCall"
+		"#form-calling": "$formCalling"
+		"#form-incoming-call": "$formIncomingCall"
 		"#form-established-call": "$formEstablishedCall"
 		"#answer": "$answerButton"
 		"#hangup": "$hangupButton"
-		"#flags-media": "$flagsMedia"
 		"#notifications": "$notifications"
 		"video": "$videos"
 		"#flag-audio": "$flagAudio"
@@ -40,12 +40,14 @@ class UI extends Spine.Controller
 		"#status": "$status"
 		".slide": "$slides"
 		".media": "$media"
+		"#sound-ringing": "$soundRinging"
+		"#sound-calling": "$soundCalling"
 
 	templates:
 		message: (message, type) ->
 			console.log message
 			"""
-			<p class="chat-m">
+			<p class="chat-message">
 				<span class="label #{type}">#{message.from} says</span> #{message.content}
 			</p>
 			"""
@@ -131,7 +133,7 @@ class UI extends Spine.Controller
 		@notify error, "danger"
 
 	fullscreen: () =>
-		$("#media-remote").fullscreen(true)
+		$("#media-remote").fullscreen true
 
 	toggleMuteAudio: () =>
 		console.log "[MEDIA] toggleMuteAudio"
@@ -213,15 +215,17 @@ class UI extends Spine.Controller
 		@api.hangup @ext2
 		false
 
-	stopSounds: () ->
-		$("#sound-ringing").get(0).pause()
-		$("#sound-calling").get(0).pause()
+	stopSounds: () =>
+		@$soundRinging.get(0).pause()
+		@$soundCalling.get(0).pause()
+		@$soundRinging.get(0).currentTime = 0
+		@$soundCalling.get(0).currentTime = 0
 
-	nextForm: (id) =>
+	nextForm: ($el) =>
 		$(".disabled").removeClass "disabled"
 		@$slides.addClass "hidden"
-		$("##{id}").removeClass "hidden"
-		$("##{id} > input:first").focus()
+		$el.removeClass "hidden"
+		$el.children(" > input:first").focus()
 
 	startTimer: () =>
 		seconds = minutes = hours = 0
@@ -263,7 +267,7 @@ class UI extends Spine.Controller
 
 				@stopSounds()
 				@updateStatus "Registered"
-				@nextForm "form-call"
+				@nextForm @$formCall
 				$("#register-info")
 					.html("<p>Your extension number is <strong>#{@register.ext}</strong>, share this URL to a friend and tell him to call you. If you want to connect to our demo webcam, just dial extension 1234.</p>")
 					.fadeIn(200)
@@ -271,13 +275,13 @@ class UI extends Spine.Controller
 
 			when 5
 				@updateStatus "Calling #{@ext2}"
-				@nextForm "form-calling"
+				@nextForm @$formCalling
 				document.getElementById("sound-calling").play()
 			
 			when 6
 				@ext2 = data.ext
 				@updateStatus "Incoming call from #{@ext2}"
-				@nextForm("form-incoming-call")
+				@nextForm @$formIncomingCall
 				document.getElementById("sound-ringing").play()
 				if window.autoanswering
 					setTimeout (-> $("#answer").click()), 1000
@@ -293,7 +297,7 @@ class UI extends Spine.Controller
 				$("#remote-legend").text "Remote extension is #{@ext2}"
 				@stopSounds()
 				@startTimer()
-				@nextForm "form-established-call"
+				@nextForm @$formEstablishedCall
 				if window.autoanswering
 					setTimeout (-> $("#hangup-established").click()), 15000
 				@$chat.show()
@@ -301,7 +305,7 @@ class UI extends Spine.Controller
 					message =
 						from: @register.ext
 						to: @ext2
-						content: $("#chat").find("input:first").val()
+						content: @$chat.find("input:first").val()
 					@$chat.find("input:first").val ""
 					@api.chat @ext2, message.content
 					@renderInstantMessage message
