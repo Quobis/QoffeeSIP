@@ -258,6 +258,7 @@ class UI extends Spine.Controller
 					return
 				@stopTimer()
 				$("#media-remote, #media-local").removeClass "active"
+				$("#media-local").css {marginTop: "0px"}
 				# if 7 <= @previousState <= 9
 				# 	$("#media-local").css {top: "-196px", width: "100%", opacity: 1, display: "block", zIndex: "1000"}
 				# $("#media-remote").css {opacity: 0}
