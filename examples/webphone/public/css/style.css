@@ -24,7 +24,6 @@
 }
 .layer {
   background-color: #fdfdfd;
-  transition: all 1s ease;
   margin-bottom: 0px;
   margin-left: 0px;
 }
@@ -36,7 +35,7 @@
   height: 264px;
   background-color: #fdfdfd;
   box-shadow: 0px 0px 16px 0.5px #ccc;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   border-radius: 4px;
   padding: 8px;
 }
