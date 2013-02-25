@@ -21,7 +21,7 @@ class RTC extends Spine.Controller
 		@browserSupport()
 		@iceServers = []
 		@iceServers.push @stunServer if @stunServer?
-		@iceServers.push @turnServer if @stunServer?
+		@iceServers.push @turnServer if @turnServer?
 		@start()
 
 	# Set some object attributes dependeing on browser.

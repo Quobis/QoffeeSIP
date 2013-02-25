@@ -1,5 +1,7 @@
-shadowColor = #AAC
-
+shadowColor      = #AAC
+backgroundColor1 = #FDFDFD
+backgroundColor2 = #EEE
+activeColor      = #337
 
 .border-radius
 	border-radius: 8px
@@ -17,7 +19,7 @@ shadowColor = #AAC
 	box-shadow: inset 0px 0px 8px 1px shadowColor
 
 .layer
-	background-color: #FDFDFD
+	background-color: backgroundColor1
 	margin-bottom: 0px
 	margin-left: 0px
 	@extend .shadow
@@ -28,7 +30,7 @@ shadowColor = #AAC
 .messages
 	overflow-y: auto
 	height: 264px
-	background-color: #FDFDFD
+	background-color: backgroundColor1
 	box-shadow: 0px 0px 16px 0.5px #CCC
 	margin-bottom: 8px
 	border-radius: 4px
@@ -64,6 +66,9 @@ shadowColor = #AAC
 
 #chat
 	display: none
+	img
+		max-width: 128px
+		max-height: 128px
 
 #media-remote.active
 	display: block
@@ -106,3 +111,14 @@ shadowColor = #AAC
 	font-size: 90%
 	display: none
 	display: none
+
+.dropbox
+	border-style: dashed
+	border-width: 3px
+	border-color: shadowColor
+	border-radius: 4px
+
+.dropbox.active
+	border-style: dashed
+	border-width: 3px
+	border-color: activeColor

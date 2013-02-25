@@ -29,11 +29,11 @@ class API extends Spine.Controller
 	call: (ext, domain) =>
 		 @sipStack.call ext, domain
 
-	answer: () =>
-		@sipStack.answer()
+	answer: (branch) =>
+		@sipStack.answer(branch)
 
-	hangup: () =>
-		@sipStack.hangup()
+	hangup: (branch) =>
+		@sipStack.hangup(branch)
 
 	unregister: () =>
 		@sipStack.unregister()

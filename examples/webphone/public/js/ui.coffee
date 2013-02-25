@@ -5,7 +5,6 @@
 # Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 ##
 
-
 # Class to manage UI.
 class UI extends Spine.Controller
 	events:
@@ -21,6 +20,9 @@ class UI extends Spine.Controller
 		"click .toggleMuteAudio": "toggleMuteAudio"
 		"click .toggleMuteVideo": "toggleMuteVideo"
 		"click #expert": "toggleExpertMode"
+		"dragenter .dropbox": "dragEnter"
+		"dragleave .dropbox": "toggleActiveClass"
+		"drop .dropbox": "onDrop"
 
 	elements:
 		"#form-register": "$formRegister"
@@ -46,6 +48,33 @@ class UI extends Spine.Controller
 		"#sound-calling": "$soundCalling"
 		"#expert": "$expert"
 		"#expert-options": "$expertOptions"
+		".dropbox": "$dropbox"
+
+	dragEnter: (e) =>
+		e.dataTransfer.effectAllowed = "copy"
+		@toggleActiveClass()
+		false
+
+	toggleActiveClass: (e) ->
+		# Prevent browser behaviour.
+		e.stopPropagation()
+		$(e.target).toggleClass "active"
+		false
+
+	onDrop: (e) =>
+		# Prevent browser behaviour.
+		e.stopPropagation()
+		e.preventDefault()
+		console.log e
+		for file in e.originalEvent.dataTransfer.files
+			url = URL.createObjectURL file
+			message =
+				from: @register.ext
+				to: @ext2
+				content: $("#chat > .messages").append("<img src=#{url}>")
+			@renderInstantMessage message
+		@toggleActiveClass(e)
+		false
 
 	templates:
 		message: (message, type) ->
@@ -100,7 +129,6 @@ class UI extends Spine.Controller
 		console.log replacedText
 		replacedText
 
-
 	# Put a chat message in the chat and scroll to the bottom.
 	# TODO: We should take care of HTML content in the message, for example a script tag.
 	renderInstantMessage: (message) =>
@@ -117,7 +145,7 @@ class UI extends Spine.Controller
 
 		@$messages
 			.append(@templates.message message, type)
-			.animate {scrollTop: @$messages[0].scrollHeight}, 300;
+			.animate {scrollTop: @$messages[0].scrollHeight}, 0
 
 	notify: (msg, type = "success") ->
 		# Avoid [Object object] notifications.
@@ -169,10 +197,10 @@ class UI extends Spine.Controller
 			url: "turn:" + $("#turn-server").val()
 			credential: $("#turn-server-credential").val()
 
+		# If there is not a STUN server defined, use the google's STUN server.
 		if stunServer.url is "stun:"
 			stunServer = {"url": "stun:74.125.132.127:19302"}
 
-		
 		serverRE = ///
 			(wss?)://
 			(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})	# IP
@@ -211,10 +239,6 @@ class UI extends Spine.Controller
 			onopen: onopen
 			mediaConstraints: {audio: true, video: not onlyAudio}
 
-		# Non-compliant parameters needed to work with Asterisk, at this moment only audio is supported (still problems)
-		#@api = new API {server: @server, hackViaTCP: false, hackIpContact: true, @mediaElements, onopen: onopen, mediaConstraints: {audio: true, video: false}}
-		false
-
 
 	callSubmit: (e) =>
 		# Get extension and domain to call.
@@ -232,14 +256,14 @@ class UI extends Spine.Controller
 		@$answerButton.addClass "disabled"
 		@$hangupButton.addClass "disabled"
 		@stopSounds()
-		@api.answer()
+		@answer()
 		false
 
 	hangupClick: (e) =>
 		e.preventDefault()
 		@$answerButton.addClass "disabled"
 		@$hangupButton.addClass "disabled"
-		@api.hangup @ext2
+		@hangup()
 		false
 
 	stopSounds: () =>
@@ -280,9 +304,7 @@ class UI extends Spine.Controller
 		switch @state
 			when 3
 				# Unregister on closing.
-				$(window).bind "beforeunload", => 
-					@api.unregister()
-					return
+				$(window).bind "beforeunload", => @api.unregister()
 				@stopTimer()
 				$("#media-remote, #media-local").removeClass "active"
 				$("#media-local").css {marginTop: "0px"}
@@ -303,12 +325,13 @@ class UI extends Spine.Controller
 
 			when 5
 				@updateStatus "Calling #{@ext2}"
-				@nextForm @$formCalling
 				document.getElementById("sound-calling").play()
 			
 			when 6
 				@ext2 = data.ext
 				@updateStatus "Incoming call from #{@ext2}"
+				@answer = => @api.answer data.branch
+				@hangup = => @api.hangup data.branch
 				@nextForm @$formIncomingCall
 				document.getElementById("sound-ringing").play()
 				if window.autoanswering
@@ -317,6 +340,7 @@ class UI extends Spine.Controller
 			when 7, 8
 				console.log @api.sipStack.rtc.pc
 				console.log @api.sipStack.rtc.mediaConstraints
+				@hangup = => @api.hangup data.branch
 				$("#media-local, #media-remote").addClass "active"
 				h = $("#media-local").height()
 				$("#media-local").css {marginTop: "-#{h}px"}
