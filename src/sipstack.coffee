@@ -55,16 +55,13 @@ class SipStack extends Spine.Controller
 	# the message that has triggered the event,
 	# and a variable number of other objects. 
 	info: (message, others...) ->
-		console.log "[INFO]" + message
-		@trigger "info", message, others
+		console.log   "[INFO]    " + message
 
 	warning: (message, others...) ->
-		console.log "[WARNING] " + message
-		@trigger "warning", message, others
+		console.warn  "[WARNING] " + message
 
 	error: (message, others...) ->
-		console.log "[ERROR] " + message
-		@trigger "error", message, others
+		console.error "[ERROR]   " + message
 
 	# TODO: Use constants instead of number and strings.
 	states:
@@ -155,10 +152,7 @@ class SipStack extends Spine.Controller
 					when 200
 						@info "RE-REGISTER answer", message
 						return
-						# TODO: Manage unregistering
-						# @setState  9
-						# @unRegister()
-						# return @
+						
 					# Here we receive a 401 for a REGISTER we sent.
 					# Once processed, we send an authenticated REGISTER.
 					when 401

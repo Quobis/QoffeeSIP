@@ -35,12 +35,10 @@ class RTC extends Spine.Controller
 			@PeerConnection        = mozRTCPeerConnection
 			@RTCSessionDescription = mozRTCSessionDescription
 			@attachStream          = ($d, stream) ->
-				return if not $d?
+				return if not $d
 				console.log "[INFO] attachStream"
 				$d.attr 'src', window.URL.createObjectURL stream
 				$d.get(0).play()
-				if @mediaConstraints.video
-					$d.removeClass "hidden"
 
 			# Fake get{Video,Audio}Tracks
 			MediaStream::getVideoTracks = () -> return []
@@ -60,8 +58,6 @@ class RTC extends Spine.Controller
 				# passed as parameter.
 				url =  webkitURL.createObjectURL stream
 				$d.attr 'src', url
-				if @mediaConstraints.video
-					$d.removeClass "hidden"
 
 			# The representation of tracks in a stream is changed in M26.
 			# Unify them for earlier Chrome versions in the coexisting period.
@@ -91,8 +87,9 @@ class RTC extends Spine.Controller
 		# When we receive remote media (RTP from the other peer), attach it to the DOM element.
 		@pc.onaddstream = (event) =>
 			console.log "[MEDIA] Stream added"
-			@trigger "info", "remotestream"
+			@trigger "remotestream"
 			@attachStream @$dom2, event.stream 
+
 
 		# When a new ice candidate is received and it's not null, we'll show it in the console.
 		# If we receive a null candidate, if means the candidate gathering process is finished;
@@ -143,7 +140,7 @@ class RTC extends Spine.Controller
 				@attachStream @$dom1, @localstream
 				# We trigger an event to be able to bind any behaviour when we get media; for example,
 				# to show a popup telling "Media got".
-				@trigger "info", "localstream"
+				@trigger "localstream"
 			gumFail = (error) =>
 				console.log error
 				console.log "GetUserMedia error"

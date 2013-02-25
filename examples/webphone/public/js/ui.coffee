@@ -25,30 +25,39 @@ class UI extends Spine.Controller
 		"drop .dropbox": "onDrop"
 
 	elements:
+		"#status": "$status"
+
 		"#form-register": "$formRegister"
 		"#form-call": "$formCall"
 		"#form-calling": "$formCalling"
 		"#form-incoming-call": "$formIncomingCall"
 		"#form-established-call": "$formEstablishedCall"
+
 		"#answer": "$answerButton"
 		"#hangup": "$hangupButton"
+
 		"#notifications": "$notifications"
+
 		"video": "$videos"
-		"#flag-audio": "$flagAudio"
-		"#flag-video": "$flagVideo"
+		"#media-local": "$mediaLocal"
+		"#media-remote": "$mediaRemote"
+
 		"#register": "$registerButton"
 		"#call": "$callButton"
 		"#chat": "$chat"
 		".messages": "$messages"
+		".dropbox": "$dropbox"
 		"#timer": "$timer"
-		"#status": "$status"
+
 		".slide": "$slides"
 		".media": "$media"
+
 		"#sound-ringing": "$soundRinging"
 		"#sound-calling": "$soundCalling"
+
 		"#expert": "$expert"
 		"#expert-options": "$expertOptions"
-		".dropbox": "$dropbox"
+
 
 	dragEnter: (e) =>
 		e.dataTransfer.effectAllowed = "copy"
@@ -223,10 +232,9 @@ class UI extends Spine.Controller
 
 		onopen = =>
 			@api.on "new-state", @newState
-			@api.on "info", @infoManager
-			@api.on "warning", @warningManager
-			@api.on "error", @errorManager
 			@api.on "instant-message", @renderInstantMessage
+			@api.on "localmedia", => @$mediaLocal.removeClass "hidden" 	 if @api.mediaConstraints.video
+			@api.on "remotemedia", => @$mediaRemote.removeClass "hidden" if @api.mediaConstraints.video
 			@api.register @register.ext, @register.pass, @register.domain
 			@$registerButton.addClass "disabled"
 
@@ -279,20 +287,19 @@ class UI extends Spine.Controller
 		$el.children(" > input:first").focus()
 
 	startTimer: () =>
-		seconds = minutes = hours = 0
+		s = seconds = minutes = hours = 0
 		time = =>
-			seconds += 1
-			minutes += seconds is 60
-			seconds %= 60
-			hours += minutes is 60
-			minutes %= 60
-			s = seconds + ""
-			s = "0" + s if s.length is 1
-			m = minutes + ""
-			m = "0" + m if m.length is 1
-			h = hours + ""
-			h = "0" +  h if h.length is 1
-			@$timer.text("#{h}:#{m}:#{s}") 
+			s += 1
+			seconds = s % 60
+			minutes = parseInt(s / 60) % 60
+			hours   = parseInt(s / 3600) % 24
+			seconds += ""
+			minutes += ""
+			hours   += ""
+			seconds = "0" + seconds if seconds.length is 1
+			minutes = "0" + minutes if minutes.length is 1
+			hours   = "0" +  hours if hours.length is 1
+			@$timer.text("#{hours}:#{minutes}:#{seconds}") 
 		@timer = setInterval time, 1000
 
 	stopTimer: () => clearInterval(@timer) if @timer?
@@ -306,18 +313,17 @@ class UI extends Spine.Controller
 				# Unregister on closing.
 				$(window).bind "beforeunload", => @api.unregister()
 				@stopTimer()
-				$("#media-remote, #media-local").removeClass "active"
-				$("#media-local").css {marginTop: "0px"}
-				# if 7 <= @previousState <= 9
-				# 	$("#media-local").css {top: "-196px", width: "100%", opacity: 1, display: "block", zIndex: "1000"}
-				# $("#media-remote").css {opacity: 0}
-				# Remove .message to clear all previous messages.
+				@$videos.removeClass "active"
+				@$mediaLocal.css {marginTop: "0px"}
+
 				@$messages.children().remove()
 				@$chat.hide()
 
 				@stopSounds()
 				@updateStatus "Registered"
+
 				@nextForm @$formCall
+
 				$("#register-info")
 					.html("<p>Your extension number is <strong>#{@register.ext}</strong>, share this URL to a friend and tell him to call you. If you want to connect to our demo webcam, just dial extension 1234.</p>")
 					.fadeIn(200)
@@ -338,12 +344,11 @@ class UI extends Spine.Controller
 					setTimeout (-> $("#answer").click()), 1000
 
 			when 7, 8
-				console.log @api.sipStack.rtc.pc
-				console.log @api.sipStack.rtc.mediaConstraints
 				@hangup = => @api.hangup data.branch
-				$("#media-local, #media-remote").addClass "active"
-				h = $("#media-local").height()
-				$("#media-local").css {marginTop: "-#{h}px"}
+				@$videos.addClass "active"
+				h = @$mediaLocal.height()
+				@$mediaLocal.css {marginTop: "-#{h}px"}
+				@$mediaLocal.removeClass "hidden"
 
 				@updateStatus "Call established with #{@ext2}"
 				$("#remote-legend").text "Remote extension is #{@ext2}"
