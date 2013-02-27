@@ -7,10 +7,11 @@
 
 
 # In this class we use WebRTC API described here: http://dev.w3.org/2011/webrtc/editor/webrtc.html
-class RTC extends Spine.Controller
-	constructor: () ->
-		super
+class RTC extends Spine.Module
+	@include Spine.Events
+	constructor: (args) ->
 		console.log "[INFO] RTC constructor"
+		@[key] = value for key,value of args
 		if @mediaElements?
 			@$dom1 = @mediaElements.localMedia
 			@$dom2 = @mediaElements.remoteMedia
@@ -87,8 +88,8 @@ class RTC extends Spine.Controller
 		# When we receive remote media (RTP from the other peer), attach it to the DOM element.
 		@pc.onaddstream = (event) =>
 			console.log "[MEDIA] Stream added"
-			@trigger "remotestream"
 			@attachStream @$dom2, event.stream 
+			@trigger "remotestream", @remotestream
 
 
 		# When a new ice candidate is received and it's not null, we'll show it in the console.
@@ -140,10 +141,11 @@ class RTC extends Spine.Controller
 				@attachStream @$dom1, @localstream
 				# We trigger an event to be able to bind any behaviour when we get media; for example,
 				# to show a popup telling "Media got".
-				@trigger "localstream"
+				@trigger "localstream", @localstream
+				console.log "localstream", @localstream
 			gumFail = (error) =>
-				console.log error
-				console.log "GetUserMedia error"
+				console.error error
+				console.error "GetUserMedia error"
 				@trigger "error", "getUserMedia"
 			# Ask to access hardware.
 			# gumSuccess and gumFail are callbacks that will be executed under getUserMedia success and failure executions.
@@ -199,13 +201,13 @@ class RTC extends Spine.Controller
 	# Set remoteDescription.
 	receiveOffer: (sdp, callback = null) =>
 		console.log "[INFO] Received offer"
-		@receive(sdp,"offer",callback)
+		@receive sdp, "offer", callback
 	
 	# Receive SDP answer.
 	# Set remoteDescription.
 	receiveAnswer: (sdp) =>
 		console.log "[INFO] Received answer"
-		@receive(sdp,"answer")
+		@receive sdp, "answer"
 
 	# Close PeerConnection and reset it with *start*.
 	close: () =>

@@ -24,17 +24,6 @@ class SipStack extends Spine.Controller
 	deleteTransaction: (message) =>
 		@_transactions = _.omit @_transactions, message.branch
 
-	# # MESSAGE id is the CSeq number.
-	# # This function stores a sent MESSAGE.
-	# addInstantMessage: (message) =>
-	# 	@_instantMessages[message.cseq] = message
-
-	# # This functions returns the MESSAGE with CSeq == cseq parameter.
-	# getInstantMessage: (cseq) =>
-	# 	@_instantMessages[cseq]
-
-	# deleteInstantMessage: (cseq) =>
-	# 	@_instantMessages = _.omit @instantMessage, cseq
 
 	checkDialog: (transaction) =>
 		# Call-ID, tags
@@ -44,16 +33,6 @@ class SipStack extends Spine.Controller
 			# We should check both, taking care of transactions that does not have toTag.
 			# check and= not _.isEmpty _.intersection [transaction.fromTag, transaction.toTag], [tr.fromTag, tr.toTag]
 
-	# checkTransaction: (transaction) =>
-	# 	check = @checkDialog(transaction)
-	# 	check and= not _.isUndefined _.find @_transactions, (tr) => transaction.branch is tr.branch
-	# 	check or console.log "[INFO] New message does not match any transaction"
-	# 	return check
-
-	# ## Events
-	# Every one of these 3 methods trigger and event with a name, 
-	# the message that has triggered the event,
-	# and a variable number of other objects. 
 	info: (message, others...) ->
 		console.log   "[INFO]    " + message
 
@@ -99,11 +78,15 @@ class SipStack extends Spine.Controller
 	# - onopen :: function
 	constructor: () ->
 		super
-		@rtc       = new RTC
+		@rtc = new RTC
 			mediaElements: @mediaElements
 			mediaConstraints: @mediaConstraints
 			turnServer: @turnServer
 			stunServer: @stunServer
+
+		@rtc.bind "localstream", (localstream) => @trigger "localstream", localstream
+		@rtc.bind "remotestream", (remotestream) => @trigger "remotestream", remotestream
+
 
 		@sipServer = @server.ip
 		@port      = @server.port
