@@ -1,0 +1,24 @@
+{exec} = require "child_process"
+fs = require "fs"
+
+
+# Clean the environment
+task "clean", "Clean the environment.", ->
+	exec "rm -rf dist/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+		console.log "All dist/* files were deleted."
+		console.log "Source code is ready to commit."
+
+# Build the stack
+task "build", "Build the stack from source files", ->
+	invoke "clean"
+	# Compile it
+	exec "mkdir -p dist/; coffee -c -o dist/ script.coffee; jade -O dist/ index.jade", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+	# Copy needed libraries to dist/ folder
+	exec "cp -R lib/ dist/; cp ../../dist/qoffeesip.js dist/lib/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+		console.log "All sources were compiled to dist/ folder."

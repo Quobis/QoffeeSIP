@@ -1,0 +1,16 @@
+{exec} = require "child_process"
+fs = require "fs"
+
+
+# Build the stack
+task "build", "Build the stack from source files", ->
+	# Compile it
+	exec "mkdir -p dist/; coffee -c -o dist/ script.coffee; jade -O dist/ index.jade", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+	# Copy needed libraries to dist/ folder
+	exec "cp -R lib/ dist/; cp ../../dist/qoffeesip.js dist/lib/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+		console.log "All sources were compiled to dist/ folder."
+		console.log "Source code is ready to commit."
