@@ -233,8 +233,6 @@ class UI extends Spine.Controller
 		onopen = =>
 			@api.on "new-state", @newState
 			@api.on "instant-message", @renderInstantMessage
-			@api.on "localmedia", => @$mediaLocal.removeClass "hidden" 	 if @api.mediaConstraints.video
-			@api.on "remotemedia", => @$mediaRemote.removeClass "hidden" if @api.mediaConstraints.video
 			@api.register @register.ext, @register.pass, @register.domain
 			@$registerButton.addClass "disabled"
 
@@ -246,6 +244,10 @@ class UI extends Spine.Controller
 			mediaElements: @mediaElements
 			onopen: onopen
 			mediaConstraints: {audio: true, video: not onlyAudio}
+		
+		@api.on "localstream", =>
+			@$mediaLocal.removeClass "hidden" 	 # if @api.mediaConstraints.video
+		@api.on "remotestream", => @$mediaRemote.removeClass "hidden" if @api.mediaConstraints.video
 
 
 	callSubmit: (e) =>
