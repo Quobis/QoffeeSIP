@@ -23,12 +23,19 @@ $ ->
             onopen: =>
                 $("#register").submit =>
                     api.register $("#register-ext").val(), $("#register-pass").val()
-                $("#call").submit =>
+                        # New submit handler for call button.
+                $("#call").submit ->
                     api.call $("#call-ext").val()
-                $("#hangup").submit =>
-                    api.hangup()
+                
         api = new API options
         api.on "new-state", (state, message) ->
             switch state
                 when 6
-                    api.answer()
+                    api.answer message.branch
+
+                when 7,8
+                    $("#hangup").submit ->
+                        api.hangup message.branch
+                when 9
+                    # Remove all previous submit handler for hangup.
+                    $("#hangup").off "submit"
