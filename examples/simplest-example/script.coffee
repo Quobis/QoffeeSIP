@@ -24,8 +24,8 @@ $ ->
                 $("#register").submit =>
                     api.register $("#register-ext").val(), $("#register-pass").val()
                         # New submit handler for call button.
-                $("#call").submit ->
-                    api.call $("#call-ext").val()
+                
+                $("#call").submit -> api.call $("#call-ext").val()
                 
         api = new API options
         api.on "new-state", (state, message) ->
@@ -34,8 +34,7 @@ $ ->
                     api.answer message.branch
 
                 when 7,8
-                    $("#hangup").submit ->
-                        api.hangup message.branch
+                    $("#hangup").submit -> api.hangup message.branch
                 when 9
                     # Remove all previous submit handler for hangup.
                     $("#hangup").off "submit"
