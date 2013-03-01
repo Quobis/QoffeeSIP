@@ -15,7 +15,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     __extends(RTC, _super);
 
-    function RTC() {
+    RTC.include(Spine.Events);
+
+    function RTC(args) {
       this.toggleMuteVideo = __bind(this.toggleMuteVideo, this);
 
       this.toggleMuteAudio = __bind(this.toggleMuteAudio, this);
@@ -44,9 +46,12 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.browserSupport = __bind(this.browserSupport, this);
 
-      var _ref;
-      RTC.__super__.constructor.apply(this, arguments);
+      var key, value, _ref;
       console.log("[INFO] RTC constructor");
+      for (key in args) {
+        value = args[key];
+        this[key] = value;
+      }
       if (this.mediaElements != null) {
         this.$dom1 = this.mediaElements.localMedia;
         this.$dom2 = this.mediaElements.remoteMedia;
@@ -142,8 +147,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       });
       this.pc.onaddstream = function(event) {
         console.log("[MEDIA] Stream added");
-        _this.trigger("remotestream");
-        return _this.attachStream(_this.$dom2, event.stream);
+        _this.attachStream(_this.$dom2, event.stream);
+        return _this.trigger("remotestream", _this.remotestream);
       };
       this.pc.onicecandidate = function(evt, moreToFollow) {
         var candidate;
@@ -198,11 +203,12 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           console.log(stream);
           _this.pc.addStream(_this.localstream);
           _this.attachStream(_this.$dom1, _this.localstream);
-          return _this.trigger("localstream");
+          _this.trigger("localstream", _this.localstream);
+          return console.log("localstream", _this.localstream);
         };
         gumFail = function(error) {
-          console.log(error);
-          console.log("GetUserMedia error");
+          console.error(error);
+          console.error("GetUserMedia error");
           return _this.trigger("error", "getUserMedia");
         };
         return this.getUserMedia(this.mediaConstraints, gumSuccess, gumFail);
@@ -348,7 +354,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     return RTC;
 
-  })(Spine.Controller);
+  })(Spine.Module);
 
   window.RTC = RTC;
 
@@ -785,6 +791,12 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         mediaConstraints: this.mediaConstraints,
         turnServer: this.turnServer,
         stunServer: this.stunServer
+      });
+      this.rtc.bind("localstream", function(localstream) {
+        return _this.trigger("localstream", localstream);
+      });
+      this.rtc.bind("remotestream", function(remotestream) {
+        return _this.trigger("remotestream", remotestream);
       });
       this.sipServer = this.server.ip;
       this.port = this.server.port;
@@ -1490,9 +1502,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     API.prototype.off = function(eventName, callback) {
       if (callback != null) {
-        this.sipStack.unbind(eventName, callback);
-      }
-      if (!(callback != null)) {
         return this.sipStack.unbind(eventName, callback);
       }
     };

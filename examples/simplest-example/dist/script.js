@@ -24,11 +24,8 @@
           $("#register").submit(function() {
             return api.register($("#register-ext").val(), $("#register-pass").val());
           });
-          $("#call").submit(function() {
+          return $("#call").submit(function() {
             return api.call($("#call-ext").val());
-          });
-          return $("#hangup").submit(function() {
-            return api.hangup();
           });
         }
       };
@@ -36,7 +33,14 @@
       return api.on("new-state", function(state, message) {
         switch (state) {
           case 6:
-            return api.answer();
+            return api.answer(message.branch);
+          case 7:
+          case 8:
+            return $("#hangup").submit(function() {
+              return api.hangup(message.branch);
+            });
+          case 9:
+            return $("#hangup").off("submit");
         }
       });
     });

@@ -7,8 +7,7 @@ task "clean", "Clean the environment.", ->
 	exec "rm -rf dist/", (err, stdout, stderr) ->
 		throw err if err
 		console.log stdout + stderr
-		console.log "All dist/* files were deleted."
-		console.log "Source code is ready to commit."
+		console.log "dist/ folder was deleted."
 
 
 # Build the stack
