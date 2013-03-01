@@ -11,8 +11,7 @@ task "clean", "Clean the environment.", ->
 	exec "rm -rf docs/; rm -f src/*.js", (err, stdout, stderr) ->
 		throw err if err
 		console.log stdout + stderr
-		console.log "All src/*.js and docs/* files were deleted."
-		console.log "Source code is ready to commit."
+		console.log "docs/ folder was deleted."
 
 # Generate Docco documentation
 task "doc", "Generate Docco documentation.", ->

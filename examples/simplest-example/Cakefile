@@ -2,10 +2,19 @@
 fs = require "fs"
 
 
-# Build the stack
-task "build", "Build the stack from source files", ->
+# Clean the environment
+task "clean", "Clean the environment.", ->
+	exec "rm -rf dist/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+		console.log "dist/ folder was deleted."
+		
+		
+# Build distribution files of the example
+task "build", "Build distribution files of this example.", ->
+	invoke "clean"
 	# Compile it
-	exec "mkdir -p dist/; coffee -c -o dist/ script.coffee; jade -O dist/ index.jade", (err, stdout, stderr) ->
+	exec "mkdir -p dist/lib; coffee -c -o dist/ script.coffee; jade -O dist/ index.jade", (err, stdout, stderr) ->
 		throw err if err
 		console.log stdout + stderr
 	# Copy needed libraries to dist/ folder
@@ -13,4 +22,3 @@ task "build", "Build the stack from source files", ->
 		throw err if err
 		console.log stdout + stderr
 		console.log "All sources were compiled to dist/ folder."
-		console.log "Source code is ready to commit."
