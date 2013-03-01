@@ -9,6 +9,7 @@
 	},
 	"contributors": [
 		"Damián Franco <damian.franco@quobis.com>",
+		"David Patiño <david.patino@quobis.com>",
 		"Jesús Pérez <jesus.perez@quobis.com>"
 	],
 	"repository": {
@@ -23,7 +24,6 @@
 	},
 	"dependencies": {
 		"coffee-script": "1.4.x",
-		"uglify-js": "2.2.x",
 		"docco":  "0.4.x"
 	},
 	"engines": {

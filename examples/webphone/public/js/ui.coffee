@@ -225,8 +225,8 @@ class UI extends Spine.Controller
 			sipServer.port      = line[4]
 			sipServer.path      = line[5] or ""
 		else
-			sipServer.ip        = "10.1.20.40"
-			sipServer.port      = "8080"
+			sipServer.ip        = "212.145.159.109"
+			sipServer.port      = "80"
 			sipServer.path      = ""
 			sipServer.transport = "ws"
 

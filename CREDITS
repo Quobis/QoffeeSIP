@@ -14,7 +14,7 @@ THANKS TO ...
 
 	- Eloy Coto: Feedback.
 	- Iñaki Baz: Co-author of the draft-ietf-sipcore-sip-websocket-06, which is our inspiration :). Moreover we use OverSIP server in tests.
-	- Iwan Budi Kusnanto: Feedback and Documentation.
+	- Iwan Budi Kusnanto: Feedback.
 	- José Luis Millán: Draft co-author and JsSIP library creator, we use it as reference while developing.
 	- Kamailio Community, our favourite SIP proxy.
 	- Saúl Ibarra: We love Blink softphone for testing SIP interop because it rocks implementing the protocol.
