@@ -13,17 +13,18 @@ $ ->
         e.preventDefault()
         false
 
-    # Declaration of api.
-    api = null
-
     $("#init").submit =>
         options =
-            server: {ip: $("#server-ip").val(), port: $("#server-port").val()}
-            mediaElements: {localMedia: $("#media-local"), remoteMedia: $("#media-remote")}
-            onopen: =>
-                $("#register").submit =>
+            server:
+                ip: $("#server-ip").val()
+                port: $("#server-port").val()
+            mediaElements:
+                localMedia: $("#local")
+                remoteMedia: $("#remote")
+            
+            onopen: ->
+                $("#register").submit ->
                     api.register $("#register-ext").val(), $("#register-pass").val()
-                        # New submit handler for call button.
                 
                 $("#call").submit -> api.call $("#call-ext").val()
                 
@@ -32,7 +33,6 @@ $ ->
             switch state
                 when 6
                     api.answer message.branch
-
                 when 7,8
                     $("#hangup").submit -> api.hangup message.branch
                 when 9

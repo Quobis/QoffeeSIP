@@ -34,10 +34,5 @@ body
 	form(id="hangup")
 		input(type="submit", value="Hangup")
 	
-	div(id="media-local")
-		video(id="local", class="row-fluid", autoplay=true)
-		audio(id="local-audio")
-	
-	div(id="media-remote")
-		video(id="remote", class="row-fluid", autoplay=true)
-		audio(id="remote-audio")
+	video(id="local", style="width: 400px", autoplay=true)
+	video(id="remote", style="width: 400px, float: right", autoplay=true)

@@ -161,11 +161,11 @@ class SipStack extends Spine.Controller
 					when "OK"
 						console.log "[MESSAGE] OK"
 						# After receiving a 200 OK we don't need the instant message anymore.
-						@deleteInstantMessage message
+						@deleteTransaction message
 					else
 						# return if not @checkTransaction message
-						return if not message.responseCode in [401,407]
-						return if not @getTransaction message
+						return unless message.responseCode in [401,407]
+						return unless @getTransaction message
 						instantMessage = @getTransaction message
 						_.extend instantMessage, _.pick message, "realm", "nonce", "toTag"
 						instantMessage.proxyAuth = message.responseCode is 407

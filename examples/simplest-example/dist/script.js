@@ -17,8 +17,8 @@
           port: $("#server-port").val()
         },
         mediaElements: {
-          localMedia: $("#media-local"),
-          remoteMedia: $("#media-remote")
+          localMedia: $("#local"),
+          remoteMedia: $("#remote")
         },
         onopen: function() {
           $("#register").submit(function() {

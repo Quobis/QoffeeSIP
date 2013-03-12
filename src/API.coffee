@@ -43,12 +43,14 @@ class API extends Spine.Controller
 		@sipStack.bind eventName, callback
 
 	off: (eventName, callback) =>
-		@sipStack.unbind eventName, callback if callback?
+		@sipStack.unbind eventName, callback
 
 	toggleMuteVideo: =>
 		@sipStack.rtc.toggleMuteVideo()
 
 	toggleMuteAudio: =>
-		@sipStack.rtc.toggleMuteAudio()		
+		@sipStack.rtc.toggleMuteAudio()	
 
+	attachStream: ($d, stream) =>
+		@sipStack.rtc.attachStream $d, stream
 window.API = API
