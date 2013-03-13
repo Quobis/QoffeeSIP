@@ -855,7 +855,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
               break;
             case "OK":
               console.log("[MESSAGE] OK");
-              _this.deleteInstantMessage(message);
+              _this.deleteTransaction(message);
               break;
             default:
               if ((_ref2 = !message.responseCode) === 401 || _ref2 === 407) {
@@ -1501,9 +1501,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     API.prototype.off = function(eventName, callback) {
-      if (callback != null) {
-        return this.sipStack.unbind(eventName, callback);
-      }
+      return this.sipStack.unbind(eventName, callback);
     };
 
     API.prototype.toggleMuteVideo = function() {

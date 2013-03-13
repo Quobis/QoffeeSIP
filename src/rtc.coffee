@@ -88,7 +88,8 @@ class RTC extends Spine.Module
 		# When we receive remote media (RTP from the other peer), attach it to the DOM element.
 		@pc.onaddstream = (event) =>
 			console.log "[MEDIA] Stream added"
-			@attachStream @$dom2, event.stream 
+			@remotestream = event.stream
+			@attachStream @$dom2, @remotestream 
 			@trigger "remotestream", @remotestream
 
 

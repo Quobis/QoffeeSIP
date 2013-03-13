@@ -53,4 +53,5 @@ class API extends Spine.Controller
 
 	attachStream: ($d, stream) =>
 		@sipStack.rtc.attachStream $d, stream
+
 window.API = API

@@ -858,7 +858,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
               _this.deleteTransaction(message);
               break;
             default:
-              if ((_ref2 = !message.responseCode) === 401 || _ref2 === 407) {
+              if ((_ref2 = message.responseCode) !== 401 && _ref2 !== 407) {
                 return;
               }
               if (!_this.getTransaction(message)) {
@@ -1438,6 +1438,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     __extends(API, _super);
 
     function API(options) {
+      this.attachStream = __bind(this.attachStream, this);
+
       this.toggleMuteAudio = __bind(this.toggleMuteAudio, this);
 
       this.toggleMuteVideo = __bind(this.toggleMuteVideo, this);
@@ -1510,6 +1512,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     API.prototype.toggleMuteAudio = function() {
       return this.sipStack.rtc.toggleMuteAudio();
+    };
+
+    API.prototype.attachStream = function($d, stream) {
+      return this.sipStack.rtc.attachStream($d, stream);
     };
 
     return API;
