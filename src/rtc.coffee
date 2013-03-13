@@ -213,7 +213,7 @@ class RTC extends Spine.Module
 	# Close PeerConnection and reset it with *start*.
 	close: () =>
 		# Hide remote video.
-		@$dom2.addClass "hidden"
+		@$dom2.addClass "hidden" if @$dom2
 		# Closing PeerConnection fails if the PeerConnection is not opened.
 		try
 			@pc.close()

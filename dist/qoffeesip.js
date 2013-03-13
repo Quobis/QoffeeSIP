@@ -147,7 +147,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       });
       this.pc.onaddstream = function(event) {
         console.log("[MEDIA] Stream added");
-        _this.attachStream(_this.$dom2, event.stream);
+        _this.remotestream = event.stream;
+        _this.attachStream(_this.$dom2, _this.remotestream);
         return _this.trigger("remotestream", _this.remotestream);
       };
       this.pc.onicecandidate = function(evt, moreToFollow) {
