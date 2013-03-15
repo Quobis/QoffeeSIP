@@ -5,6 +5,10 @@
 # Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 ##
 
+class User extends Spine.Model
+	@configure "User", "user", "password", "sipServer", "turnServer", "turnCredential", "stunServer", "audioSession"
+	@extend Spine.Model.Local
+
 # Class to manage UI.
 class UI extends Spine.Controller
 	events:
@@ -98,6 +102,17 @@ class UI extends Spine.Controller
 		super
 		# Object to store data bout register.
 		@register = {}
+		User.fetch()
+		user = User.last()
+		if user
+			$("#user-reg").val user.user
+			$("#pass-reg").val user.password
+			$("#server-reg").val user.sipServer
+			$("#only-audio").attr("checked", true) if user.audioSession
+			$("#stun-server").val user.stunServer
+			$("#turn-server").val user.turnServer
+			$("#turn-server-credential").val user.turnCredential
+
 
 	# Converts urls inside a text in html limks.
 	linkify: (inputText) ->
@@ -196,6 +211,16 @@ class UI extends Spine.Controller
 		@$expertOptions.toggleClass "hidden"
 
 	registerSubmit: (e) =>
+		# Save user in local storage.
+		User.create
+			user: $("#user-reg").val()
+			password: $("#pass-reg").val()
+			sipServer: $("#server-reg").val()
+			audioSession: $("#only-audio").is(":checked")
+			stunServer: $("#stun-server").val()
+			turnServer: $("#stun-server").val()
+			turnCredential: $("#turn-server-credential").val()
+
 		[@register.ext, @register.domain] = $("#user-reg").val().split "@"
 		# Trick to speed up tests.
 		@register.pass = $("#pass-reg").val() or @register.ext
