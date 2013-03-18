@@ -272,7 +272,7 @@ class UI extends Spine.Controller
 		
 		@api.on "localstream", =>
 			@$mediaLocal.removeClass "hidden" 	 # if @api.mediaConstraints.video
-		@api.on "remotestream", => @$mediaRemote.removeClass "hidden" if @api.mediaConstraints.video
+		# @api.on "remotestream", => @$mediaRemote.removeClass "hidden" if @api.mediaConstraints.video
 
 
 	callSubmit: (e) =>
@@ -373,11 +373,6 @@ class UI extends Spine.Controller
 					setTimeout (-> $("#answer").click()), 1000
 
 			when 7, 8
-				@$videos.addClass "active"
-				h = @$mediaLocal.height()
-				@$mediaLocal.css {marginTop: "-#{h}px"}
-				@$mediaLocal.removeClass "hidden"
-
 				@updateStatus "Call established with #{@ext2}"
 				$("#remote-legend").text "Remote extension is #{@ext2}"
 				@stopSounds()
@@ -395,7 +390,17 @@ class UI extends Spine.Controller
 					@api.chat @ext2, message.content
 					@renderInstantMessage message
 				@previousState = @state
-			
+
+				callback = => 
+					@$mediaRemote.removeClass "hidden"
+					@$videos.addClass "active"
+					h = @$mediaLocal.height()
+					@$mediaLocal.css {marginTop: "-#{h}px"}
+
+				
+				_.delay callback, 200
+					
+				
 			when 9
 				@updateStatus "Hanging up"
 				@stopTimer()

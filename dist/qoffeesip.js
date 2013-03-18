@@ -297,9 +297,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     RTC.prototype.close = function() {
-      if (this.$dom2) {
-        this.$dom2.addClass("hidden");
-      }
       try {
         return this.pc.close();
       } catch (e) {

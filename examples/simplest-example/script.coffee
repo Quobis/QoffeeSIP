@@ -8,33 +8,33 @@
 
 # On document ready...
 $ ->
-    # Avoid page "reloading" on submit.
-    $("form").submit (e) ->
-        e.preventDefault()
-        false
+	# Avoid page "reloading" on submit.
+	$("form").submit (e) ->
+		e.preventDefault()
+		false
 
-    $("#init").submit =>
-        options =
-            server:
-                ip: $("#server-ip").val()
-                port: $("#server-port").val()
-            mediaElements:
-                localMedia: $("#local")
-                remoteMedia: $("#remote")
-            
-            onopen: ->
-                $("#register").submit ->
-                    api.register $("#register-ext").val(), $("#register-pass").val()
-                
-                $("#call").submit -> api.call $("#call-ext").val()
-                
-        api = new API options
-        api.on "new-state", (state, message) ->
-            switch state
-                when 6
-                    api.answer message.branch
-                when 7,8
-                    $("#hangup").submit -> api.hangup message.branch
-                when 9
-                    # Remove all previous submit handler for hangup.
-                    $("#hangup").off "submit"
+	$("#init").submit =>
+		options =
+			server:
+				ip: $("#server-ip").val()
+				port: $("#server-port").val()
+			mediaElements:
+				localMedia: $("#local")
+				remoteMedia: $("#remote")
+			
+			onopen: ->
+				$("#register").submit ->
+					api.register $("#register-ext").val(), $("#register-pass").val()
+				
+				$("#call").submit -> api.call $("#call-ext").val()
+				
+		api = new API options
+		api.on "new-state", (state, message) ->
+			switch state
+				when 5,8
+					$("#hangup").submit -> api.hangup message.branch
+				when 6
+					api.answer message.branch
+				when 9
+					# Remove all previous submit handler for hangup.
+					$("#hangup").off "submit"
