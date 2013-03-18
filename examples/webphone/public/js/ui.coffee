@@ -337,11 +337,14 @@ class UI extends Spine.Controller
 		console.log "[STATE] #{@state}"
 		switch @state
 			when 3
+				callback = => 
+						@stopTimer()
+						@$videos.removeClass "active"
+						@$mediaRemote.addClass "hidden"
+						@$mediaLocal.css {marginTop: "0px"}
+				callback()
 				# Unregister on closing.
 				$(window).bind "beforeunload", => @api.unregister()
-				@stopTimer()
-				@$videos.removeClass "active"
-				@$mediaLocal.css {marginTop: "0px"}
 
 				@$messages.children().remove()
 				@$chat.hide()
@@ -397,7 +400,6 @@ class UI extends Spine.Controller
 					h = @$mediaLocal.height()
 					@$mediaLocal.css {marginTop: "-#{h}px"}
 
-				
 				_.delay callback, 200
 					
 				
