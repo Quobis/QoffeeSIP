@@ -359,19 +359,20 @@ class UI extends Spine.Controller
 			when 5
 				@updateStatus "Calling #{@ext2}"
 				document.getElementById("sound-calling").play()
+				@hangup = => @api.hangup data.branch	
 			
 			when 6
 				@ext2 = data.ext
 				@updateStatus "Incoming call from #{@ext2}"
 				@answer = => @api.answer data.branch
 				@hangup = => @api.hangup data.branch
+
 				@nextForm @$formIncomingCall
 				document.getElementById("sound-ringing").play()
 				if window.autoanswering
 					setTimeout (-> $("#answer").click()), 1000
 
 			when 7, 8
-				@hangup = => @api.hangup data.branch
 				@$videos.addClass "active"
 				h = @$mediaLocal.height()
 				@$mediaLocal.css {marginTop: "-#{h}px"}
