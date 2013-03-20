@@ -38,7 +38,13 @@ class API extends Spine.Controller
 
 	chat: (ext, content) =>
 		@sipStack.sendInstantMessage ext, content
+	
+	subscribe: (ext, domain) =>
+		@sipStack.subscribe ext, domain
 
+	publish: (pstatus, domain) =>
+		@sipStack.publish pstatus
+	
 	on: (eventName, callback) =>
 		@sipStack.bind eventName, callback
 

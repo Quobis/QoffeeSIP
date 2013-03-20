@@ -48,6 +48,7 @@ class SipTransaction
 		@callId ?= @randomString 16
 		@regid = 1
 		SipTransaction::uuid ?= @getUuid()
+		@tupleId ?= @randomString 8
 
 	# It receives a dictionary and set all key-value pairs
 	# as pairs of instance variable - value.
