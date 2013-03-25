@@ -132,6 +132,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     RTC.prototype.start = function() {
+      console.log("PeerConnection starting");
       this.noMoreCandidates = false || (this.browser === "firefox");
       return this.createPeerConnection();
     };
@@ -1008,7 +1009,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                   return _this.send(_this.createMessage(_this.getTransaction(transaction)));
                 };
                 _this.t = setInterval(_this.reRegister, transaction.expires * 1000);
-                return _this.gruu = message.gruu;
+                _this.gruu = message.gruu;
+                return _this.rtc.start();
               case 401:
                 _this.info("Unsusccessful register", message);
                 return _this.setState(0, message);
@@ -1018,9 +1020,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             break;
           case 3:
-            _.once(function() {
-              return this.rtc.start();
-            });
             switch (message.meth) {
               case "INVITE":
                 transaction = new SipTransaction(message);

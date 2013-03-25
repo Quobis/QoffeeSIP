@@ -72,6 +72,7 @@ class RTC extends Spine.Module
 				webkitRTCPeerConnection::getRemoteStreams = -> @remoteStreams
 
 	start: () =>
+		console.log "PeerConnection starting"
 		# Firefox does not provide *onicecandidate* callback.
 		@noMoreCandidates = false or (@browser is "firefox")
 		@createPeerConnection()

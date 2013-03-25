@@ -296,7 +296,7 @@ class SipStack extends Spine.Controller
 							@reRegister = () => @send @createMessage @getTransaction transaction
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@gruu = message.gruu
-
+							@rtc.start()
 						# Unsusccessful register.
 						when 401
 							@info "Unsusccessful register", message
@@ -308,7 +308,6 @@ class SipStack extends Spine.Controller
 
 				# ### REGISTERED
 				when 3
-					_.once 	-> @rtc.start()
 					switch message.meth
 						# Incoming call
 						when "INVITE"
