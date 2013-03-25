@@ -72,7 +72,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (this.turnServer != null) {
         this.iceServers.push(this.turnServer);
       }
-      this.start();
     }
 
     RTC.prototype.browserSupport = function() {
@@ -1019,6 +1018,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             break;
           case 3:
+            _.once(function() {
+              return this.rtc.start();
+            });
             switch (message.meth) {
               case "INVITE":
                 transaction = new SipTransaction(message);
@@ -1169,7 +1171,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     SipStack.prototype.getDigest = function(transaction) {
       var ha1, ha2, sol;
-      console.log(transaction);
       ha1 = CryptoJS.MD5("" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass);
       ha2 = CryptoJS.MD5("" + transaction.meth + ":" + transaction.requestUri);
       sol = CryptoJS.MD5("" + ha1 + ":" + transaction.nonce + ":" + ha2);

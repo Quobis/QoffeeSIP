@@ -308,6 +308,7 @@ class SipStack extends Spine.Controller
 
 				# ### REGISTERED
 				when 3
+					_.once 	-> @rtc.start()
 					switch message.meth
 						# Incoming call
 						when "INVITE"
@@ -459,10 +460,12 @@ class SipStack extends Spine.Controller
 
 	# SIP digest calculator as defined is RFC 3261.
 	getDigest: (transaction) =>
-		console.log transaction
 		ha1 = CryptoJS.MD5 "#{transaction.ext}:#{transaction.realm}:#{transaction.pass}"
 		ha2 = CryptoJS.MD5 "#{transaction.meth}:#{transaction.requestUri}"
 		sol = CryptoJS.MD5 "#{ha1}:#{transaction.nonce}:#{ha2}"
+		# console.log "HA1 = md5(#{transaction.ext}:#{transaction.realm}:#{transaction.pass})"
+		# console.log "HA2 = md5(#{transaction.meth}:#{transaction.requestUri})"
+		# console.log "response = md5(#{ha1}:#{transaction.nonce}:#{ha2})"
 		return sol
 
 	# SIP websockets request creator as defined in draft-ietf-sipcore-sip-websocket-06 and XXXX

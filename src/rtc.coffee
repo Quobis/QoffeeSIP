@@ -23,7 +23,6 @@ class RTC extends Spine.Module
 		@iceServers = []
 		@iceServers.push @stunServer if @stunServer?
 		@iceServers.push @turnServer if @turnServer?
-		@start()
 
 	# Set some object attributes dependeing on browser.
 	browserSupport: () =>
@@ -254,10 +253,10 @@ class RTC extends Spine.Module
 
 		if @isVideoMuted
 			bool = true
-			console.log("Video unmuted.");
+			console.log "Video unmuted."
 		else
 			bool = false
-			console.log("Video muted.");
+			console.log "Video muted."
 
 		videoTrack.enabled = bool for videoTrack in videoTracks
 		@isVideoMuted = not bool;
