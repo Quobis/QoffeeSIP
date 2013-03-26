@@ -1177,12 +1177,12 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     SipStack.prototype.createMessage = function(transaction) {
-      var address, authUri, data, opaque, rr, _i, _len, _ref;
+      var address, authUri, data, opaque, rr, _i, _len, _ref, _ref1;
       transaction = new SipTransaction(transaction);
       transaction.uri = "sip:" + transaction.ext + "@" + (this.domain || this.sipServer);
       transaction.uri2 = "sip:" + transaction.ext2 + "@" + (transaction.domain2 || this.sipServer);
       transaction.targetUri = "sip:" + this.sipServer;
-      if (transaction.meth === "BYE") {
+      if ((_ref = transaction.meth) === "BYE" || _ref === "REGISTER") {
         transaction.cseq.number += 1;
       }
       switch (transaction.meth) {
@@ -1213,9 +1213,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           data = "SIP/2.0 486 Busy Here\r\n";
       }
       if ((transaction.cseq.meth === "INVITE" && transaction.meth !== "ACK") && (_.isArray(transaction.recordRoutes))) {
-        _ref = transaction.recordRoutes;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          rr = _ref[_i];
+        _ref1 = transaction.recordRoutes;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          rr = _ref1[_i];
           data += rr + "\r\n";
         }
       } else {
