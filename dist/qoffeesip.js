@@ -1333,7 +1333,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         }
         if (transaction.proxyAuth === true) {
           if (transaction.cseq.meth === "PUBLISH") {
-            authUri = transaction.uri;
+            authUri = transaction.targetUri;
           } else {
             authUri = transaction.uri2;
           }

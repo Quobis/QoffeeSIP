@@ -12,9 +12,8 @@ task "clean", "Clean the environment.", ->
 		
 # Build distribution files of the example
 task "build", "Build distribution files of this example.", ->
-	invoke "clean"
 	# Compile it
-	exec "mkdir -p dist/lib; coffee -c -o dist/ script.coffee; jade -O dist/ index.jade", (err, stdout, stderr) ->
+	exec "rm -rf dist/; mkdir -p dist/lib; coffee -c -o dist/ script.coffee; jade -O dist/ index.jade", (err, stdout, stderr) ->
 		throw err if err
 		console.log stdout + stderr
 	# Copy needed libraries to dist/ folder

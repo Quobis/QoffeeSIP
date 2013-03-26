@@ -615,7 +615,7 @@ class SipStack extends Spine.Controller
 				data += "Authorization:"
 			if transaction.proxyAuth is true
 				if transaction.cseq.meth is "PUBLISH"
-					authUri = transaction.uri
+					authUri = transaction.targetUri
 				else
 					authUri = transaction.uri2
 				data += "Proxy-Authorization:"

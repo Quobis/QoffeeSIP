@@ -22,9 +22,8 @@ appFiles = [
 
 						
 task "build", "Build distribution files of the example.", ->
-	invoke "clean"
 	# delete old stuff
-	exec "mkdir -p dist/js/", (err, stdout, stderr) ->
+	exec "rm -rf dist/; mkdir -p dist/js/", (err, stdout, stderr) ->
 		throw err if err
 		console.log stdout + stderr
 	# join all .coffee files and compile it
