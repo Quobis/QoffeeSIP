@@ -492,7 +492,7 @@ class SipStack extends Spine.Controller
 		transaction.uri         = "sip:#{transaction.ext}@#{@domain or @sipServer}"
 		transaction.uri2        = "sip:#{transaction.ext2}@#{transaction.domain2 or @sipServer}"
 		transaction.targetUri   = "sip:#{@sipServer}"
-		transaction.cseq.number += 1 if transaction.meth is "BYE"
+		transaction.cseq.number += 1 if transaction.meth in ["BYE", "REGISTER"]
 			
 		# SIP frame is filled.
 		switch transaction.meth
