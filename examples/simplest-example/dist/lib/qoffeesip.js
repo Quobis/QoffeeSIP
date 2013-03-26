@@ -1187,8 +1187,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }
       switch (transaction.meth) {
         case "REGISTER":
-        case "PUBLISH":
           transaction.requestUri = transaction.targetUri;
+          data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
+          break;
+        case "PUBLISH":
+          transaction.requestUri = transaction.uri;
           data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
           break;
         case "INVITE":
@@ -1332,10 +1335,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           data += "Authorization:";
         }
         if (transaction.proxyAuth === true) {
-          if (transaction.cseq.meth === "PUBLISH") {
-            authUri = transaction.targetUri;
-          } else {
-            authUri = transaction.uri2;
+          authUri = transaction.uri2;
+          if (transaction.meth === "PUBLISH") {
+            authUri = transaction.uri;
           }
           data += "Proxy-Authorization:";
         }

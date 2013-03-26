@@ -492,12 +492,15 @@ class SipStack extends Spine.Controller
 		transaction.uri         = "sip:#{transaction.ext}@#{@domain or @sipServer}"
 		transaction.uri2        = "sip:#{transaction.ext2}@#{transaction.domain2 or @sipServer}"
 		transaction.targetUri   = "sip:#{@sipServer}"
-		transaction.cseq.number += 1 if transaction.meth in ["BYE", "REGISTER"]
+		transaction.cseq.number += 1 if transaction.meth is "BYE"
 			
 		# SIP frame is filled.
 		switch transaction.meth
-			when "REGISTER", "PUBLISH"
+			when "REGISTER"
 				transaction.requestUri = transaction.targetUri
+				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"
+			when "PUBLISH"
+				transaction.requestUri = transaction.uri
 				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"
 			when "INVITE", "MESSAGE", "CANCEL", "SUBSCRIBE"
 				transaction.requestUri = transaction.uri2
@@ -614,10 +617,8 @@ class SipStack extends Spine.Controller
 					authUri = transaction.uri2
 				data += "Authorization:"
 			if transaction.proxyAuth is true
-				if transaction.cseq.meth is "PUBLISH"
-					authUri = transaction.targetUri
-				else
-					authUri = transaction.uri2
+				authUri = transaction.uri2
+				authUri = transaction.uri if transaction.meth is "PUBLISH"
 				data += "Proxy-Authorization:"
 			transaction.response = @getDigest transaction
 			data += " Digest username=\"#{transaction.ext}\",realm=\"#{transaction.realm}\","

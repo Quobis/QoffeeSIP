@@ -1177,18 +1177,21 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     SipStack.prototype.createMessage = function(transaction) {
-      var address, authUri, data, opaque, rr, _i, _len, _ref, _ref1;
+      var address, authUri, data, opaque, rr, _i, _len, _ref;
       transaction = new SipTransaction(transaction);
       transaction.uri = "sip:" + transaction.ext + "@" + (this.domain || this.sipServer);
       transaction.uri2 = "sip:" + transaction.ext2 + "@" + (transaction.domain2 || this.sipServer);
       transaction.targetUri = "sip:" + this.sipServer;
-      if ((_ref = transaction.meth) === "BYE" || _ref === "REGISTER") {
+      if (transaction.meth === "BYE") {
         transaction.cseq.number += 1;
       }
       switch (transaction.meth) {
         case "REGISTER":
-        case "PUBLISH":
           transaction.requestUri = transaction.targetUri;
+          data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
+          break;
+        case "PUBLISH":
+          transaction.requestUri = transaction.uri;
           data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
           break;
         case "INVITE":
@@ -1213,9 +1216,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           data = "SIP/2.0 486 Busy Here\r\n";
       }
       if ((transaction.cseq.meth === "INVITE" && transaction.meth !== "ACK") && (_.isArray(transaction.recordRoutes))) {
-        _ref1 = transaction.recordRoutes;
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          rr = _ref1[_i];
+        _ref = transaction.recordRoutes;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          rr = _ref[_i];
           data += rr + "\r\n";
         }
       } else {
@@ -1332,10 +1335,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           data += "Authorization:";
         }
         if (transaction.proxyAuth === true) {
-          if (transaction.cseq.meth === "PUBLISH") {
-            authUri = transaction.targetUri;
-          } else {
-            authUri = transaction.uri2;
+          authUri = transaction.uri2;
+          if (transaction.meth === "PUBLISH") {
+            authUri = transaction.uri;
           }
           data += "Proxy-Authorization:";
         }
