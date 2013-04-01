@@ -8,8 +8,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
   var API, Parser, RTC, SipStack, SipTransaction,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __slice = [].slice;
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   RTC = (function(_super) {
 
@@ -719,22 +718,19 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }));
     };
 
-    SipStack.prototype.info = function() {
-      var message, others;
-      message = arguments[0], others = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      return console.log("[INFO]    " + message);
+    SipStack.prototype.info = function(message, data) {
+      console.log("[INFO]    " + message);
+      return this.trigger(message, data);
     };
 
-    SipStack.prototype.warning = function() {
-      var message, others;
-      message = arguments[0], others = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      return console.warn("[WARNING] " + message);
+    SipStack.prototype.warning = function(message, data) {
+      console.warn("[WARNING] " + message);
+      return this.trigger(message, data);
     };
 
-    SipStack.prototype.error = function() {
-      var message, others;
-      message = arguments[0], others = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      return console.error("[ERROR]   " + message);
+    SipStack.prototype.error = function(message, data) {
+      console.error("[ERROR]   " + message);
+      return this.trigger(message, data);
     };
 
     SipStack.prototype.states = ["OFFLINE", "REGISTERING (before challenge)", "REGISTERING (after challenge)", "REGISTERED", "INCOMING CALL", "CALLING", "RINGING", "CALL STABLISHED (caller)", "CALL STABLISHED (callee)", "HANGING", "CANCELLING"];
@@ -783,6 +779,12 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this.createMessage = __bind(this.createMessage, this);
 
       this.getDigest = __bind(this.getDigest, this);
+
+      this.error = __bind(this.error, this);
+
+      this.warning = __bind(this.warning, this);
+
+      this.info = __bind(this.info, this);
 
       this.checkDialog = __bind(this.checkDialog, this);
 
@@ -967,7 +969,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             transaction.vias = message.vias;
             switch (message.responseCode) {
               case 200:
-                _this.info("Register successful", message);
+                _this.info("register-success", message);
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires / 2;
                 _this.reRegister = function() {

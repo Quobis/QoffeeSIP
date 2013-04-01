@@ -33,14 +33,17 @@ class SipStack extends Spine.Controller
 			# We should check both, taking care of transactions that does not have toTag.
 			# check and= not _.isEmpty _.intersection [transaction.fromTag, transaction.toTag], [tr.fromTag, tr.toTag]
 
-	info: (message, others...) ->
+	info: (message, data) =>
 		console.log   "[INFO]    " + message
+		@trigger message, data
 
-	warning: (message, others...) ->
+	warning: (message, data) =>
 		console.warn  "[WARNING] " + message
+		@trigger message, data
 
-	error: (message, others...) ->
+	error: (message, data) =>
 		console.error "[ERROR]   " + message
+		@trigger message, data
 
 	# TODO: Use constants instead of number and strings.
 	states:
@@ -251,7 +254,7 @@ class SipStack extends Spine.Controller
 					switch message.responseCode
 						# Successful register.
 						when 200
-							@info "Register successful", message
+							@info "register-success", message
 							@setState 3, message
 							# Manage reregisters. Important: @t should be clean on unregistering.
 							transaction.expires = message.proposedExpires / 2
