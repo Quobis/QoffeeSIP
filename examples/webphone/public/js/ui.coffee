@@ -262,8 +262,8 @@ class UI extends Spine.Controller
 			@$registerButton.addClass "disabled"
 			@$registerButton.addClass "disabled"
 			# # TODO: SUBSCRIBRE TO EACH CONTACT, only one for now
-			# @api.subscribe "101"
-			# @api.publish "Online"
+			@api.subscribe "101"
+			@api.publish "Online"
 
 		# Both video and audio on, let to true what you need
 		@api = new API

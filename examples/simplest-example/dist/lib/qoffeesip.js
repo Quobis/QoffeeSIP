@@ -72,7 +72,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (this.turnServer != null) {
         this.iceServers.push(this.turnServer);
       }
-      this.start();
     }
 
     RTC.prototype.browserSupport = function() {
@@ -133,6 +132,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     RTC.prototype.start = function() {
+      console.log("PeerConnection starting");
       this.noMoreCandidates = false || (this.browser === "firefox");
       return this.createPeerConnection();
     };
@@ -1009,7 +1009,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                   return _this.send(_this.createMessage(_this.getTransaction(transaction)));
                 };
                 _this.t = setInterval(_this.reRegister, transaction.expires * 1000);
-                return _this.gruu = message.gruu;
+                _this.gruu = message.gruu;
+                return _this.rtc.start();
               case 401:
                 _this.info("Unsusccessful register", message);
                 return _this.setState(0, message);
@@ -1169,7 +1170,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     SipStack.prototype.getDigest = function(transaction) {
       var ha1, ha2, sol;
-      console.log(transaction);
       ha1 = CryptoJS.MD5("" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass);
       ha2 = CryptoJS.MD5("" + transaction.meth + ":" + transaction.requestUri);
       sol = CryptoJS.MD5("" + ha1 + ":" + transaction.nonce + ":" + ha2);
@@ -1187,8 +1187,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }
       switch (transaction.meth) {
         case "REGISTER":
-        case "PUBLISH":
           transaction.requestUri = transaction.targetUri;
+          data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
+          break;
+        case "PUBLISH":
+          transaction.requestUri = transaction.uri;
           data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
           break;
         case "INVITE":
@@ -1332,10 +1335,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           data += "Authorization:";
         }
         if (transaction.proxyAuth === true) {
-          if (transaction.cseq.meth === "PUBLISH") {
-            authUri = transaction.targetUri;
-          } else {
-            authUri = transaction.uri2;
+          authUri = transaction.uri2;
+          if (transaction.meth === "PUBLISH") {
+            authUri = transaction.uri;
           }
           data += "Proxy-Authorization:";
         }
