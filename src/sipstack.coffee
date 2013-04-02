@@ -292,7 +292,7 @@ class SipStack extends Spine.Controller
 					switch message.responseCode
 						# Successful register.
 						when 200
-							@info "Successful register", message
+							@info "register-success", message
 							@setState 3, message
 							# Manage reregisters.
 							transaction.expires = message.proposedExpires / 2
@@ -302,10 +302,10 @@ class SipStack extends Spine.Controller
 							@rtc.start()
 						# Unsusccessful register.
 						when 401
-							@info "Unsusccessful register", message
+							@info "register-fail", message
 							@setState 0, message
 						else
-							@warning "Unexpected message", message
+							@warning "message-unexpected", message
 							@setState 0, message
 
 

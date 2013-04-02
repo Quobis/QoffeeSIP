@@ -1004,7 +1004,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             transaction.vias = message.vias;
             switch (message.responseCode) {
               case 200:
-                _this.info("Successful register", message);
+                _this.info("register-success", message);
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires / 2;
                 _this.reRegister = function() {
@@ -1014,10 +1014,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 _this.gruu = message.gruu;
                 return _this.rtc.start();
               case 401:
-                _this.info("Unsusccessful register", message);
+                _this.info("register-fail", message);
                 return _this.setState(0, message);
               default:
-                _this.warning("Unexpected message", message);
+                _this.warning("message-unexpected", message);
                 return _this.setState(0, message);
             }
             break;
