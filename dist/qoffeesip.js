@@ -970,6 +970,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             switch (message.responseCode) {
               case 200:
                 _this.info("register-success", message);
+                _this.rtc.start();
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires / 2;
                 _this.reRegister = function() {
@@ -1005,14 +1006,14 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             switch (message.responseCode) {
               case 200:
                 _this.info("register-success", message);
+                _this.rtc.start();
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires / 2;
                 _this.reRegister = function() {
                   return _this.send(_this.createMessage(_this.getTransaction(transaction)));
                 };
                 _this.t = setInterval(_this.reRegister, transaction.expires * 1000);
-                _this.gruu = message.gruu;
-                return _this.rtc.start();
+                return _this.gruu = message.gruu;
               case 401:
                 _this.info("register-fail", message);
                 return _this.setState(0, message);

@@ -255,6 +255,7 @@ class SipStack extends Spine.Controller
 						# Successful register.
 						when 200
 							@info "register-success", message
+							@rtc.start()
 							@setState 3, message
 							# Manage reregisters. Important: @t should be clean on unregistering.
 							transaction.expires = message.proposedExpires / 2
@@ -293,13 +294,13 @@ class SipStack extends Spine.Controller
 						# Successful register.
 						when 200
 							@info "register-success", message
+							@rtc.start()
 							@setState 3, message
 							# Manage reregisters.
 							transaction.expires = message.proposedExpires / 2
 							@reRegister = () => @send @createMessage @getTransaction transaction
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@gruu = message.gruu
-							@rtc.start()
 						# Unsusccessful register.
 						when 401
 							@info "register-fail", message
