@@ -830,7 +830,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         return _this.onopen();
       };
       this.websocket.onmessage = function(evt) {
-        var ack, busy, instantMessage, message, ok, publish, register, ringing, subscribe, t, transaction, _ref2, _ref3, _ref4, _ref5;
+        var ack, busy, instantMessage, message, ok, register, ringing, t, transaction, _ref2, _ref3;
         message = Parser.parse(evt.data);
         _this.info("Input message", message);
         if ((_this.state > 2) && (message.cseq.meth === "REGISTER")) {
@@ -884,73 +884,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           }
           return;
         }
-        if (_this.state > 0 && message.cseq.meth === "SUBSCRIBE") {
-          switch (message.meth) {
-            case "SUBSCRIBE":
-              console.log("[SUBSCRIBE] " + message.content);
-              subscribe = {
-                from: message.ext,
-                to: message.ext2,
-                content: message.content
-              };
-              _this.trigger("subscribe", subscribe);
-              _this.send(_this.createMessage(new SipTransaction(_.extend(message, {
-                meth: "OK"
-              }))));
-              break;
-            case "OK":
-              console.log("[SUBSCRIBE] OK");
-              _this.deleteTransaction(message);
-              break;
-            default:
-              if ((_ref3 = message.responseCode) !== 401 && _ref3 !== 407) {
-                return;
-              }
-              if (!_this.getTransaction(message)) {
-                return;
-              }
-              subscribe = _this.getTransaction(message);
-              _.extend(subscribe, _.pick(message, "realm", "nonce", "toTag"));
-              subscribe.proxyAuth = message.responseCode === 407;
-              subscribe.auth = message.responseCode === 401;
-              _this.send(_this.createMessage(subscribe));
-          }
-          return;
-        }
-        if (_this.state > 0 && message.cseq.meth === "PUBLISH") {
-          switch (message.meth) {
-            case "PUBLISH":
-              console.log("[PUBLISH] " + message.content);
-              publish = {
-                from: message.ext,
-                to: message.ext,
-                content: message.content
-              };
-              _this.trigger("publish", publish);
-              _this.send(_this.createMessage(new SipTransaction(_.extend(message, {
-                meth: "OK"
-              }))));
-              break;
-            case "OK":
-              console.log("[PUBLISH] OK");
-              _this.deleteTransaction(message);
-              break;
-            default:
-              if ((_ref4 = message.responseCode) !== 401 && _ref4 !== 407) {
-                return;
-              }
-              if (!_this.getTransaction(message)) {
-                return;
-              }
-              publish = _this.getTransaction(message);
-              _.extend(publish, _.pick(message, "realm", "nonce", "toTag"));
-              publish.proxyAuth = message.responseCode === 407;
-              publish.auth = message.responseCode === 401;
-              _this.send(_this.createMessage(publish));
-          }
-          return;
-        }
-        if ((3 < (_ref5 = _this.state) && _ref5 < 9)) {
+        if ((3 < (_ref3 = _this.state) && _ref3 < 9)) {
           if (message.meth === "INVITE") {
             _this.info("Another incoming call (BUSY)", message);
             busy = _.clone(message);
@@ -1010,9 +944,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 _this.rtc.start();
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires / 2;
-                transaction.cseq.number += 1;
                 _this.reRegister = function() {
-                  return _this.send(_this.createMessage(_this.getTransaction(transaction)));
+                  var newRegister;
+                  newRegister = _this.getTransaction(transaction);
+                  newRegister.cseq.number += 1;
+                  return _this.send(_this.createMessage(newRegister));
                 };
                 _this.t = setInterval(_this.reRegister, transaction.expires * 1000);
                 return _this.gruu = message.gruu;

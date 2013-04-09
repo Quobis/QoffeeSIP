@@ -177,57 +177,57 @@ class SipStack extends Spine.Controller
 						@send @createMessage instantMessage
 				return
 
-			# Presence manager for SUBSCRIBE
-			if @state > 0 and message.cseq.meth is "SUBSCRIBE"
-				switch message.meth
-					when "SUBSCRIBE"
-						console.log "[SUBSCRIBE] #{message.content}"
-						subscribe =
-							from: message.ext,
-							to: message.ext2,
-							content: message.content
-						@trigger "subscribe", subscribe
-						@send @createMessage new SipTransaction _.extend message, {meth: "OK"}
-					when "OK"
-						console.log "[SUBSCRIBE] OK"
-						# After receiving a 200 OK we don't need the instant message anymore.
-						@deleteTransaction message
-					else
-						# return if not @checkTransaction message
-						return unless message.responseCode in [401,407]
-						return unless @getTransaction message
-						subscribe = @getTransaction message
-						_.extend subscribe, _.pick message, "realm", "nonce", "toTag"
-						subscribe.proxyAuth = message.responseCode is 407
-						subscribe.auth      = message.responseCode is 401
-						@send @createMessage subscribe
-				return
-			
-			# Presence manager for PUBLISH
-			if @state > 0 and message.cseq.meth is "PUBLISH"
-				switch message.meth
-					when "PUBLISH"
-						console.log "[PUBLISH] #{message.content}"
-						publish =
-							from: message.ext,
-							to: message.ext,
-							content: message.content
-						@trigger "publish", publish
-						@send @createMessage new SipTransaction _.extend message, {meth: "OK"}
-					when "OK"
-						console.log "[PUBLISH] OK"
-						# After receiving a 200 OK we don't need the instant message anymore.
-						@deleteTransaction message
-					else
-						# return if not @checkTransaction message
-						return unless message.responseCode in [401,407]
-						return unless @getTransaction message
-						publish = @getTransaction message
-						_.extend publish, _.pick message, "realm", "nonce", "toTag"
-						publish.proxyAuth = message.responseCode is 407
-						publish.auth      = message.responseCode is 401
-						@send @createMessage publish
-				return
+#			# Presence manager for SUBSCRIBE
+#			if @state > 0 and message.cseq.meth is "SUBSCRIBE"
+#				switch message.meth
+#					when "SUBSCRIBE"
+#						console.log "[SUBSCRIBE] #{message.content}"
+#						subscribe =
+#							from: message.ext,
+#							to: message.ext2,
+#							content: message.content
+#						@trigger "subscribe", subscribe
+#						@send @createMessage new SipTransaction _.extend message, {meth: "OK"}
+#					when "OK"
+#						console.log "[SUBSCRIBE] OK"
+#						# After receiving a 200 OK we don't need the instant message anymore.
+#						@deleteTransaction message
+#					else
+#						# return if not @checkTransaction message
+#						return unless message.responseCode in [401,407]
+#						return unless @getTransaction message
+#						subscribe = @getTransaction message
+#						_.extend subscribe, _.pick message, "realm", "nonce", "toTag"
+#						subscribe.proxyAuth = message.responseCode is 407
+#						subscribe.auth      = message.responseCode is 401
+#						@send @createMessage subscribe
+#				return
+#			
+#			# Presence manager for PUBLISH
+#			if @state > 0 and message.cseq.meth is "PUBLISH"
+#				switch message.meth
+#					when "PUBLISH"
+#						console.log "[PUBLISH] #{message.content}"
+#						publish =
+#							from: message.ext,
+#							to: message.ext,
+#							content: message.content
+#						@trigger "publish", publish
+#						@send @createMessage new SipTransaction _.extend message, {meth: "OK"}
+#					when "OK"
+#						console.log "[PUBLISH] OK"
+#						# After receiving a 200 OK we don't need the instant message anymore.
+#						@deleteTransaction message
+#					else
+#						# return if not @checkTransaction message
+#						return unless message.responseCode in [401,407]
+#						return unless @getTransaction message
+#						publish = @getTransaction message
+#						_.extend publish, _.pick message, "realm", "nonce", "toTag"
+#						publish.proxyAuth = message.responseCode is 407
+#						publish.auth      = message.responseCode is 401
+#						@send @createMessage publish
+#				return
 				
 			# Busy manager
 			# We can receive a INVITE method in any within-dialog state (>= 3) and answer Busy.
@@ -300,8 +300,10 @@ class SipStack extends Spine.Controller
 							@setState 3, message
 							# Manage reregisters.
 							transaction.expires = message.proposedExpires / 2
-							transaction.cseq.number += 1
-							@reRegister = () => @send @createMessage @getTransaction transaction
+							@reRegister = () =>
+								newRegister = @getTransaction transaction
+								newRegister.cseq.number += 1
+								@send @createMessage newRegister
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@gruu = message.gruu
 						# Unsusccessful register.
