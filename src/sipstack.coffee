@@ -144,6 +144,7 @@ class SipStack extends Spine.Controller
 					when 401
 						register      =  @getTransaction message
 						register.vias = message.vias
+						register.cseq.number += 1
 						_.extend register, _.pick message, "realm", "nonce", "toTag"
 						register.auth = true
 						@send @createMessage register
@@ -260,6 +261,7 @@ class SipStack extends Spine.Controller
 							# Manage reregisters. Important: @t should be clean on unregistering.
 							transaction.expires = message.proposedExpires / 2
 							# A re-register petition is created and sent.
+							
 							@reRegister = () => @send @createMessage @getTransaction transaction
 							# An un-register petition is created (as proposed in RFC 3261) and sent.
 							t = setInterval @reRegister, transaction.expires*1000
@@ -298,6 +300,7 @@ class SipStack extends Spine.Controller
 							@setState 3, message
 							# Manage reregisters.
 							transaction.expires = message.proposedExpires / 2
+							transaction.cseq.number += 1
 							@reRegister = () => @send @createMessage @getTransaction transaction
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@gruu = message.gruu

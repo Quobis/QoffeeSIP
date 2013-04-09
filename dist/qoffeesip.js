@@ -844,6 +844,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             case 401:
               register = _this.getTransaction(message);
               register.vias = message.vias;
+              register.cseq.number += 1;
               _.extend(register, _.pick(message, "realm", "nonce", "toTag"));
               register.auth = true;
               _this.send(_this.createMessage(register));
@@ -1009,6 +1010,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 _this.rtc.start();
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires / 2;
+                transaction.cseq.number += 1;
                 _this.reRegister = function() {
                   return _this.send(_this.createMessage(_this.getTransaction(transaction)));
                 };
