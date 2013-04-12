@@ -261,10 +261,11 @@ class SipStack extends Spine.Controller
 							# Manage reregisters. Important: @t should be clean on unregistering.
 							transaction.expires = message.proposedExpires / 2
 							# A re-register petition is created and sent.
-							
-							@reRegister = () => @send @createMessage @getTransaction transaction
-							# An un-register petition is created (as proposed in RFC 3261) and sent.
-							t = setInterval @reRegister, transaction.expires*1000
+							@reRegister = () =>
+								newRegister = @getTransaction transaction
+								newRegister.cseq.number += 1
+								@send @createMessage newRegister
+							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@unregister = () =>
 								console.log "[INFO] unregistering"
 								transaction = @getTransaction message

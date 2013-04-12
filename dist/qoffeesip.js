@@ -830,7 +830,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         return _this.onopen();
       };
       this.websocket.onmessage = function(evt) {
-        var ack, busy, instantMessage, message, ok, register, ringing, t, transaction, _ref2, _ref3;
+        var ack, busy, instantMessage, message, ok, register, ringing, transaction, _ref2, _ref3;
         message = Parser.parse(evt.data);
         _this.info("Input message", message);
         if ((_this.state > 2) && (message.cseq.meth === "REGISTER")) {
@@ -909,9 +909,12 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires / 2;
                 _this.reRegister = function() {
-                  return _this.send(_this.createMessage(_this.getTransaction(transaction)));
+                  var newRegister;
+                  newRegister = _this.getTransaction(transaction);
+                  newRegister.cseq.number += 1;
+                  return _this.send(_this.createMessage(newRegister));
                 };
-                t = setInterval(_this.reRegister, transaction.expires * 1000);
+                _this.t = setInterval(_this.reRegister, transaction.expires * 1000);
                 _this.unregister = function() {
                   console.log("[INFO] unregistering");
                   transaction = _this.getTransaction(message);
