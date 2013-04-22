@@ -919,7 +919,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                   console.log("[INFO] unregistering");
                   transaction = _this.getTransaction(message);
                   transaction.expires = 0;
-                  clearInterval(t);
+                  clearInterval(_this.t);
                   message = _this.createMessage(transaction);
                   _this.send(message);
                   return _this.setState(0, message);
