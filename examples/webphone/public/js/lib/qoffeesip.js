@@ -8,8 +8,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
   var API, Parser, RTC, SipStack, SipTransaction,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __slice = [].slice;
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   RTC = (function(_super) {
 
@@ -719,22 +718,19 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }));
     };
 
-    SipStack.prototype.info = function() {
-      var message, others;
-      message = arguments[0], others = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      return console.log("[INFO]    " + message);
+    SipStack.prototype.info = function(message, data) {
+      console.log("[INFO]    " + message);
+      return this.trigger(message, data);
     };
 
-    SipStack.prototype.warning = function() {
-      var message, others;
-      message = arguments[0], others = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      return console.warn("[WARNING] " + message);
+    SipStack.prototype.warning = function(message, data) {
+      console.warn("[WARNING] " + message);
+      return this.trigger(message, data);
     };
 
-    SipStack.prototype.error = function() {
-      var message, others;
-      message = arguments[0], others = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      return console.error("[ERROR]   " + message);
+    SipStack.prototype.error = function(message, data) {
+      console.error("[ERROR]   " + message);
+      return this.trigger(message, data);
     };
 
     SipStack.prototype.states = ["OFFLINE", "REGISTERING (before challenge)", "REGISTERING (after challenge)", "REGISTERED", "INCOMING CALL", "CALLING", "RINGING", "CALL STABLISHED (caller)", "CALL STABLISHED (callee)", "HANGING", "CANCELLING"];
@@ -784,6 +780,12 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.getDigest = __bind(this.getDigest, this);
 
+      this.error = __bind(this.error, this);
+
+      this.warning = __bind(this.warning, this);
+
+      this.info = __bind(this.info, this);
+
       this.checkDialog = __bind(this.checkDialog, this);
 
       this.deleteTransaction = __bind(this.deleteTransaction, this);
@@ -828,7 +830,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         return _this.onopen();
       };
       this.websocket.onmessage = function(evt) {
-        var ack, busy, instantMessage, message, ok, publish, register, ringing, subscribe, t, transaction, _ref2, _ref3, _ref4, _ref5;
+        var ack, busy, instantMessage, message, ok, register, ringing, t, transaction, _ref2, _ref3;
         message = Parser.parse(evt.data);
         _this.info("Input message", message);
         if ((_this.state > 2) && (message.cseq.meth === "REGISTER")) {
@@ -842,6 +844,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             case 401:
               register = _this.getTransaction(message);
               register.vias = message.vias;
+              register.cseq.number += 1;
               _.extend(register, _.pick(message, "realm", "nonce", "toTag"));
               register.auth = true;
               _this.send(_this.createMessage(register));
@@ -881,73 +884,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           }
           return;
         }
-        if (_this.state > 0 && message.cseq.meth === "SUBSCRIBE") {
-          switch (message.meth) {
-            case "SUBSCRIBE":
-              console.log("[SUBSCRIBE] " + message.content);
-              subscribe = {
-                from: message.ext,
-                to: message.ext2,
-                content: message.content
-              };
-              _this.trigger("subscribe", subscribe);
-              _this.send(_this.createMessage(new SipTransaction(_.extend(message, {
-                meth: "OK"
-              }))));
-              break;
-            case "OK":
-              console.log("[SUBSCRIBE] OK");
-              _this.deleteTransaction(message);
-              break;
-            default:
-              if ((_ref3 = message.responseCode) !== 401 && _ref3 !== 407) {
-                return;
-              }
-              if (!_this.getTransaction(message)) {
-                return;
-              }
-              subscribe = _this.getTransaction(message);
-              _.extend(subscribe, _.pick(message, "realm", "nonce", "toTag"));
-              subscribe.proxyAuth = message.responseCode === 407;
-              subscribe.auth = message.responseCode === 401;
-              _this.send(_this.createMessage(subscribe));
-          }
-          return;
-        }
-        if (_this.state > 0 && message.cseq.meth === "PUBLISH") {
-          switch (message.meth) {
-            case "PUBLISH":
-              console.log("[PUBLISH] " + message.content);
-              publish = {
-                from: message.ext,
-                to: message.ext,
-                content: message.content
-              };
-              _this.trigger("publish", publish);
-              _this.send(_this.createMessage(new SipTransaction(_.extend(message, {
-                meth: "OK"
-              }))));
-              break;
-            case "OK":
-              console.log("[PUBLISH] OK");
-              _this.deleteTransaction(message);
-              break;
-            default:
-              if ((_ref4 = message.responseCode) !== 401 && _ref4 !== 407) {
-                return;
-              }
-              if (!_this.getTransaction(message)) {
-                return;
-              }
-              publish = _this.getTransaction(message);
-              _.extend(publish, _.pick(message, "realm", "nonce", "toTag"));
-              publish.proxyAuth = message.responseCode === 407;
-              publish.auth = message.responseCode === 401;
-              _this.send(_this.createMessage(publish));
-          }
-          return;
-        }
-        if ((3 < (_ref5 = _this.state) && _ref5 < 9)) {
+        if ((3 < (_ref3 = _this.state) && _ref3 < 9)) {
           if (message.meth === "INVITE") {
             _this.info("Another incoming call (BUSY)", message);
             busy = _.clone(message);
@@ -967,7 +904,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             transaction.vias = message.vias;
             switch (message.responseCode) {
               case 200:
-                _this.info("Register successful", message);
+                _this.info("register-success", message);
+                _this.rtc.start();
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires / 2;
                 _this.reRegister = function() {
@@ -1002,20 +940,23 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             transaction.vias = message.vias;
             switch (message.responseCode) {
               case 200:
-                _this.info("Successful register", message);
+                _this.info("register-success", message);
+                _this.rtc.start();
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires / 2;
                 _this.reRegister = function() {
-                  return _this.send(_this.createMessage(_this.getTransaction(transaction)));
+                  var newRegister;
+                  newRegister = _this.getTransaction(transaction);
+                  newRegister.cseq.number += 1;
+                  return _this.send(_this.createMessage(newRegister));
                 };
                 _this.t = setInterval(_this.reRegister, transaction.expires * 1000);
-                _this.gruu = message.gruu;
-                return _this.rtc.start();
+                return _this.gruu = message.gruu;
               case 401:
-                _this.info("Unsusccessful register", message);
+                _this.info("register-fail", message);
                 return _this.setState(0, message);
               default:
-                _this.warning("Unexpected message", message);
+                _this.warning("message-unexpected", message);
                 return _this.setState(0, message);
             }
             break;
@@ -1177,18 +1118,21 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     SipStack.prototype.createMessage = function(transaction) {
-      var address, authUri, data, opaque, rr, _i, _len, _ref, _ref1;
+      var address, authUri, data, opaque, rr, _i, _len, _ref;
       transaction = new SipTransaction(transaction);
       transaction.uri = "sip:" + transaction.ext + "@" + (this.domain || this.sipServer);
       transaction.uri2 = "sip:" + transaction.ext2 + "@" + (transaction.domain2 || this.sipServer);
       transaction.targetUri = "sip:" + this.sipServer;
-      if ((_ref = transaction.meth) === "BYE" || _ref === "REGISTER") {
+      if (transaction.meth === "BYE") {
         transaction.cseq.number += 1;
       }
       switch (transaction.meth) {
         case "REGISTER":
-        case "PUBLISH":
           transaction.requestUri = transaction.targetUri;
+          data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
+          break;
+        case "PUBLISH":
+          transaction.requestUri = transaction.uri;
           data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
           break;
         case "INVITE":
@@ -1213,9 +1157,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           data = "SIP/2.0 486 Busy Here\r\n";
       }
       if ((transaction.cseq.meth === "INVITE" && transaction.meth !== "ACK") && (_.isArray(transaction.recordRoutes))) {
-        _ref1 = transaction.recordRoutes;
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          rr = _ref1[_i];
+        _ref = transaction.recordRoutes;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          rr = _ref[_i];
           data += rr + "\r\n";
         }
       } else {
@@ -1332,10 +1276,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           data += "Authorization:";
         }
         if (transaction.proxyAuth === true) {
-          if (transaction.cseq.meth === "PUBLISH") {
+          authUri = transaction.uri2;
+          if (transaction.meth === "PUBLISH") {
             authUri = transaction.uri;
-          } else {
-            authUri = transaction.uri2;
           }
           data += "Proxy-Authorization:";
         }

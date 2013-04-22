@@ -270,7 +270,7 @@ class SipStack extends Spine.Controller
 								console.log "[INFO] unregistering"
 								transaction = @getTransaction message
 								transaction.expires = 0
-								clearInterval t
+								clearInterval @t
 								message = @createMessage transaction
 								@send message
 								@setState 0, message # Offline
