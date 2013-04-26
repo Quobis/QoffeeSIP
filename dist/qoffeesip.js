@@ -756,12 +756,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     function SipStack() {
       this.setState = __bind(this.setState, this);
 
-      this.publish = __bind(this.publish, this);
-
-      this.getPidf = __bind(this.getPidf, this);
-
-      this.subscribe = __bind(this.subscribe, this);
-
       this.sendInstantMessage = __bind(this.sendInstantMessage, this);
 
       this.sendWithSDP = __bind(this.sendWithSDP, this);
@@ -1134,14 +1128,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           transaction.requestUri = transaction.targetUri;
           data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
           break;
-        case "PUBLISH":
-          transaction.requestUri = transaction.uri;
-          data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
-          break;
         case "INVITE":
         case "MESSAGE":
         case "CANCEL":
-        case "SUBSCRIBE":
           transaction.requestUri = transaction.uri2;
           data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
           break;
@@ -1171,8 +1160,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           case "INVITE":
           case "MESSAGE":
           case "CANCEL":
-          case "SUBSCRIBE":
-          case "PUBLISH":
             data += "Route: <sip:" + this.sipServer + ":" + this.port + ";transport=ws;lr>\r\n";
             break;
           case "ACK":
@@ -1191,13 +1178,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       data += "From: " + transaction.uri + ";tag=" + transaction.fromTag + "\r\n";
       switch (transaction.meth) {
         case "REGISTER":
-        case "PUBLISH":
           data += "To: " + transaction.uri + "\r\n";
           break;
         case "INVITE":
         case "MESSAGE":
         case "CANCEL":
-        case "SUBSCRIBE":
           data += "To: " + transaction.uri2 + "\r\n";
           break;
         default:
@@ -1222,7 +1207,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }
       data += "Max-Forwards: 70\r\n";
       if (transaction.meth === "REGISTER" || transaction.meth === "INVITE") {
-        data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE, NOTIFY\r\n";
+        data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n";
       }
       data += "Supported: path, outbound, gruu\r\n";
       data += "User-Agent: QoffeeSIP 0.5\r\n";
@@ -1245,11 +1230,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           }
           break;
         case "REGISTER":
-        case "PUBLISH":
           data += "Contact: <sip:" + transaction.ext + "@" + address + ";transport=ws>\r\n";
           break;
         case "INVITE":
-        case "SUBSCRIBE":
           if (this.gruu) {
             data += "Contact: <" + this.gruu + ";ob>\r\n";
           } else {
@@ -1280,22 +1263,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         }
         if (transaction.proxyAuth === true) {
           authUri = transaction.uri2;
-          if (transaction.meth === "PUBLISH") {
-            authUri = transaction.uri;
-          }
           data += "Proxy-Authorization:";
         }
         transaction.response = this.getDigest(transaction);
         data += " Digest username=\"" + transaction.ext + "\",realm=\"" + transaction.realm + "\",";
         data += "nonce=\"" + transaction.nonce + "\"," + opaque + "uri=\"" + authUri + "\",response=\"" + transaction.response + "\",algorithm=MD5\r\n";
-      }
-      switch (transaction.meth) {
-        case "SUBSCRIBE":
-        case "PUBLISH":
-          data += "Event: presence\r\n";
-          if (transaction.meth === "SUBSCRIBE") {
-            data += "Accept: application/pidf+xml\r\n";
-          }
       }
       switch (transaction.meth) {
         case "INVITE":
@@ -1309,11 +1281,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         case "MESSAGE":
           data += "Content-Length: " + (transaction.content.length || 0) + "\r\n";
           data += "Content-Type: text/plain\r\n\r\n";
-          data += transaction.content;
-          break;
-        case "PUBLISH":
-          data += "Content-Length: " + (transaction.content.length || 0) + "\r\n";
-          data += "Content-Type: application/pidf+xml\r\n\r\n";
           data += transaction.content;
           break;
         default:
@@ -1467,53 +1434,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.send(this.createMessage(message));
     };
 
-    SipStack.prototype.subscribe = function(ext2, domain2) {
-      var message, transaction;
-      transaction = new SipTransaction({
-        meth: "SUBSCRIBE",
-        ext: this.ext,
-        pass: this.pass,
-        ext2: ext2,
-        domain2: domain2 || this.domain
-      });
-      this.addTransaction(transaction);
-      message = this.createMessage(transaction);
-      return this.send(message);
-    };
-
-    SipStack.prototype.getPidf = function(status, ext, domain, tupleId) {
-      var data, pstate;
-      if (status === "Online") {
-        pstate = "open";
-      } else {
-        pstate = "close";
-      }
-      data = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
-      data = "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\"\n";
-      data += "\tentity=\"sip:" + ext + "@" + domain + "\">\n";
-      data += "\t<tuple id=\"" + tupleId + "\">\n";
-      data += "\t\t<status>\n";
-      data += "\t\t\t<basic>" + pstate + "</basic>\n";
-      data += "\t\t</status>\n";
-      data += "\t\t<contact priority=\"0.8\">" + ext + "@" + domain + "</contact>\n";
-      data += "\t</tuple>\n";
-      return data += "</presence>";
-    };
-
-    SipStack.prototype.publish = function(status) {
-      var message, transaction;
-      transaction = new SipTransaction({
-        meth: "PUBLISH",
-        ext: this.ext,
-        pass: this.pass,
-        domain: this.domain
-      });
-      transaction.content = this.getPidf(status, this.ext, this.domain || this.sipServer, transaction.tupleId);
-      this.addTransaction(transaction);
-      message = this.createMessage(transaction);
-      return this.send(message);
-    };
-
     SipStack.prototype.setState = function(state, data) {
       this.state = state;
       console.log("[INFO] New state  " + this.states[this.state] + ("(" + this.state + ")"));
@@ -1540,10 +1460,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this.off = __bind(this.off, this);
 
       this.on = __bind(this.on, this);
-
-      this.publish = __bind(this.publish, this);
-
-      this.subscribe = __bind(this.subscribe, this);
 
       this.chat = __bind(this.chat, this);
 
@@ -1593,14 +1509,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     API.prototype.chat = function(ext, content) {
       return this.sipStack.sendInstantMessage(ext, content);
-    };
-
-    API.prototype.subscribe = function(ext, domain) {
-      return this.sipStack.subscribe(ext, domain);
-    };
-
-    API.prototype.publish = function(pstatus, domain) {
-      return this.sipStack.publish(pstatus);
     };
 
     API.prototype.on = function(eventName, callback) {

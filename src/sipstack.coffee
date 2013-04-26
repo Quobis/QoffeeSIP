@@ -176,59 +176,8 @@ class SipStack extends Spine.Controller
 						instantMessage.auth      = message.responseCode is 401
 						@send @createMessage instantMessage
 				return
-
-#			# Presence manager for SUBSCRIBE
-#			if @state > 0 and message.cseq.meth is "SUBSCRIBE"
-#				switch message.meth
-#					when "SUBSCRIBE"
-#						console.log "[SUBSCRIBE] #{message.content}"
-#						subscribe =
-#							from: message.ext,
-#							to: message.ext2,
-#							content: message.content
-#						@trigger "subscribe", subscribe
-#						@send @createMessage new SipTransaction _.extend message, {meth: "OK"}
-#					when "OK"
-#						console.log "[SUBSCRIBE] OK"
-#						# After receiving a 200 OK we don't need the instant message anymore.
-#						@deleteTransaction message
-#					else
-#						# return if not @checkTransaction message
-#						return unless message.responseCode in [401,407]
-#						return unless @getTransaction message
-#						subscribe = @getTransaction message
-#						_.extend subscribe, _.pick message, "realm", "nonce", "toTag"
-#						subscribe.proxyAuth = message.responseCode is 407
-#						subscribe.auth      = message.responseCode is 401
-#						@send @createMessage subscribe
-#				return
-#			
-#			# Presence manager for PUBLISH
-#			if @state > 0 and message.cseq.meth is "PUBLISH"
-#				switch message.meth
-#					when "PUBLISH"
-#						console.log "[PUBLISH] #{message.content}"
-#						publish =
-#							from: message.ext,
-#							to: message.ext,
-#							content: message.content
-#						@trigger "publish", publish
-#						@send @createMessage new SipTransaction _.extend message, {meth: "OK"}
-#					when "OK"
-#						console.log "[PUBLISH] OK"
-#						# After receiving a 200 OK we don't need the instant message anymore.
-#						@deleteTransaction message
-#					else
-#						# return if not @checkTransaction message
-#						return unless message.responseCode in [401,407]
-#						return unless @getTransaction message
-#						publish = @getTransaction message
-#						_.extend publish, _.pick message, "realm", "nonce", "toTag"
-#						publish.proxyAuth = message.responseCode is 407
-#						publish.auth      = message.responseCode is 401
-#						@send @createMessage publish
-#				return
 				
+								
 			# Busy manager
 			# We can receive a INVITE method in any within-dialog state (>= 3) and answer Busy.
 			if 3 < @state < 9
@@ -509,10 +458,7 @@ class SipStack extends Spine.Controller
 			when "REGISTER"
 				transaction.requestUri = transaction.targetUri
 				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"
-			when "PUBLISH"
-				transaction.requestUri = transaction.uri
-				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"
-			when "INVITE", "MESSAGE", "CANCEL", "SUBSCRIBE"
+			when "INVITE", "MESSAGE", "CANCEL"
 				transaction.requestUri = transaction.uri2
 				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"
 			when "ACK", "BYE"
@@ -531,7 +477,7 @@ class SipStack extends Spine.Controller
 		
 		# Route
 		else switch transaction.meth
-			when "REGISTER", "INVITE", "MESSAGE", "CANCEL", "SUBSCRIBE", "PUBLISH"
+			when "REGISTER", "INVITE", "MESSAGE", "CANCEL"
 				data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr>\r\n"
 			when "ACK", "OK", "BYE"
 				if transaction.cseq.meth isnt "MESSAGE"
@@ -549,9 +495,9 @@ class SipStack extends Spine.Controller
 
 		# To
 		switch transaction.meth
-			when "REGISTER", "PUBLISH"
+			when "REGISTER"
 				data += "To: #{transaction.uri}\r\n"
-			when "INVITE", "MESSAGE", "CANCEL", "SUBSCRIBE"
+			when "INVITE", "MESSAGE", "CANCEL"
 				data += "To: #{transaction.uri2}\r\n"
 			else
 				data += "To: #{transaction.uri2};tag=#{transaction.toTag}\r\n"
@@ -577,7 +523,7 @@ class SipStack extends Spine.Controller
 
 		# Allow
 		if transaction.meth is "REGISTER" or transaction.meth is "INVITE"
-			data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE, NOTIFY\r\n"
+			data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n"
 
 		# Supported
 		data += "Supported: path, outbound, gruu\r\n"
@@ -600,9 +546,9 @@ class SipStack extends Spine.Controller
 						data += "Contact: <sip:#{transaction.ext2}@#{address};gr=urn:uuid:#{transaction.uuid}>\r\n"
 					else
 						data += "Contact: <sip:#{transaction.ext2}@#{address};transport=ws>\r\n"
-			when "REGISTER", "PUBLISH"
+			when "REGISTER"
 				data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws>\r\n"
-			when "INVITE", "SUBSCRIBE"
+			when "INVITE"
 				if @gruu
 					data += "Contact: <#{@gruu};ob>\r\n"
 				else
@@ -628,18 +574,11 @@ class SipStack extends Spine.Controller
 				data += "Authorization:"
 			if transaction.proxyAuth is true
 				authUri = transaction.uri2
-				authUri = transaction.uri if transaction.meth is "PUBLISH"
 				data += "Proxy-Authorization:"
 			transaction.response = @getDigest transaction
 			data += " Digest username=\"#{transaction.ext}\",realm=\"#{transaction.realm}\","
 			data += "nonce=\"#{transaction.nonce}\",#{opaque}uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5\r\n"
 		
-		# Presence headers
-		switch transaction.meth
-			when "SUBSCRIBE", "PUBLISH"
-				data += "Event: presence\r\n"
-				if transaction.meth is "SUBSCRIBE"
-					data += "Accept: application/pidf+xml\r\n"
 					
 		# Content-type and content
 		switch transaction.meth
@@ -651,10 +590,6 @@ class SipStack extends Spine.Controller
 			when "MESSAGE"
 				data += "Content-Length: #{transaction.content.length or 0}\r\n"
 				data += "Content-Type: text/plain\r\n\r\n"
-				data += transaction.content
-			when "PUBLISH"
-				data += "Content-Length: #{transaction.content.length or 0}\r\n"
-				data += "Content-Type: application/pidf+xml\r\n\r\n"
 				data += transaction.content
 			else
 				data += "Content-Length: 0\r\n\r\n"		
@@ -781,46 +716,6 @@ class SipStack extends Spine.Controller
 		@addTransaction message
 		@send @createMessage message
 
-	subscribe: (ext2, domain2) =>
-		transaction = new SipTransaction
-			meth: "SUBSCRIBE",
-			ext: @ext,
-			pass : @pass,
-			ext2 : ext2
-			domain2: domain2 or @domain
-#		console.log transaction
-#		alert transaction.branch
-		@addTransaction transaction
-		message = @createMessage transaction
-		@send message
-
-	getPidf: (status, ext, domain, tupleId) =>
-		if status is "Online"
-			pstate = "open"
-		else
-			pstate = "close"
-		data = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
-		data = "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\"\n"
-		data += "\tentity=\"sip:#{ext}@#{domain}\">\n"
-		data += "\t<tuple id=\"#{tupleId}\">\n"
-		data += "\t\t<status>\n"
-		data += "\t\t\t<basic>#{pstate}</basic>\n"
-		data += "\t\t</status>\n"
-		data += "\t\t<contact priority=\"0.8\">#{ext}@#{domain}</contact>\n"
-		data += "\t</tuple>\n"
-		data += "</presence>"
-	
-	
-	publish: (status) =>
-		transaction = new SipTransaction
-			meth: "PUBLISH",
-			ext: @ext,
-			pass : @pass,
-			domain: @domain
-		transaction.content = @getPidf status, @ext, @domain or @sipServer, transaction.tupleId
-		@addTransaction transaction
-		message = @createMessage transaction
-		@send message
 
 	# Set @state and trigger the "new-state" event.
 	setState: (@state, data) =>
