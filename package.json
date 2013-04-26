@@ -1,26 +1,33 @@
 {
-    "name": "QoffeeSIP",
-    "description":  "A Javascript SIP (over websockets) stack.",
-    "author":   "Quobis <http://www.quobis.com/>" ,
-    "maintainers":  [
-        "Damián Franco <damian.franco@quobis.com>",
-        "Jesús Pérez <jesus.perez@quobis.com>"
-    ],
-    "homepage": "http://qoffeesip.quobis.com/",
-    "repository":   {
-        "type": "git",
-        "url":  "https://github.com/Quobis/QoffeeSIP.git"
-    },
-    "version": "0.4.0",
-    "private": "true",
-    "dependencies": {
-        "coffee-script": "1.4.x",
-        "uglify-js": "2.2.x",
-        "docco":  "0.4.x"
-    },
-    "engines":  {
-        "node": "0.9.x",
-        "npm": "1.1.x"
-    },
-    "license": "GNU-LGPL-3.0-or-later"
+	"name": "QoffeeSIP",
+	"version": "0.5.0",
+	"description":  "A Javascript SIP (over websockets) stack.",
+	"author" : { 
+		"name" : "Quobis",
+		"email" : "info@quobis.com",
+		"url" : "http://www.quobis.com/"
+	},
+	"contributors": [
+		"Damián Franco <damian.franco@quobis.com>",
+		"David Patiño <david.patino@quobis.com>",
+		"Jesús Pérez <jesus.perez@quobis.com>"
+	],
+	"repository": {
+		"type": "git",
+		"url":  "https://github.com/Quobis/QoffeeSIP.git"
+	},
+	"private": "true",
+	"keywords" : ["Quobis", "WebRTC", "VoIP", "SIP", "websockets", "webphone"],
+	"homepage": "http://qoffeesip.quobis.com/",
+	"bugs" : { 
+		"url" : "http://github.com/Quobis/QoffeeSIP/issues"
+	},
+	"dependencies": {
+		"coffee-script": "1.4.x",
+		"docco":  "0.4.x"
+	},
+	"engines": {
+		"node": "0.9.x",
+		"npm": "1.1.x"
+	}
 }

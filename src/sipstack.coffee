@@ -14,27 +14,16 @@ class SipStack extends Spine.Controller
 	# *Transactions* id is the meth.
 	# transaction :: SipTransaction
 	addTransaction: (transaction) =>
-		@_transactions[transaction.meth] = transaction
+		@_transactions[transaction.branch] = transaction
 
 	# meth :: String
-	getTransaction: (meth) =>
-		@_transactions[meth]
+	getTransaction: (message) =>
+		@_transactions[message.branch]
 
-	# meth :: String
-	deleteTransaction: (meth) =>
-		@_transactions = _.omit @_transactions, meth
+	# branch :: String
+	deleteTransaction: (message) =>
+		@_transactions = _.omit @_transactions, message.branch
 
-	# MESSAGE id is the CSeq number.
-	# This function stores a sent MESSAGE.
-	addInstantMessage: (message) =>
-		@_instantMessages[message.cseq] = message
-
-	# This functions returns the MESSAGE with CSeq == cseq parameter.
-	getInstantMessage: (cseq) =>
-		@_instantMessages[cseq]
-
-	deleteInstantMessage: (cseq) =>
-		@_instantMessages = _.omit @instantMessage, cseq
 
 	checkDialog: (transaction) =>
 		# Call-ID, tags
@@ -44,27 +33,17 @@ class SipStack extends Spine.Controller
 			# We should check both, taking care of transactions that does not have toTag.
 			# check and= not _.isEmpty _.intersection [transaction.fromTag, transaction.toTag], [tr.fromTag, tr.toTag]
 
-	checkTransaction: (transaction) =>
-		check = @checkDialog(transaction)
-		check and= not _.isUndefined _.find @_transactions, (tr) => transaction.branch is tr.branch
-		check or console.log "[INFO] New message does not match any transaction"
-		return check
+	info: (message, data) =>
+		console.log   "[INFO]    " + message
+		@trigger message, data
 
-	# ## Events
-	# Every one of these 3 methods trigger and event with a name, 
-	# the message that has triggered the event,
-	# and a variable number of other objects. 
-	info: (message, others...) ->
-		console.log "[INFO]" + message
-		@trigger "info", message, others
+	warning: (message, data) =>
+		console.warn  "[WARNING] " + message
+		@trigger message, data
 
-	warning: (message, others...) ->
-		console.log "[WARNING] " + message
-		@trigger "warning", message, others
-
-	error: (message, others...) ->
-		console.log "[ERROR] " + message
-		@trigger "error", message, others
+	error: (message, data) =>
+		console.error "[ERROR]   " + message
+		@trigger message, data
 
 	# TODO: Use constants instead of number and strings.
 	states:
@@ -100,12 +79,17 @@ class SipStack extends Spine.Controller
 	# - mediaContraints :: {audio: bool, video: bool}
 	# - server :: {ip: string, port: number, path:: string, transport :: string}
 	# - onopen :: function
-	# TODO: allow server to be a string like ws://ip:port/path
 	constructor: () ->
 		super
-		@rtc       = new RTC
+		@rtc = new RTC
 			mediaElements: @mediaElements
 			mediaConstraints: @mediaConstraints
+			turnServer: @turnServer
+			stunServer: @stunServer
+
+		@rtc.bind "localstream", (localstream) => @trigger "localstream", localstream
+		@rtc.bind "remotestream", (remotestream) => @trigger "remotestream", remotestream
+
 
 		@sipServer = @server.ip
 		@port      = @server.port
@@ -148,21 +132,19 @@ class SipStack extends Spine.Controller
 
 			# Re-register manager. 
 			if (@state > 2) and (message.cseq.meth is "REGISTER")
-				return if not @checkTransaction message
+				return if not @getTransaction message
 				switch message.responseCode
 					# Here we receive a 200 OK for a REGISTER we sent.
 					when 200
 						@info "RE-REGISTER answer", message
 						return
-						# TODO: Manage unregistering
-						# @setState  9
-						# @unRegister()
-						# return @
+						
 					# Here we receive a 401 for a REGISTER we sent.
 					# Once processed, we send an authenticated REGISTER.
 					when 401
-						register      =  @getTransaction "REGISTER"
+						register      =  @getTransaction message
 						register.vias = message.vias
+						register.cseq.number += 1
 						_.extend register, _.pick message, "realm", "nonce", "toTag"
 						register.auth = true
 						@send @createMessage register
@@ -183,17 +165,19 @@ class SipStack extends Spine.Controller
 					when "OK"
 						console.log "[MESSAGE] OK"
 						# After receiving a 200 OK we don't need the instant message anymore.
-						@deleteInstantMessage message.cseq
+						@deleteTransaction message
 					else
-						return if not @checkTransaction message
-						return if not message.respose code in [401,407]
-						instantMessage = @getInstantMessage message.cseq
+						# return if not @checkTransaction message
+						return unless message.responseCode in [401,407]
+						return unless @getTransaction message
+						instantMessage = @getTransaction message
 						_.extend instantMessage, _.pick message, "realm", "nonce", "toTag"
 						instantMessage.proxyAuth = message.responseCode is 407
 						instantMessage.auth      = message.responseCode is 401
 						@send @createMessage instantMessage
 				return
-
+				
+								
 			# Busy manager
 			# We can receive a INVITE method in any within-dialog state (>= 3) and answer Busy.
 			if 3 < @state < 9
@@ -210,21 +194,35 @@ class SipStack extends Spine.Controller
 			switch @state
 				# ### REGISTERING (before challenging).
 				when 1
-					return if not @checkTransaction message
-					# We get the original REGISTER which originated the transaction.
-					transaction = @getTransaction "REGISTER"
+					# Get the original REGISTER which originated the transaction.
+					return if not @getTransaction message
+					transaction = @getTransaction message
 
-					# We add the vias of the new message to the original REGISTER.
+					# Add the vias of the new message to the original REGISTER.
 					transaction.vias = message.vias
 
 					switch message.responseCode
 						# Successful register.
 						when 200
-							@info "Register successful", message
+							@info "register-success", message
+							@rtc.start()
 							@setState 3, message
 							# Manage reregisters. Important: @t should be clean on unregistering.
 							transaction.expires = message.proposedExpires / 2
-							@t    = setInterval @reRegister, transaction.expires*1000
+							# A re-register petition is created and sent.
+							@reRegister = () =>
+								newRegister = @getTransaction transaction
+								newRegister.cseq.number += 1
+								@send @createMessage newRegister
+							@t    = setInterval(@reRegister, transaction.expires*1000)
+							@unregister = () =>
+								console.log "[INFO] unregistering"
+								transaction = @getTransaction message
+								transaction.expires = 0
+								clearInterval @t
+								message = @createMessage transaction
+								@send message
+								@setState 0, message # Offline
 							@gruu = message.gruu
 
 						# Unsusccessful register.
@@ -240,69 +238,66 @@ class SipStack extends Spine.Controller
 
 				# ### REGISTERING (after challenging)
 				when 2
-					return if not @checkTransaction message
-					transaction = @getTransaction "REGISTER"
+					return if not @getTransaction message
+					transaction = @getTransaction message
 					transaction.vias = message.vias
 
 					switch message.responseCode
 						# Successful register.
 						when 200
-							@info "Successful register", message
+							@info "register-success", message
+							@rtc.start()
 							@setState 3, message
 							# Manage reregisters.
 							transaction.expires = message.proposedExpires / 2
+							@reRegister = () =>
+								newRegister = @getTransaction transaction
+								newRegister.cseq.number += 1
+								@send @createMessage newRegister
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@gruu = message.gruu
-
 						# Unsusccessful register.
 						when 401
-							@info "Unsusccessful register", message
+							@info "register-fail", message
 							@setState 0, message
 						else
-							@warning "Unexpected message", message
+							@warning "message-unexpected", message
 							@setState 0, message
 
 
 				# ### REGISTERED
 				when 3
-					switch message.type
-						when "request"
-							switch message.meth
-								# Incoming call
-								when "INVITE"
-									# Generate 180 RINGING
-									transaction = new SipTransaction message
-									@addTransaction transaction
-									ringing      = _.clone transaction
-									ringing.meth = "Ringing"
-									@send @createMessage ringing
-									@setState 6, message
-								else
-									@warning "Unexpected request", message
-
-						when "response"
-							@warning "Unexpected response", message
+					switch message.meth
+						# Incoming call
+						when "INVITE"
+							# Generate 180 RINGING
+							transaction = new SipTransaction message
+							@addTransaction transaction
+							ringing      = _.clone transaction
+							ringing.meth = "Ringing"
+							@send @createMessage ringing
+							@setState 6, message
 						else
 							@warning "Unexpected message", message
 
 				# ### incoming CALLING
 				when 4
+					return if not @checkDialog message
 					# TODO: Manage CANCELs and 480 (remote user press hang out)
 					switch message.meth
 						when "CANCEL"
-							return if not @checkTransaction message
 							@info "Call ended"
 							@setState 3, message
 						when "ACK"
 							 # An ACK as response to a 200 OK is a new transaction of the same dialog.
-							return if not @checkDialog message
 							@setState 8, message
 						else
 							@warning "Unexpected message", message
 
 				# ### CALLING
 				when 5
-					return if not @checkTransaction message
+					return if not @getTransaction message
+					transaction = @getTransaction message
 					switch message.type
 						when "response"
 							# If the message is a known response
@@ -315,12 +310,12 @@ class SipStack extends Spine.Controller
 							switch message.responseCode
 								when 180
 									# Update INVITE transaction's contact.
-									@getTransaction("INVITE").contact = message.contact
+									transaction.contact = message.contact
 
 								when 200
 									@info "Establishing call", message
 									@rtc.receiveAnswer message.content
-									_.extend @getTransaction("INVITE"), _.pick message, "from", "to", "fromTag", "toTag"
+									_.extend transaction, _.pick message, "from", "to", "fromTag", "toTag"
 									ack      = new SipTransaction message
 									ack.meth = "ACK"
 									@send @createMessage ack
@@ -337,7 +332,6 @@ class SipStack extends Spine.Controller
 									ack.vias = message.vias
 									@send @createMessage ack
 
-									transaction             = @getTransaction "INVITE"
 									transaction.vias        = message.vias
 									transaction.cseq.number += 1
 									_.extend transaction, _.pick message, "realm", "nonce", "toTag"
@@ -370,11 +364,11 @@ class SipStack extends Spine.Controller
 									@send @createMessage ok
 									@setState 3, message
 								else
-									@warning "Unexpected request", message
+									@warning "Unexpected message", message
 
 				# ### RINGING
 				when 6
-					return if not @checkTransaction message
+					return if not @checkDialog message
 					@info "RINGING", message
 					switch message.meth
 						when "CANCEL"
@@ -387,7 +381,7 @@ class SipStack extends Spine.Controller
 				# ### CALL ESTABLISHED
 				# TODO: We don't manage ACKs after BUSYs.
 				when 7, 8
-					return if not @checkTransaction message
+					return if not @checkDialog message
 					@info "CALL ESTABLISHED", message
 					switch message.meth
 						when "BYE"
@@ -404,14 +398,14 @@ class SipStack extends Spine.Controller
 				# ### HANGING UP
 				# TODO: Timers for states 9 and 10.
 				when 9
-					return if not @checkTransaction message
+					return if not @getTransaction message
 					@info "HANGING UP", message
 					@info "Call ended", message
 					@rtc.close()
 					@setState 3, message # Registered
 
 				when 10
-					return if not @checkTransaction message
+					return if not @getTransaction message
 					@info "HANGING UP", message
 					@info "Call ended", message
 					@setState 3, message # Registered
@@ -424,10 +418,12 @@ class SipStack extends Spine.Controller
 
 	# SIP digest calculator as defined is RFC 3261.
 	getDigest: (transaction) =>
-		console.log transaction
 		ha1 = CryptoJS.MD5 "#{transaction.ext}:#{transaction.realm}:#{transaction.pass}"
 		ha2 = CryptoJS.MD5 "#{transaction.meth}:#{transaction.requestUri}"
 		sol = CryptoJS.MD5 "#{ha1}:#{transaction.nonce}:#{ha2}"
+		# console.log "HA1 = md5(#{transaction.ext}:#{transaction.realm}:#{transaction.pass})"
+		# console.log "HA2 = md5(#{transaction.meth}:#{transaction.requestUri})"
+		# console.log "response = md5(#{ha1}:#{transaction.nonce}:#{ha2})"
 		return sol
 
 	# SIP websockets request creator as defined in draft-ietf-sipcore-sip-websocket-06 and XXXX
@@ -527,14 +523,13 @@ class SipStack extends Spine.Controller
 
 		# Allow
 		if transaction.meth is "REGISTER" or transaction.meth is "INVITE"
-			#data += "Allow: INVITE, ACK, CANCEL, BYE, OPTIONS, MESSAGE, SUBSCRIBE"
 			data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n"
 
 		# Supported
 		data += "Supported: path, outbound, gruu\r\n"
 
 		# User-Agent
-		data += "User-Agent: QoffeeSIP 0.4\r\n"
+		data += "User-Agent: QoffeeSIP 0.5\r\n"
 
 		# Contact
 		# Addres is a randomIP when hackIpContact is true, else, a randomDomain.
@@ -552,7 +547,7 @@ class SipStack extends Spine.Controller
 					else
 						data += "Contact: <sip:#{transaction.ext2}@#{address};transport=ws>\r\n"
 			when "REGISTER"
-				data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws>"
+				data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws>\r\n"
 			when "INVITE"
 				if @gruu
 					data += "Contact: <#{@gruu};ob>\r\n"
@@ -583,7 +578,8 @@ class SipStack extends Spine.Controller
 			transaction.response = @getDigest transaction
 			data += " Digest username=\"#{transaction.ext}\",realm=\"#{transaction.realm}\","
 			data += "nonce=\"#{transaction.nonce}\",#{opaque}uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5\r\n"
-
+		
+					
 		# Content-type and content
 		switch transaction.meth
 			when "INVITE", "OK"
@@ -607,11 +603,10 @@ class SipStack extends Spine.Controller
 		@send message
 
 	call: (ext2, domain2) =>
-		register    = (@getTransaction "REGISTER")
 		transaction = new SipTransaction
 			meth: "INVITE",
-			ext: register.ext,
-			pass : register.pass,
+			ext: @ext,
+			pass : @pass,
 			ext2 : ext2
 			domain2: domain2 or @domain
 		@addTransaction transaction
@@ -619,31 +614,31 @@ class SipStack extends Spine.Controller
 		message = @createMessage transaction
 		@sendWithSDP message, "offer", null
 
-	answer: () =>
-		ok = _.clone @getTransaction "INVITE"
+	answer: (branch) =>
+		ok = _.clone @getTransaction {branch}
 		# TODO: meth is not the same as reason phrase.
 		# Distinguish between meth and reason phrase.
 		ok.meth = "OK"
 		# Media
 		# This function will be executed when API.answer is called.
-		@sendWithSDP (@createMessage ok), "answer", @getTransaction("INVITE").content
+		@sendWithSDP (@createMessage ok), "answer", @getTransaction({branch}).content
 		@setState 4, ok
 
-	hangup: () =>
+	hangup: (branch) =>
 
 		# If user is the callee, fromTag of "INVITE" belongs to caller, ext2 in this method.
 		# Tags must be swapped.
 		swap = (d, p1, p2)-> [d[p1], d[p2]] = [d[p2], d[p1]]
 
 		# We need the INVITE request that has originated the dialog.
-		invite = @getTransaction "INVITE"
+		invite = @getTransaction {branch}
 
 		switch @state
 			when 5
 				cancel = new SipTransaction
 					meth: "CANCEL",
-					ext : (@getTransaction "REGISTER").ext
-					domain : (@getTransaction "REGISTER").domain
+					ext : @ext
+					domain : @domain
 					ext2 : invite.ext2
 					domain2: invite.domain2
 
@@ -654,7 +649,7 @@ class SipStack extends Spine.Controller
 			when 6
 				busy = new SipTransaction
 					meth: "Busy here"
-					ext : (@getTransaction "REGISTER").ext
+					ext : @ext
 					ext2 : invite.ext
 
 				_.extend busy, _.pick invite, "callId", "fromTag", "from", "to", "cseq", "domainName", "branch", "vias"
@@ -664,7 +659,7 @@ class SipStack extends Spine.Controller
 			when 7
 				bye = new SipTransaction
 					meth: "BYE"
-					ext : (@getTransaction "REGISTER").ext
+					ext : @ext
 					ext2 : invite.ext2
 				_.extend bye, _.pick invite, "callId", "contact", "fromTag", "toTag", "from", "to", "cseq"
 				@send @createMessage bye
@@ -675,7 +670,7 @@ class SipStack extends Spine.Controller
 			when 8
 				bye = new SipTransaction
 					meth: "BYE"
-					ext : (@getTransaction "REGISTER").ext
+					ext : @ext
 					ext2 : invite.ext
 				_.extend bye, _.pick invite, "callId", "contact", "fromTag", "toTag", "from", "to", "cseq", "vias"
 				swap bye, "fromTag", "toTag"
@@ -684,20 +679,6 @@ class SipStack extends Spine.Controller
 				@addTransaction bye
 				@setState 9, bye # Hanging
 				@rtc.close()
-
-	# A re-register petition is created and sent.
-	reRegister: () =>
-		@send @createMessage @getTransaction "REGISTER"
-
-	# An un-register petition is created (as proposed in RFC 3261) and sent.
-	unregister: () =>
-		console.log "[INFO] unregistering"
-		transaction = @getTransaction "REGISTER"
-		transaction.expires = 0
-		clearInterval(@t);
-		message = @createMessage transaction
-		@send message
-		@setState 0, message # Offline
 
 	send: (data) =>
 		if data?
@@ -729,11 +710,12 @@ class SipStack extends Spine.Controller
 		message = new SipTransaction 
 			meth: "MESSAGE"
 			ext: @ext
-			pass: (@getTransaction "REGISTER").pass
+			pass: @pass
 			ext2: ext2
 			content: text
-		@addInstantMessage message
+		@addTransaction message
 		@send @createMessage message
+
 
 	# Set @state and trigger the "new-state" event.
 	setState: (@state, data) =>

@@ -1,0 +1,67 @@
+{exec} = require "child_process"
+fs = require "fs"
+
+
+# Clean the environment
+task "clean", "Clean the environment.", ->
+	exec "rm -rf dist/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+		console.log "dist/ folder was deleted."
+
+
+# Build the stack
+# File which are going to be compiled
+appFiles = [
+	# omit src/ and .coffee to make the below lines a little shorter
+	"public/js/fullscreen.coffee"
+	"public/js/ui.coffee"
+	"public/js/testbrowser.coffee"
+	"public/js/script.coffee"
+]
+
+						
+task "build", "Build distribution files of the example.", ->
+	# delete old stuff
+	exec "rm -rf dist/; mkdir -p dist/js/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+	# join all .coffee files and compile it
+	appContents = new Array remaining = appFiles.length
+	for file, index in appFiles then do (file, index) ->
+		fs.readFile "#{file}", "utf8", (err, fileContents) ->
+			throw err if err
+			appContents[index] = fileContents
+			process() if --remaining is 0
+	process = ->
+		fs.writeFile "dist/js/webphone.coffee", appContents.join("\n\n"), "utf8", (err) ->
+			throw err if err
+			# and compile it
+			exec "coffee -c dist/js/webphone.coffee", (err, stdout, stderr) ->
+				throw err if err
+				fs.unlink "dist/js/webphone.coffee", (err) ->
+					throw err if err
+					# add license advertisement
+					exec "cat ../../LICENSE-min > tmp.js; cat dist/js/webphone.js >> tmp.js; mv tmp.js dist/js/webphone.js", (err, stdout, stderr) ->
+						throw err if err
+						console.log stdout + stderr
+	# Copy needed libraries to dist/lib/ folder
+	exec "cp -R public/js/lib/ dist/js/; cp ../../dist/qoffeesip.js dist/js/lib/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+	# Copy images, favicon and audio.
+	exec "cp -R public/img/ dist/; cp public/img/favicon/favicon.ico dist/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+	exec "cp -R public/audio/ dist/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+	# Compile .jade (HTML) files
+	exec "jade -O dist/ views/index.jade; ", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+	# Compile own .styl (CSS) file
+	exec "mkdir -p dist/css/; stylus -o dist/css public/css/style.styl; cp public/css/*.css dist/css/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+		console.log "All sources were compiled to dist/ folder."

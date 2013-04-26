@@ -7,10 +7,11 @@
 
 
 # In this class we use WebRTC API described here: http://dev.w3.org/2011/webrtc/editor/webrtc.html
-class RTC extends Spine.Controller
-	constructor: () ->
-		super
+class RTC extends Spine.Module
+	@include Spine.Events
+	constructor: (args) ->
 		console.log "[INFO] RTC constructor"
+		@[key] = value for key,value of args
 		if @mediaElements?
 			@$dom1 = @mediaElements.localMedia
 			@$dom2 = @mediaElements.remoteMedia
@@ -19,7 +20,9 @@ class RTC extends Spine.Controller
 
 		@mediaConstraints ?= {audio: true, video: true}
 		@browserSupport()
-		@start()
+		@iceServers = []
+		@iceServers.push @stunServer if @stunServer?
+		@iceServers.push @turnServer if @turnServer?
 
 	# Set some object attributes dependeing on browser.
 	browserSupport: () =>
@@ -31,13 +34,11 @@ class RTC extends Spine.Controller
 			@getUserMedia          = navigator.mozGetUserMedia.bind navigator
 			@PeerConnection        = mozRTCPeerConnection
 			@RTCSessionDescription = mozRTCSessionDescription
-			@attachStream          = ($dom, stream) ->
-				return if not $dom?
+			@attachStream          = ($d, stream) ->
+				return if not $d
 				console.log "[INFO] attachStream"
-				$d = $($dom.find("video")[0])
 				$d.attr 'src', window.URL.createObjectURL stream
 				$d.get(0).play()
-				$d.parent().css {opacity: 1}
 
 			# Fake get{Video,Audio}Tracks
 			MediaStream::getVideoTracks = () -> return []
@@ -50,15 +51,13 @@ class RTC extends Spine.Controller
 			@getUserMedia          = navigator.webkitGetUserMedia.bind navigator
 			@PeerConnection        = webkitRTCPeerConnection
 			@RTCSessionDescription = RTCSessionDescription
-			@attachStream          = ($dom, stream) =>
-				return if not $dom?
+			@attachStream          = ($d, stream) =>
+				return if not $d?
 				console.log "[INFO] attachStream"
-				$d = $($dom.find("video")[0])
 				# Builds a URL from a stream to be able to attach it to the DOM element
 				# passed as parameter.
 				url =  webkitURL.createObjectURL stream
 				$d.attr 'src', url
-				$d.parent().css {opacity: 1}
 
 			# The representation of tracks in a stream is changed in M26.
 			# Unify them for earlier Chrome versions in the coexisting period.
@@ -73,6 +72,7 @@ class RTC extends Spine.Controller
 				webkitRTCPeerConnection::getRemoteStreams = -> @remoteStreams
 
 	start: () =>
+		console.log "PeerConnection starting"
 		# Firefox does not provide *onicecandidate* callback.
 		@noMoreCandidates = false or (@browser is "firefox")
 		@createPeerConnection()
@@ -81,13 +81,17 @@ class RTC extends Spine.Controller
 		console.log "[INFO] createPeerConnection"
 		# We must provide at least one stun/turn server as parameter. 
 		# If the server is not reacheable by browser, peerconnection can only get host candidates.
-		@pc = new @PeerConnection "iceServers": ["url": "stun:74.125.132.127:19302"]
+		console.log "[MEDIA] ICE servers"
+		console.log @iceServers
+		@pc = new @PeerConnection "iceServers": @iceServers
 		
 		# When we receive remote media (RTP from the other peer), attach it to the DOM element.
 		@pc.onaddstream = (event) =>
 			console.log "[MEDIA] Stream added"
-			@trigger "info", "remotestream"
-			@attachStream @$dom2, event.stream 
+			@remotestream = event.stream
+			@attachStream @$dom2, @remotestream 
+			@trigger "remotestream", @remotestream
+
 
 		# When a new ice candidate is received and it's not null, we'll show it in the console.
 		# If we receive a null candidate, if means the candidate gathering process is finished;
@@ -138,10 +142,11 @@ class RTC extends Spine.Controller
 				@attachStream @$dom1, @localstream
 				# We trigger an event to be able to bind any behaviour when we get media; for example,
 				# to show a popup telling "Media got".
-				@trigger "info", "localstream"
+				@trigger "localstream", @localstream
+				console.log "localstream", @localstream
 			gumFail = (error) =>
-				console.log error
-				console.log "GetUserMedia error"
+				console.error error
+				console.error "GetUserMedia error"
 				@trigger "error", "getUserMedia"
 			# Ask to access hardware.
 			# gumSuccess and gumFail are callbacks that will be executed under getUserMedia success and failure executions.
@@ -197,18 +202,18 @@ class RTC extends Spine.Controller
 	# Set remoteDescription.
 	receiveOffer: (sdp, callback = null) =>
 		console.log "[INFO] Received offer"
-		@receive(sdp,"offer",callback)
+		@receive sdp, "offer", callback
 	
 	# Receive SDP answer.
 	# Set remoteDescription.
 	receiveAnswer: (sdp) =>
 		console.log "[INFO] Received answer"
-		@receive(sdp,"answer")
+		@receive sdp, "answer"
 
 	# Close PeerConnection and reset it with *start*.
 	close: () =>
 		# Hide remote video.
-		@$dom2.animate opacity: 0 if @$dom2?
+		# @$dom2.addClass "hidden" if @$dom2
 		# Closing PeerConnection fails if the PeerConnection is not opened.
 		try
 			@pc.close()
@@ -249,10 +254,10 @@ class RTC extends Spine.Controller
 
 		if @isVideoMuted
 			bool = true
-			console.log("Video unmuted.");
+			console.log "Video unmuted."
 		else
 			bool = false
-			console.log("Video muted.");
+			console.log "Video muted."
 
 		videoTrack.enabled = bool for videoTrack in videoTracks
 		@isVideoMuted = not bool;
