@@ -948,6 +948,15 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                   return _this.send(_this.createMessage(newRegister));
                 };
                 _this.t = setInterval(_this.reRegister, transaction.expires * 1000);
+                _this.unregister = function() {
+                  console.log("[INFO] unregistering");
+                  transaction = _this.getTransaction(message);
+                  transaction.expires = 0;
+                  clearInterval(_this.t);
+                  message = _this.createMessage(transaction);
+                  _this.send(message);
+                  return _this.setState(0, message);
+                };
                 return _this.gruu = message.gruu;
               case 401:
                 _this.info("register-fail", message);
@@ -1210,7 +1219,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n";
       }
       data += "Supported: path, outbound, gruu\r\n";
-      data += "User-Agent: QoffeeSIP 0.5\r\n";
+      data += "User-Agent: QoffeeSIP 0.6\r\n";
       address = (this.hackIpContact && transaction.IP) || transaction.domainName;
       switch (transaction.meth) {
         case "Ringing":
@@ -1230,7 +1239,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           }
           break;
         case "REGISTER":
-          data += "Contact: <sip:" + transaction.ext + "@" + address + ";transport=ws>\r\n";
+          data += "Contact: <sip:" + transaction.ext + "@" + address + ";transport=ws>";
           break;
         case "INVITE":
           if (this.gruu) {

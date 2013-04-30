@@ -255,6 +255,14 @@ class SipStack extends Spine.Controller
 								newRegister.cseq.number += 1
 								@send @createMessage newRegister
 							@t    = setInterval(@reRegister, transaction.expires*1000)
+							@unregister = () =>
+								console.log "[INFO] unregistering"
+								transaction = @getTransaction message
+								transaction.expires = 0
+								clearInterval @t
+								message = @createMessage transaction
+								@send message
+								@setState 0, message # Offline							
 							@gruu = message.gruu
 						# Unsusccessful register.
 						when 401
@@ -547,7 +555,7 @@ class SipStack extends Spine.Controller
 					else
 						data += "Contact: <sip:#{transaction.ext2}@#{address};transport=ws>\r\n"
 			when "REGISTER"
-				data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws>\r\n"
+				data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws>"
 			when "INVITE"
 				if @gruu
 					data += "Contact: <#{@gruu};ob>\r\n"
