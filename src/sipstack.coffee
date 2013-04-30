@@ -555,7 +555,7 @@ class SipStack extends Spine.Controller
 					else
 						data += "Contact: <sip:#{transaction.ext2}@#{address};transport=ws>\r\n"
 			when "REGISTER"
-				data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws>\r\n"
+				data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws>"
 			when "INVITE"
 				if @gruu
 					data += "Contact: <#{@gruu};ob>\r\n"
