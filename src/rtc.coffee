@@ -117,7 +117,7 @@ class RTC extends Spine.Module
 					
 		# PeerConnections events just to log them (only chrome).
 		if @browser is "chrome"
-			@pc.onicechange = (event) => console.log "[INFO] icestate changed -> #{@pc.iceState}"
+			@pc.onicechange   = (event) => console.log "[INFO] icestate changed -> #{@pc.iceState}"
 			@pc.onstatechange = (event) =>  console.log "[INFO] peerconnectionstate changed -> #{@pc.readyState}"
 			@pc.onopen  = -> console.log "[MEDIA] peerconnection opened"
 			@pc.onclose = -> console.log "[INFO] peerconnection closed"
@@ -137,7 +137,6 @@ class RTC extends Spine.Module
 			gumSuccess = (stream) =>
 				@localstream = stream
 				console.log "[INFO] getUserMedia successed"
-				console.log stream
 				@pc.addStream @localstream
 				@attachStream @$dom1, @localstream
 				# We trigger an event to be able to bind any behaviour when we get media; for example,
@@ -186,16 +185,16 @@ class RTC extends Spine.Module
 
 	# Generic function to receive both, SDP offer and answer.
 	# It will be called from *receiveOffer* and *receiveAnswer*.
-	receive: (sdp, type, callback = -> null) =>
+	receive: (sdp, type, callback) =>
 		success = =>
 			console.log "[INFO] Remote description setted."
 			console.log "[INFO] localDescription:"
 			console.log @pc.localDescription
 			console.log "[INFO] remotelocalDescription:"
 			console.log @pc.remoteDescription	
-			callback()
+			callback?()
 
-		description = (new @RTCSessionDescription type: type, sdp: sdp)
+		description = new @RTCSessionDescription type: type, sdp: sdp
 		@pc.setRemoteDescription description, success, => @trigger "error", "setRemoteDescription", description
 
 	# Receive SDP offer.
@@ -227,7 +226,6 @@ class RTC extends Spine.Module
 	toggleMuteAudio: () =>
 		# Call the getAudioTracks method via "adapter.js".
 		audioTracks = @localstream.getAudioTracks()
-		console.log audioTracks
 
 		if audioTracks.length is 0
 			console.log "[MEDIA] No local audio available."
@@ -241,32 +239,31 @@ class RTC extends Spine.Module
 			console.log "[MEDIA] Audio muted."
 
 		audioTrack.enabled = bool for audioTrack in audioTracks
-		@isAudioMuted = not bool
+		@isAudioMuted      = not bool
 
 	muteAudio: () =>
-		audioTracks = @localstream.getAudioTracks()
+		audioTracks        = @localstream.getAudioTracks()
 		audioTrack.enabled = false for audioTrack in audioTracks
-		@isAudioMuted = true
+		@isAudioMuted      = true
 
 	unmuteAudio: () =>
-		audioTracks = @localstream.getAudioTracks()
+		audioTracks        = @localstream.getAudioTracks()
 		audioTrack.enabled = true for audioTrack in audioTracks
-		@isAudioMuted = false
+		@isAudioMuted      = false
 
 	muteVideo: () =>
-		videoTracks = @localstream.getVideoTracks()
+		videoTracks        = @localstream.getVideoTracks()
 		videoTrack.enabled = false for videoTrack in videoTracks
-		@isVideoMuted = true
+		@isVideoMuted      = true
 
 	unmuteVideo: () =>
-		videoTracks = @localstream.getVideoTracks()
+		videoTracks        = @localstream.getVideoTracks()
 		videoTrack.enabled = true for videoTrack in videoTracks
-		@isVideoMuted = false
+		@isVideoMuted      = false
 
 	toggleMuteVideo: () =>
 		# Call the getVideoTracks method via "adapter.js".
 		videoTracks = @localstream.getVideoTracks()
-		console.log videoTracks
 
 		if videoTracks.length is 0
 			console.log "[MEDIA] No local audio available."
@@ -280,7 +277,7 @@ class RTC extends Spine.Module
 			console.log "Video muted."
 
 		videoTrack.enabled = bool for videoTrack in videoTracks
-		@isVideoMuted = not bool;
+		@isVideoMuted      = not bool;
 
 	mediaState: () =>
 		video: not @isVideoMuted, audio: not @isAudioMuted
