@@ -17,7 +17,17 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     RTC.include(Spine.Events);
 
     function RTC(args) {
+      this.mediaState = __bind(this.mediaState, this);
+
       this.toggleMuteVideo = __bind(this.toggleMuteVideo, this);
+
+      this.unmuteVideo = __bind(this.unmuteVideo, this);
+
+      this.muteVideo = __bind(this.muteVideo, this);
+
+      this.unmuteAudio = __bind(this.unmuteAudio, this);
+
+      this.muteAudio = __bind(this.muteAudio, this);
 
       this.toggleMuteAudio = __bind(this.toggleMuteAudio, this);
 
@@ -329,6 +339,46 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.isAudioMuted = !bool;
     };
 
+    RTC.prototype.muteAudio = function() {
+      var audioTrack, audioTracks, _i, _len;
+      audioTracks = this.localstream.getAudioTracks();
+      for (_i = 0, _len = audioTracks.length; _i < _len; _i++) {
+        audioTrack = audioTracks[_i];
+        audioTrack.enabled = false;
+      }
+      return this.isAudioMuted = true;
+    };
+
+    RTC.prototype.unmuteAudio = function() {
+      var audioTrack, audioTracks, _i, _len;
+      audioTracks = this.localstream.getAudioTracks();
+      for (_i = 0, _len = audioTracks.length; _i < _len; _i++) {
+        audioTrack = audioTracks[_i];
+        audioTrack.enabled = true;
+      }
+      return this.isAudioMuted = false;
+    };
+
+    RTC.prototype.muteVideo = function() {
+      var videoTrack, videoTracks, _i, _len;
+      videoTracks = this.localstream.getVideoTracks();
+      for (_i = 0, _len = videoTracks.length; _i < _len; _i++) {
+        videoTrack = videoTracks[_i];
+        videoTrack.enabled = false;
+      }
+      return this.isVideoMuted = true;
+    };
+
+    RTC.prototype.unmuteVideo = function() {
+      var videoTrack, videoTracks, _i, _len;
+      videoTracks = this.localstream.getVideoTracks();
+      for (_i = 0, _len = videoTracks.length; _i < _len; _i++) {
+        videoTrack = videoTracks[_i];
+        videoTrack.enabled = true;
+      }
+      return this.isVideoMuted = false;
+    };
+
     RTC.prototype.toggleMuteVideo = function() {
       var bool, videoTrack, videoTracks, _i, _len;
       videoTracks = this.localstream.getVideoTracks();
@@ -349,6 +399,13 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         videoTrack.enabled = bool;
       }
       return this.isVideoMuted = !bool;
+    };
+
+    RTC.prototype.mediaState = function() {
+      return {
+        video: !this.isVideoMuted,
+        audio: !this.isAudioMuted
+      };
     };
 
     return RTC;
@@ -1107,6 +1164,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             _this.info("HANGING UP", message);
             _this.info("Call ended", message);
+            _this.rtc.close();
             return _this.setState(3, message);
         }
       };
@@ -1462,6 +1520,16 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     function API(options) {
       this.attachStream = __bind(this.attachStream, this);
 
+      this.mediaState = __bind(this.mediaState, this);
+
+      this.unmuteAudio = __bind(this.unmuteAudio, this);
+
+      this.muteAudio = __bind(this.muteAudio, this);
+
+      this.unmuteVideo = __bind(this.unmuteVideo, this);
+
+      this.muteVideo = __bind(this.muteVideo, this);
+
       this.toggleMuteAudio = __bind(this.toggleMuteAudio, this);
 
       this.toggleMuteVideo = __bind(this.toggleMuteVideo, this);
@@ -1534,6 +1602,26 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     API.prototype.toggleMuteAudio = function() {
       return this.sipStack.rtc.toggleMuteAudio();
+    };
+
+    API.prototype.muteVideo = function() {
+      return this.sipStack.rtc.muteVideo();
+    };
+
+    API.prototype.unmuteVideo = function() {
+      return this.sipStack.rtc.unmuteVideo();
+    };
+
+    API.prototype.muteAudio = function() {
+      return this.sipStack.rtc.muteAudio();
+    };
+
+    API.prototype.unmuteAudio = function() {
+      return this.sipStack.rtc.unmuteAudio();
+    };
+
+    API.prototype.mediaState = function() {
+      return this.sipStack.rtc.mediaState();
     };
 
     API.prototype.attachStream = function($d, stream) {

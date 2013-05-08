@@ -49,7 +49,22 @@ class API extends Spine.Controller
 		@sipStack.rtc.toggleMuteVideo()
 
 	toggleMuteAudio: =>
-		@sipStack.rtc.toggleMuteAudio()	
+		@sipStack.rtc.toggleMuteAudio()
+
+	muteVideo: =>
+		@sipStack.rtc.muteVideo()
+
+	unmuteVideo: =>
+		@sipStack.rtc.unmuteVideo()
+	
+	muteAudio: =>
+		@sipStack.rtc.muteAudio()
+
+	unmuteAudio: =>
+		@sipStack.rtc.unmuteAudio()
+
+	mediaState: =>
+		@sipStack.rtc.mediaState()	
 
 	attachStream: ($d, stream) =>
 		@sipStack.rtc.attachStream $d, stream

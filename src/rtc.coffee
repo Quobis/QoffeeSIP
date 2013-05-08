@@ -241,7 +241,27 @@ class RTC extends Spine.Module
 			console.log "[MEDIA] Audio muted."
 
 		audioTrack.enabled = bool for audioTrack in audioTracks
-		@isAudioMuted = not bool;
+		@isAudioMuted = not bool
+
+	muteAudio: () =>
+		audioTracks = @localstream.getAudioTracks()
+		audioTrack.enabled = false for audioTrack in audioTracks
+		@isAudioMuted = true
+
+	unmuteAudio: () =>
+		audioTracks = @localstream.getAudioTracks()
+		audioTrack.enabled = true for audioTrack in audioTracks
+		@isAudioMuted = false
+
+	muteVideo: () =>
+		videoTracks = @localstream.getVideoTracks()
+		videoTrack.enabled = false for videoTrack in videoTracks
+		@isVideoMuted = true
+
+	unmuteVideo: () =>
+		videoTracks = @localstream.getVideoTracks()
+		videoTrack.enabled = true for videoTrack in videoTracks
+		@isVideoMuted = false
 
 	toggleMuteVideo: () =>
 		# Call the getVideoTracks method via "adapter.js".
@@ -262,5 +282,7 @@ class RTC extends Spine.Module
 		videoTrack.enabled = bool for videoTrack in videoTracks
 		@isVideoMuted = not bool;
 
+	mediaState: () =>
+		video: not @isVideoMuted, audio: not @isAudioMuted
 
 window.RTC = RTC
