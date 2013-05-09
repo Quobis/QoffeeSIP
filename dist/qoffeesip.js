@@ -81,6 +81,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (this.turnServer != null) {
         this.iceServers.push(this.turnServer);
       }
+      this.isVideoActive = false;
+      this.isAudioActive = false;
     }
 
     RTC.prototype.browserSupport = function() {
@@ -142,7 +144,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     RTC.prototype.start = function() {
       console.log("PeerConnection starting");
-      this.noMoreCandidates = false || (this.browser === "firefox");
+      this.noMoreCandidates = this.browser === "firefox";
       return this.createPeerConnection();
     };
 
@@ -208,13 +210,14 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         return this.attachStream(this.$dom1, this.localstream);
       } else {
         gumSuccess = function(stream) {
+          var _ref;
           _this.localstream = stream;
           console.log("[INFO] getUserMedia successed");
-          console.log(stream);
           _this.pc.addStream(_this.localstream);
           _this.attachStream(_this.$dom1, _this.localstream);
           _this.trigger("localstream", _this.localstream);
-          return console.log("localstream", _this.localstream);
+          console.log("localstream", _this.localstream);
+          return _ref = [stream.getVideoTracks().length > 1, stream.getAudioTracks().length > 1], _this.isVideoActive = _ref[0], _this.isAudioActive = _ref[1], _ref;
         };
         gumFail = function(error) {
           console.error(error);
@@ -270,18 +273,13 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     RTC.prototype.receive = function(sdp, type, callback) {
       var description, success,
         _this = this;
-      if (callback == null) {
-        callback = function() {
-          return null;
-        };
-      }
       success = function() {
         console.log("[INFO] Remote description setted.");
         console.log("[INFO] localDescription:");
         console.log(_this.pc.localDescription);
         console.log("[INFO] remotelocalDescription:");
         console.log(_this.pc.remoteDescription);
-        return callback();
+        return typeof callback === "function" ? callback() : void 0;
       };
       description = new this.RTCSessionDescription({
         type: type,
@@ -320,12 +318,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     RTC.prototype.toggleMuteAudio = function() {
       var audioTrack, audioTracks, bool, _i, _len;
       audioTracks = this.localstream.getAudioTracks();
-      console.log(audioTracks);
       if (audioTracks.length === 0) {
         console.log("[MEDIA] No local audio available.");
         return;
       }
-      if (this.isAudioMuted) {
+      if (this.isAudioActive) {
         bool = true;
         console.log("[MEDIA] Audio unmuted.");
       } else {
@@ -336,7 +333,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         audioTrack = audioTracks[_i];
         audioTrack.enabled = bool;
       }
-      return this.isAudioMuted = !bool;
+      return this.isAudioActive = !bool;
     };
 
     RTC.prototype.muteAudio = function() {
@@ -346,7 +343,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         audioTrack = audioTracks[_i];
         audioTrack.enabled = false;
       }
-      return this.isAudioMuted = true;
+      return this.isAudioActive = true;
     };
 
     RTC.prototype.unmuteAudio = function() {
@@ -356,7 +353,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         audioTrack = audioTracks[_i];
         audioTrack.enabled = true;
       }
-      return this.isAudioMuted = false;
+      return this.isAudioActive = false;
     };
 
     RTC.prototype.muteVideo = function() {
@@ -366,7 +363,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         videoTrack = videoTracks[_i];
         videoTrack.enabled = false;
       }
-      return this.isVideoMuted = true;
+      return this.isVideoActive = true;
     };
 
     RTC.prototype.unmuteVideo = function() {
@@ -376,18 +373,17 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         videoTrack = videoTracks[_i];
         videoTrack.enabled = true;
       }
-      return this.isVideoMuted = false;
+      return this.isVideoActive = false;
     };
 
     RTC.prototype.toggleMuteVideo = function() {
       var bool, videoTrack, videoTracks, _i, _len;
       videoTracks = this.localstream.getVideoTracks();
-      console.log(videoTracks);
       if (videoTracks.length === 0) {
         console.log("[MEDIA] No local audio available.");
         return;
       }
-      if (this.isVideoMuted) {
+      if (this.isVideoActive) {
         bool = true;
         console.log("Video unmuted.");
       } else {
@@ -398,13 +394,13 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         videoTrack = videoTracks[_i];
         videoTrack.enabled = bool;
       }
-      return this.isVideoMuted = !bool;
+      return this.isVideoActive = !bool;
     };
 
     RTC.prototype.mediaState = function() {
       return {
-        video: !this.isVideoMuted,
-        audio: !this.isAudioMuted
+        video: !Boolean(this.isVideoActive),
+        audio: !Boolean(this.isAudioActive)
       };
     };
 

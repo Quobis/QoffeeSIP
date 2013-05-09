@@ -23,6 +23,8 @@ class RTC extends Spine.Module
 		@iceServers = []
 		@iceServers.push @stunServer if @stunServer?
 		@iceServers.push @turnServer if @turnServer?
+		@isVideoActive = false
+		@isAudioActive = false
 
 	# Set some object attributes dependeing on browser.
 	browserSupport: () =>
@@ -62,9 +64,9 @@ class RTC extends Spine.Module
 			# The representation of tracks in a stream is changed in M26.
 			# Unify them for earlier Chrome versions in the coexisting period.
 			if not webkitMediaStream::getVideoTracks
-				webkitMediaStream::getVideoTracks = () -> @videoTracks;
+				webkitMediaStream::getVideoTracks = () -> @videoTracks
 			if not webkitMediaStream::getAudioTracks
-				webkitMediaStream::getAudioTracks = () -> @audioTracks;
+				webkitMediaStream::getAudioTracks = () -> @audioTracks
 
 			# New syntax of getXXXStreams method in M26.
 			if not webkitRTCPeerConnection::getLocalStreams
@@ -74,7 +76,7 @@ class RTC extends Spine.Module
 	start: () =>
 		console.log "PeerConnection starting"
 		# Firefox does not provide *onicecandidate* callback.
-		@noMoreCandidates = false or (@browser is "firefox")
+		@noMoreCandidates = @browser is "firefox"
 		@createPeerConnection()
 
 	createPeerConnection: =>
@@ -143,6 +145,7 @@ class RTC extends Spine.Module
 				# to show a popup telling "Media got".
 				@trigger "localstream", @localstream
 				console.log "localstream", @localstream
+				[@isVideoActive, @isAudioActive] = [stream.getVideoTracks().length > 1, stream.getAudioTracks().length > 1]
 			gumFail = (error) =>
 				console.error error
 				console.error "GetUserMedia error"
@@ -231,7 +234,7 @@ class RTC extends Spine.Module
 			console.log "[MEDIA] No local audio available."
 			return
 
-		if @isAudioMuted
+		if @isAudioActive
 			bool = true
 			console.log "[MEDIA] Audio unmuted."
 		else
@@ -239,27 +242,27 @@ class RTC extends Spine.Module
 			console.log "[MEDIA] Audio muted."
 
 		audioTrack.enabled = bool for audioTrack in audioTracks
-		@isAudioMuted      = not bool
+		@isAudioActive      = not bool
 
 	muteAudio: () =>
 		audioTracks        = @localstream.getAudioTracks()
 		audioTrack.enabled = false for audioTrack in audioTracks
-		@isAudioMuted      = true
+		@isAudioActive     = true
 
 	unmuteAudio: () =>
 		audioTracks        = @localstream.getAudioTracks()
 		audioTrack.enabled = true for audioTrack in audioTracks
-		@isAudioMuted      = false
+		@isAudioActive      = false
 
 	muteVideo: () =>
 		videoTracks        = @localstream.getVideoTracks()
 		videoTrack.enabled = false for videoTrack in videoTracks
-		@isVideoMuted      = true
+		@isVideoActive     = true
 
 	unmuteVideo: () =>
 		videoTracks        = @localstream.getVideoTracks()
 		videoTrack.enabled = true for videoTrack in videoTracks
-		@isVideoMuted      = false
+		@isVideoActive     = false
 
 	toggleMuteVideo: () =>
 		# Call the getVideoTracks method via "adapter.js".
@@ -269,7 +272,7 @@ class RTC extends Spine.Module
 			console.log "[MEDIA] No local audio available."
 			return
 
-		if @isVideoMuted
+		if @isVideoActive
 			bool = true
 			console.log "Video unmuted."
 		else
@@ -277,9 +280,9 @@ class RTC extends Spine.Module
 			console.log "Video muted."
 
 		videoTrack.enabled = bool for videoTrack in videoTracks
-		@isVideoMuted      = not bool;
+		@isVideoActive     = not bool
 
 	mediaState: () =>
-		video: not @isVideoMuted, audio: not @isAudioMuted
+		video: not Boolean(@isVideoActive), audio: not Boolean(@isAudioActive)
 
 window.RTC = RTC
