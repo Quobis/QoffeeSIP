@@ -23,8 +23,8 @@ class RTC extends Spine.Module
 		@iceServers = []
 		@iceServers.push @stunServer if @stunServer?
 		@iceServers.push @turnServer if @turnServer?
-		@isVideoActive = false
-		@isAudioActive = false
+		@isVideoActive = true
+		@isAudioActive = true
 
 	# Set some object attributes dependeing on browser.
 	browserSupport: () =>
@@ -145,7 +145,7 @@ class RTC extends Spine.Module
 				# to show a popup telling "Media got".
 				@trigger "localstream", @localstream
 				console.log "localstream", @localstream
-				[@isVideoActive, @isAudioActive] = [stream.getVideoTracks().length > 1, stream.getAudioTracks().length > 1]
+				[@isVideoActive, @isAudioActive] = [stream.getVideoTracks().length > 0, stream.getAudioTracks().length > 0]
 			gumFail = (error) =>
 				console.error error
 				console.error "GetUserMedia error"
@@ -235,34 +235,29 @@ class RTC extends Spine.Module
 			return
 
 		if @isAudioActive
-			bool = true
-			console.log "[MEDIA] Audio unmuted."
+			@muteAudio()
 		else
-			bool = false
-			console.log "[MEDIA] Audio muted."
-
-		audioTrack.enabled = bool for audioTrack in audioTracks
-		@isAudioActive      = not bool
+			@unmuteAudio()
 
 	muteAudio: () =>
 		audioTracks        = @localstream.getAudioTracks()
 		audioTrack.enabled = false for audioTrack in audioTracks
-		@isAudioActive     = true
+		@isAudioActive     = false
 
 	unmuteAudio: () =>
 		audioTracks        = @localstream.getAudioTracks()
 		audioTrack.enabled = true for audioTrack in audioTracks
-		@isAudioActive      = false
+		@isAudioActive     = true
 
 	muteVideo: () =>
 		videoTracks        = @localstream.getVideoTracks()
 		videoTrack.enabled = false for videoTrack in videoTracks
-		@isVideoActive     = true
+		@isVideoActive     = false
 
 	unmuteVideo: () =>
 		videoTracks        = @localstream.getVideoTracks()
 		videoTrack.enabled = true for videoTrack in videoTracks
-		@isVideoActive     = false
+		@isVideoActive     = true
 
 	toggleMuteVideo: () =>
 		# Call the getVideoTracks method via "adapter.js".
@@ -273,16 +268,11 @@ class RTC extends Spine.Module
 			return
 
 		if @isVideoActive
-			bool = true
-			console.log "Video unmuted."
+			@muteVideo()
 		else
-			bool = false
-			console.log "Video muted."
-
-		videoTrack.enabled = bool for videoTrack in videoTracks
-		@isVideoActive     = not bool
+			@unmuteVideo()
 
 	mediaState: () =>
-		video: not Boolean(@isVideoActive), audio: not Boolean(@isAudioActive)
+		video: Boolean(@isVideoActive), audio: Boolean(@isAudioActive)
 
 window.RTC = RTC

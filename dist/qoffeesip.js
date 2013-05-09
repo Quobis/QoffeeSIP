@@ -81,8 +81,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (this.turnServer != null) {
         this.iceServers.push(this.turnServer);
       }
-      this.isVideoActive = false;
-      this.isAudioActive = false;
+      this.isVideoActive = true;
+      this.isAudioActive = true;
     }
 
     RTC.prototype.browserSupport = function() {
@@ -217,7 +217,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           _this.attachStream(_this.$dom1, _this.localstream);
           _this.trigger("localstream", _this.localstream);
           console.log("localstream", _this.localstream);
-          return _ref = [stream.getVideoTracks().length > 1, stream.getAudioTracks().length > 1], _this.isVideoActive = _ref[0], _this.isAudioActive = _ref[1], _ref;
+          return _ref = [stream.getVideoTracks().length > 0, stream.getAudioTracks().length > 0], _this.isVideoActive = _ref[0], _this.isAudioActive = _ref[1], _ref;
         };
         gumFail = function(error) {
           console.error(error);
@@ -316,24 +316,17 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     RTC.prototype.toggleMuteAudio = function() {
-      var audioTrack, audioTracks, bool, _i, _len;
+      var audioTracks;
       audioTracks = this.localstream.getAudioTracks();
       if (audioTracks.length === 0) {
         console.log("[MEDIA] No local audio available.");
         return;
       }
       if (this.isAudioActive) {
-        bool = true;
-        console.log("[MEDIA] Audio unmuted.");
+        return this.muteAudio();
       } else {
-        bool = false;
-        console.log("[MEDIA] Audio muted.");
+        return this.unmuteAudio();
       }
-      for (_i = 0, _len = audioTracks.length; _i < _len; _i++) {
-        audioTrack = audioTracks[_i];
-        audioTrack.enabled = bool;
-      }
-      return this.isAudioActive = !bool;
     };
 
     RTC.prototype.muteAudio = function() {
@@ -343,7 +336,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         audioTrack = audioTracks[_i];
         audioTrack.enabled = false;
       }
-      return this.isAudioActive = true;
+      return this.isAudioActive = false;
     };
 
     RTC.prototype.unmuteAudio = function() {
@@ -353,7 +346,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         audioTrack = audioTracks[_i];
         audioTrack.enabled = true;
       }
-      return this.isAudioActive = false;
+      return this.isAudioActive = true;
     };
 
     RTC.prototype.muteVideo = function() {
@@ -363,7 +356,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         videoTrack = videoTracks[_i];
         videoTrack.enabled = false;
       }
-      return this.isVideoActive = true;
+      return this.isVideoActive = false;
     };
 
     RTC.prototype.unmuteVideo = function() {
@@ -373,34 +366,27 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         videoTrack = videoTracks[_i];
         videoTrack.enabled = true;
       }
-      return this.isVideoActive = false;
+      return this.isVideoActive = true;
     };
 
     RTC.prototype.toggleMuteVideo = function() {
-      var bool, videoTrack, videoTracks, _i, _len;
+      var videoTracks;
       videoTracks = this.localstream.getVideoTracks();
       if (videoTracks.length === 0) {
         console.log("[MEDIA] No local audio available.");
         return;
       }
       if (this.isVideoActive) {
-        bool = true;
-        console.log("Video unmuted.");
+        return this.muteVideo();
       } else {
-        bool = false;
-        console.log("Video muted.");
+        return this.unmuteVideo();
       }
-      for (_i = 0, _len = videoTracks.length; _i < _len; _i++) {
-        videoTrack = videoTracks[_i];
-        videoTrack.enabled = bool;
-      }
-      return this.isVideoActive = !bool;
     };
 
     RTC.prototype.mediaState = function() {
       return {
-        video: !Boolean(this.isVideoActive),
-        audio: !Boolean(this.isAudioActive)
+        video: Boolean(this.isVideoActive),
+        audio: Boolean(this.isAudioActive)
       };
     };
 
