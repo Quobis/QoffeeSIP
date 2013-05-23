@@ -15,8 +15,10 @@ class RTC extends Spine.Module
 		if @mediaElements?
 			@$dom1 = @mediaElements.localMedia
 			@$dom2 = @mediaElements.remoteMedia
+			@$dom1[0].volume = 0
 		else
 			@$dom1 = @$dom2 = null
+
 
 		@mediaConstraints ?= {audio: true, video: true}
 		@browserSupport()

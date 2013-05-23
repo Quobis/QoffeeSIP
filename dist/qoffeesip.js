@@ -64,6 +64,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (this.mediaElements != null) {
         this.$dom1 = this.mediaElements.localMedia;
         this.$dom2 = this.mediaElements.remoteMedia;
+        this.$dom1[0].volume = 0;
       } else {
         this.$dom1 = this.$dom2 = null;
       }
