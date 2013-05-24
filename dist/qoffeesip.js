@@ -17,7 +17,17 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     RTC.include(Spine.Events);
 
     function RTC(args) {
+      this.mediaState = __bind(this.mediaState, this);
+
       this.toggleMuteVideo = __bind(this.toggleMuteVideo, this);
+
+      this.unmuteVideo = __bind(this.unmuteVideo, this);
+
+      this.muteVideo = __bind(this.muteVideo, this);
+
+      this.unmuteAudio = __bind(this.unmuteAudio, this);
+
+      this.muteAudio = __bind(this.muteAudio, this);
 
       this.toggleMuteAudio = __bind(this.toggleMuteAudio, this);
 
@@ -54,6 +64,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (this.mediaElements != null) {
         this.$dom1 = this.mediaElements.localMedia;
         this.$dom2 = this.mediaElements.remoteMedia;
+        this.$dom1[0].volume = 0;
       } else {
         this.$dom1 = this.$dom2 = null;
       }
@@ -71,6 +82,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (this.turnServer != null) {
         this.iceServers.push(this.turnServer);
       }
+      this.isVideoActive = true;
+      this.isAudioActive = true;
     }
 
     RTC.prototype.browserSupport = function() {
@@ -132,7 +145,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     RTC.prototype.start = function() {
       console.log("PeerConnection starting");
-      this.noMoreCandidates = false || (this.browser === "firefox");
+      this.noMoreCandidates = this.browser === "firefox";
       return this.createPeerConnection();
     };
 
@@ -198,13 +211,14 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         return this.attachStream(this.$dom1, this.localstream);
       } else {
         gumSuccess = function(stream) {
+          var _ref;
           _this.localstream = stream;
           console.log("[INFO] getUserMedia successed");
-          console.log(stream);
           _this.pc.addStream(_this.localstream);
           _this.attachStream(_this.$dom1, _this.localstream);
           _this.trigger("localstream", _this.localstream);
-          return console.log("localstream", _this.localstream);
+          console.log("localstream", _this.localstream);
+          return _ref = [stream.getVideoTracks().length > 0, stream.getAudioTracks().length > 0], _this.isVideoActive = _ref[0], _this.isAudioActive = _ref[1], _ref;
         };
         gumFail = function(error) {
           console.error(error);
@@ -260,18 +274,13 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     RTC.prototype.receive = function(sdp, type, callback) {
       var description, success,
         _this = this;
-      if (callback == null) {
-        callback = function() {
-          return null;
-        };
-      }
       success = function() {
         console.log("[INFO] Remote description setted.");
         console.log("[INFO] localDescription:");
         console.log(_this.pc.localDescription);
         console.log("[INFO] remotelocalDescription:");
         console.log(_this.pc.remoteDescription);
-        return callback();
+        return typeof callback === "function" ? callback() : void 0;
       };
       description = new this.RTCSessionDescription({
         type: type,
@@ -308,47 +317,78 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     RTC.prototype.toggleMuteAudio = function() {
-      var audioTrack, audioTracks, bool, _i, _len;
+      var audioTracks;
       audioTracks = this.localstream.getAudioTracks();
-      console.log(audioTracks);
       if (audioTracks.length === 0) {
         console.log("[MEDIA] No local audio available.");
         return;
       }
-      if (this.isAudioMuted) {
-        bool = true;
-        console.log("[MEDIA] Audio unmuted.");
+      if (this.isAudioActive) {
+        return this.muteAudio();
       } else {
-        bool = false;
-        console.log("[MEDIA] Audio muted.");
+        return this.unmuteAudio();
       }
+    };
+
+    RTC.prototype.muteAudio = function() {
+      var audioTrack, audioTracks, _i, _len;
+      audioTracks = this.localstream.getAudioTracks();
       for (_i = 0, _len = audioTracks.length; _i < _len; _i++) {
         audioTrack = audioTracks[_i];
-        audioTrack.enabled = bool;
+        audioTrack.enabled = false;
       }
-      return this.isAudioMuted = !bool;
+      return this.isAudioActive = false;
+    };
+
+    RTC.prototype.unmuteAudio = function() {
+      var audioTrack, audioTracks, _i, _len;
+      audioTracks = this.localstream.getAudioTracks();
+      for (_i = 0, _len = audioTracks.length; _i < _len; _i++) {
+        audioTrack = audioTracks[_i];
+        audioTrack.enabled = true;
+      }
+      return this.isAudioActive = true;
+    };
+
+    RTC.prototype.muteVideo = function() {
+      var videoTrack, videoTracks, _i, _len;
+      videoTracks = this.localstream.getVideoTracks();
+      for (_i = 0, _len = videoTracks.length; _i < _len; _i++) {
+        videoTrack = videoTracks[_i];
+        videoTrack.enabled = false;
+      }
+      return this.isVideoActive = false;
+    };
+
+    RTC.prototype.unmuteVideo = function() {
+      var videoTrack, videoTracks, _i, _len;
+      videoTracks = this.localstream.getVideoTracks();
+      for (_i = 0, _len = videoTracks.length; _i < _len; _i++) {
+        videoTrack = videoTracks[_i];
+        videoTrack.enabled = true;
+      }
+      return this.isVideoActive = true;
     };
 
     RTC.prototype.toggleMuteVideo = function() {
-      var bool, videoTrack, videoTracks, _i, _len;
+      var videoTracks;
       videoTracks = this.localstream.getVideoTracks();
-      console.log(videoTracks);
       if (videoTracks.length === 0) {
         console.log("[MEDIA] No local audio available.");
         return;
       }
-      if (this.isVideoMuted) {
-        bool = true;
-        console.log("Video unmuted.");
+      if (this.isVideoActive) {
+        return this.muteVideo();
       } else {
-        bool = false;
-        console.log("Video muted.");
+        return this.unmuteVideo();
       }
-      for (_i = 0, _len = videoTracks.length; _i < _len; _i++) {
-        videoTrack = videoTracks[_i];
-        videoTrack.enabled = bool;
-      }
-      return this.isVideoMuted = !bool;
+    };
+
+    RTC.prototype.mediaState = function() {
+      return {
+        video: Boolean(this.isVideoActive),
+        audio: Boolean(this.isAudioActive)
+      };
     };
 
     return RTC;
@@ -1107,6 +1147,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             _this.info("HANGING UP", message);
             _this.info("Call ended", message);
+            _this.rtc.close();
             return _this.setState(3, message);
         }
       };
@@ -1219,7 +1260,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n";
       }
       data += "Supported: path, outbound, gruu\r\n";
-      data += "User-Agent: QoffeeSIP 0.5\r\n";
+      data += "User-Agent: QoffeeSIP 0.6\r\n";
       address = (this.hackIpContact && transaction.IP) || transaction.domainName;
       switch (transaction.meth) {
         case "Ringing":
@@ -1462,6 +1503,16 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     function API(options) {
       this.attachStream = __bind(this.attachStream, this);
 
+      this.mediaState = __bind(this.mediaState, this);
+
+      this.unmuteAudio = __bind(this.unmuteAudio, this);
+
+      this.muteAudio = __bind(this.muteAudio, this);
+
+      this.unmuteVideo = __bind(this.unmuteVideo, this);
+
+      this.muteVideo = __bind(this.muteVideo, this);
+
       this.toggleMuteAudio = __bind(this.toggleMuteAudio, this);
 
       this.toggleMuteVideo = __bind(this.toggleMuteVideo, this);
@@ -1534,6 +1585,26 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     API.prototype.toggleMuteAudio = function() {
       return this.sipStack.rtc.toggleMuteAudio();
+    };
+
+    API.prototype.muteVideo = function() {
+      return this.sipStack.rtc.muteVideo();
+    };
+
+    API.prototype.unmuteVideo = function() {
+      return this.sipStack.rtc.unmuteVideo();
+    };
+
+    API.prototype.muteAudio = function() {
+      return this.sipStack.rtc.muteAudio();
+    };
+
+    API.prototype.unmuteAudio = function() {
+      return this.sipStack.rtc.unmuteAudio();
+    };
+
+    API.prototype.mediaState = function() {
+      return this.sipStack.rtc.mediaState();
     };
 
     API.prototype.attachStream = function($d, stream) {

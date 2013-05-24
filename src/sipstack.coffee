@@ -262,7 +262,7 @@ class SipStack extends Spine.Controller
 								clearInterval @t
 								message = @createMessage transaction
 								@send message
-								@setState 0, message # Offline
+								@setState 0, message # Offline							
 							@gruu = message.gruu
 						# Unsusccessful register.
 						when 401
@@ -416,7 +416,9 @@ class SipStack extends Spine.Controller
 					return if not @getTransaction message
 					@info "HANGING UP", message
 					@info "Call ended", message
+					@rtc.close()
 					@setState 3, message # Registered
+
 
 			# # End of Finite State Machine
 
@@ -537,7 +539,7 @@ class SipStack extends Spine.Controller
 		data += "Supported: path, outbound, gruu\r\n"
 
 		# User-Agent
-		data += "User-Agent: QoffeeSIP 0.5\r\n"
+		data += "User-Agent: QoffeeSIP 0.6\r\n"
 
 		# Contact
 		# Addres is a randomIP when hackIpContact is true, else, a randomDomain.
