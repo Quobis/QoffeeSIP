@@ -1385,6 +1385,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     SipStack.prototype.hangup = function(branch) {
       var busy, bye, cancel, invite, swap;
+      this.rtc.unbind("sdp");
       swap = function(d, p1, p2) {
         var _ref;
         return _ref = [d[p2], d[p1]], d[p1] = _ref[0], d[p2] = _ref[1], _ref;

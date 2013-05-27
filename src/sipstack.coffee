@@ -635,6 +635,10 @@ class SipStack extends Spine.Controller
 		@setState 4, ok
 
 	hangup: (branch) =>
+		# It is possible to call hangup before the INVITE has been sent (PeerConnection 
+		# is still getting ICE candidates), so we must unbind "sdp" event to avoid 
+		# sending CANCEL before INVITE.
+		@rtc.unbind "sdp"
 
 		# If user is the callee, fromTag of "INVITE" belongs to caller, ext2 in this method.
 		# Tags must be swapped.
