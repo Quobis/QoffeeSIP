@@ -99,7 +99,7 @@ class Parser
 			From:
 				(\s?".+"\s?)?
 				\s*
-				<?sips?:((.+)@[A-z0-9\.]+)>?(;tag=(.+))?
+				<?sips?:((.+)@[A-z0-9\.]+(\:[0-9]+)?>?(;tag=(.+))?
 			///i
 		return @getRegExprResult pkt, lineFromRE, {from: 2, ext: 3, fromTag: 5}
 
