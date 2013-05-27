@@ -513,7 +513,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     Parser.parseFrom = function(pkt) {
       var lineFromRE;
-      lineFromRE = /From:(\s?".+"\s?)?\s*<?sips?:((.+)@[A-z0-9\.]+)>?(;tag=(.+))?/i;
+      lineFromRE = /From:(\s?".+"\s?)?\s*<?sips?:((.+)@[A-z0-9\.]+(\:[0-9]+)?>?(;tag=(.+))?/i;
       return this.getRegExprResult(pkt, lineFromRE, {
         from: 2,
         ext: 3,
@@ -1260,7 +1260,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n";
       }
       data += "Supported: path, outbound, gruu\r\n";
-      data += "User-Agent: QoffeeSIP 0.6\r\n";
+      data += "User-Agent: QoffeeSIP 0.7\r\n";
       address = (this.hackIpContact && transaction.IP) || transaction.domainName;
       switch (transaction.meth) {
         case "Ringing":
