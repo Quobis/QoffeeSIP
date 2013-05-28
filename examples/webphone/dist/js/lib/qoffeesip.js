@@ -64,6 +64,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (this.mediaElements != null) {
         this.$dom1 = this.mediaElements.localMedia;
         this.$dom2 = this.mediaElements.remoteMedia;
+        this.$dom1[0].volume = 0;
       } else {
         this.$dom1 = this.$dom2 = null;
       }
@@ -512,7 +513,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     Parser.parseFrom = function(pkt) {
       var lineFromRE;
-      lineFromRE = /From:(\s?".+"\s?)?\s*<?sips?:((.+)@[A-z0-9\.]+)>?(;tag=(.+))?/i;
+      lineFromRE = /From:(\s?".+"\s?)?\s*<?sips?:((.+)@[A-z0-9\.]+(\:[0-9]+)?)>?(;tag=(.+))?/i;
       return this.getRegExprResult(pkt, lineFromRE, {
         from: 2,
         ext: 3,
@@ -584,7 +585,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     Parser.parseChallenge = function(pkt) {
       var line, lineRe, nonce, nonceRe, realm, realmRe;
       lineRe = /^WWW-Authenticate\:.+$|^Proxy-Authenticate\:.+$/m;
-      realmRe = /realm="(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|(([a-z]+\.)+[a-z]{2,3})|(\w+))"/;
+      realmRe = /realm="(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|(([a-z\-]+\.)+[a-z\-]{2,3})|(\w+))"/;
       nonceRe = /nonce="(.{4,})"/;
       line = lineRe.exec(pkt);
       if (line != null) {
@@ -1164,7 +1165,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     SipStack.prototype.createMessage = function(transaction) {
-      var address, authUri, data, opaque, rr, _i, _len, _ref;
+      var address, authExt, authUri, data, opaque, rr, _i, _len, _ref;
       transaction = new SipTransaction(transaction);
       transaction.uri = "sip:" + transaction.ext + "@" + (this.domain || this.sipServer);
       transaction.uri2 = "sip:" + transaction.ext2 + "@" + (transaction.domain2 || this.sipServer);
@@ -1258,8 +1259,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (transaction.meth === "REGISTER" || transaction.meth === "INVITE") {
         data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n";
       }
-      data += "Supported: path, outbound, gruu\r\n";
-      data += "User-Agent: QoffeeSIP 0.6\r\n";
+      data += "Supported: path, gruu\r\n";
+      data += "User-Agent: QoffeeSIP 0.7\r\n";
       address = (this.hackIpContact && transaction.IP) || transaction.domainName;
       switch (transaction.meth) {
         case "Ringing":
@@ -1315,7 +1316,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           data += "Proxy-Authorization:";
         }
         transaction.response = this.getDigest(transaction);
-        data += " Digest username=\"" + transaction.ext + "\",realm=\"" + transaction.realm + "\",";
+        authExt = transaction.ext;
+        if (transaction.privId) {
+          authExt = transaction.privId;
+        }
+        data += " Digest username=\"" + authExt + "\",realm=\"" + transaction.realm + "\",";
         data += "nonce=\"" + transaction.nonce + "\"," + opaque + "uri=\"" + authUri + "\",response=\"" + transaction.response + "\",algorithm=MD5\r\n";
       }
       switch (transaction.meth) {
@@ -1338,16 +1343,18 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return data;
     };
 
-    SipStack.prototype.register = function(ext, pass, domain) {
+    SipStack.prototype.register = function(ext, pass, domain, privateId) {
       var message, transaction;
       this.ext = ext;
       this.pass = pass;
       this.domain = domain;
+      this.privateId = privateId;
       transaction = new SipTransaction({
         meth: "REGISTER",
         ext: this.ext,
         domain: this.domain,
-        pass: this.pass || ""
+        pass: this.pass || "",
+        privId: this.privateId || ""
       });
       this.addTransaction(transaction);
       this.setState(1, transaction);
@@ -1384,6 +1391,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     SipStack.prototype.hangup = function(branch) {
       var busy, bye, cancel, invite, swap;
+      this.rtc.unbind("sdp");
       swap = function(d, p1, p2) {
         var _ref;
         return _ref = [d[p2], d[p1]], d[p1] = _ref[0], d[p2] = _ref[1], _ref;
@@ -1546,8 +1554,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       });
     }
 
-    API.prototype.register = function(ext, pass, domain) {
-      return this.sipStack.register(ext, pass, domain);
+    API.prototype.register = function(ext, pass, domain, privateId) {
+      return this.sipStack.register(ext, pass, domain, privateId);
     };
 
     API.prototype.call = function(ext, domain) {

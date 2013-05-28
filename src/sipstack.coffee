@@ -536,7 +536,7 @@ class SipStack extends Spine.Controller
 			data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n"
 
 		# Supported
-		data += "Supported: path, outbound, gruu\r\n"
+		data += "Supported: path, gruu\r\n"
 
 		# User-Agent
 		data += "User-Agent: QoffeeSIP 0.7\r\n"
@@ -586,8 +586,11 @@ class SipStack extends Spine.Controller
 				authUri = transaction.uri2
 				data += "Proxy-Authorization:"
 			transaction.response = @getDigest transaction
-			data += " Digest username=\"#{transaction.ext}\",realm=\"#{transaction.realm}\","
-			data += "nonce=\"#{transaction.nonce}\",#{opaque}uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5\r\n"
+			authExt = transaction.ext
+			# if IMS
+			authExt = transaction.privId if transaction.privId
+			data += " Digest username=\"#{authExt}\",realm=\"#{transaction.realm}\","
+			data += "nonce=\"#{transaction.nonce}\",#{opaque}uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5\r\n"		
 		
 					
 		# Content-type and content
@@ -602,11 +605,11 @@ class SipStack extends Spine.Controller
 				data += "Content-Type: text/plain\r\n\r\n"
 				data += transaction.content
 			else
-				data += "Content-Length: 0\r\n\r\n"		
+				data += "Content-Length: 0\r\n\r\n"	
 		return data
 
-	register: (@ext, @pass, @domain) =>
-		transaction = new SipTransaction {meth: "REGISTER", ext: @ext, domain: @domain, pass: @pass or ""}
+	register: (@ext, @pass, @domain, @privateId) =>
+		transaction = new SipTransaction {meth: "REGISTER", ext: @ext, domain: @domain, pass: @pass or "", privId: @privateId or ""}
 		@addTransaction transaction
 		@setState 1, transaction
 		message = @createMessage transaction

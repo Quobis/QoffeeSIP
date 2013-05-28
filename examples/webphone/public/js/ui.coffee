@@ -6,7 +6,7 @@
 ##
 
 class User extends Spine.Model
-	@configure "User", "user", "password", "sipServer", "turnServer", "turnCredential", "stunServer", "audioSession"
+	@configure "User", "user", "password", "sipServer", "userPriv", "turnServer", "turnCredential", "stunServer", "audioSession"
 	@extend Spine.Model.Local
 
 # Class to manage UI.
@@ -108,6 +108,7 @@ class UI extends Spine.Controller
 			$("#user-reg").val user.user
 			$("#pass-reg").val user.password
 			$("#server-reg").val user.sipServer
+			$("#user-reg-priv").val user.userPriv
 			$("#only-audio").attr("checked", true) if user.audioSession
 			$("#stun-server").val user.stunServer
 			$("#turn-server").val user.turnServer
@@ -211,11 +212,13 @@ class UI extends Spine.Controller
 		@$expertOptions.toggleClass "hidden"
 
 	registerSubmit: (e) =>
+
 		# Save user in local storage.
 		User.create
 			user: $("#user-reg").val()
 			password: $("#pass-reg").val()
 			sipServer: $("#server-reg").val()
+			userPriv: $("#user-reg-priv").val()
 			audioSession: $("#only-audio").is(":checked")
 			stunServer: $("#stun-server").val()
 			turnServer: $("#stun-server").val()
@@ -225,6 +228,7 @@ class UI extends Spine.Controller
 		# Trick to speed up tests.
 		@register.pass = $("#pass-reg").val() or @register.ext
 		server         = $("#server-reg").val()
+		@register.userPriv = $("#user-reg-priv").val()
 		onlyAudio      = $("#only-audio").is(":checked")
 		stunServer     = url: "stun:" + $("#stun-server").val()
 		turnServer     = 
@@ -258,7 +262,8 @@ class UI extends Spine.Controller
 		onopen = =>
 			@api.on "new-state", @newState
 			@api.on "instant-message", @renderInstantMessage
-			@api.register @register.ext, @register.pass, @register.domain
+
+			@api.register @register.ext, @register.pass, @register.domain, @register.userPriv
 			@$registerButton.addClass "disabled"
 			@$registerButton.addClass "disabled"
 

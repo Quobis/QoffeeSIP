@@ -19,9 +19,9 @@ class API extends Spine.Controller
 			mediaElements: @mediaElements
 			onopen: @onopen or -> false
 
-	# domain is opcional
-	register: (ext, pass, domain) =>
-		@sipStack.register ext, pass, domain
+	# domain and privateId are optional
+	register: (ext, pass, domain, privateId) =>
+		@sipStack.register ext, pass, domain, privateId
 
 	# domain is opcional
 	call: (ext, domain) =>

@@ -145,7 +145,7 @@ class Parser
 		# security checks
 		realmRe  = 
 			///
-			realm="(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|(([a-z]+\.)+[a-z]{2,3})|(\w+))"
+			realm="(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|(([a-z\-]+\.)+[a-z\-]{2,3})|(\w+))"
 			///
 		# Too much restrictive, Kamailio includes reserverd characters
 		# like "/" or "+" in nonces. :|

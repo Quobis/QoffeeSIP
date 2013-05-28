@@ -34,7 +34,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return _ref;
     }
 
-    User.configure("User", "user", "password", "sipServer", "turnServer", "turnCredential", "stunServer", "audioSession");
+    User.configure("User", "user", "password", "sipServer", "userPriv", "turnServer", "turnCredential", "stunServer", "audioSession");
 
     User.extend(Spine.Model.Local);
 
@@ -163,6 +163,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         $("#user-reg").val(user.user);
         $("#pass-reg").val(user.password);
         $("#server-reg").val(user.sipServer);
+        $("#user-reg-priv").val(user.userPriv);
         if (user.audioSession) {
           $("#only-audio").attr("checked", true);
         }
@@ -294,6 +295,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         user: $("#user-reg").val(),
         password: $("#pass-reg").val(),
         sipServer: $("#server-reg").val(),
+        userPriv: $("#user-reg-priv").val(),
         audioSession: $("#only-audio").is(":checked"),
         stunServer: $("#stun-server").val(),
         turnServer: $("#stun-server").val(),
@@ -302,6 +304,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       _ref1 = $("#user-reg").val().split("@"), this.register.ext = _ref1[0], this.register.domain = _ref1[1];
       this.register.pass = $("#pass-reg").val() || this.register.ext;
       server = $("#server-reg").val();
+      this.register.userPriv = $("#user-reg-priv").val();
       onlyAudio = $("#only-audio").is(":checked");
       stunServer = {
         url: "stun:" + $("#stun-server").val()
@@ -332,7 +335,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       onopen = function() {
         _this.api.on("new-state", _this.newState);
         _this.api.on("instant-message", _this.renderInstantMessage);
-        _this.api.register(_this.register.ext, _this.register.pass, _this.register.domain);
+        _this.api.register(_this.register.ext, _this.register.pass, _this.register.domain, _this.register.userPriv);
         _this.$registerButton.addClass("disabled");
         return _this.$registerButton.addClass("disabled");
       };
