@@ -149,13 +149,19 @@ class Parser
 			///
 		# Too much restrictive, Kamailio includes reserverd characters
 		# like "/" or "+" in nonces. :|
-		nonceRe  = /nonce="(.{4,})"/
-		line = (lineRe.exec pkt)
+		nonceRe  = /nonce="([^"]{4,})"/
+		opaqueRe = /opaque="([^"]{4,})"/
+		qopRe    = /qop="([^"]{4,})"/
+		
+		line     = (lineRe.exec pkt)
 		if line?
-			line = line[0]
-			realm = realmRe.exec(line)[1]
-			nonce = nonceRe.exec(line)[1]
-		return {realm, nonce}
+			line   = line[0]
+			realm  = realmRe.exec(line)?[1]
+			nonce  = nonceRe.exec(line)?[1]
+			opaque = opaqueRe.exec(line)?[1]
+			qop    = qopRe.exec(line)?[1]
+
+		return {realm, nonce, opaque, qop}
 
 	# Expires parser
 	@parseExpires: (pkt) ->

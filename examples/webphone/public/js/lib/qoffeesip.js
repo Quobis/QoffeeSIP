@@ -17,7 +17,17 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     RTC.include(Spine.Events);
 
     function RTC(args) {
+      this.mediaState = __bind(this.mediaState, this);
+
       this.toggleMuteVideo = __bind(this.toggleMuteVideo, this);
+
+      this.unmuteVideo = __bind(this.unmuteVideo, this);
+
+      this.muteVideo = __bind(this.muteVideo, this);
+
+      this.unmuteAudio = __bind(this.unmuteAudio, this);
+
+      this.muteAudio = __bind(this.muteAudio, this);
 
       this.toggleMuteAudio = __bind(this.toggleMuteAudio, this);
 
@@ -54,6 +64,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (this.mediaElements != null) {
         this.$dom1 = this.mediaElements.localMedia;
         this.$dom2 = this.mediaElements.remoteMedia;
+        this.$dom1[0].volume = 0;
       } else {
         this.$dom1 = this.$dom2 = null;
       }
@@ -71,6 +82,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (this.turnServer != null) {
         this.iceServers.push(this.turnServer);
       }
+      this.isVideoActive = true;
+      this.isAudioActive = true;
     }
 
     RTC.prototype.browserSupport = function() {
@@ -132,7 +145,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     RTC.prototype.start = function() {
       console.log("PeerConnection starting");
-      this.noMoreCandidates = false || (this.browser === "firefox");
+      this.noMoreCandidates = this.browser === "firefox";
       return this.createPeerConnection();
     };
 
@@ -198,13 +211,14 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         return this.attachStream(this.$dom1, this.localstream);
       } else {
         gumSuccess = function(stream) {
+          var _ref;
           _this.localstream = stream;
           console.log("[INFO] getUserMedia successed");
-          console.log(stream);
           _this.pc.addStream(_this.localstream);
           _this.attachStream(_this.$dom1, _this.localstream);
           _this.trigger("localstream", _this.localstream);
-          return console.log("localstream", _this.localstream);
+          console.log("localstream", _this.localstream);
+          return _ref = [stream.getVideoTracks().length > 0, stream.getAudioTracks().length > 0], _this.isVideoActive = _ref[0], _this.isAudioActive = _ref[1], _ref;
         };
         gumFail = function(error) {
           console.error(error);
@@ -260,18 +274,13 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     RTC.prototype.receive = function(sdp, type, callback) {
       var description, success,
         _this = this;
-      if (callback == null) {
-        callback = function() {
-          return null;
-        };
-      }
       success = function() {
         console.log("[INFO] Remote description setted.");
         console.log("[INFO] localDescription:");
         console.log(_this.pc.localDescription);
         console.log("[INFO] remotelocalDescription:");
         console.log(_this.pc.remoteDescription);
-        return callback();
+        return typeof callback === "function" ? callback() : void 0;
       };
       description = new this.RTCSessionDescription({
         type: type,
@@ -308,47 +317,78 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     RTC.prototype.toggleMuteAudio = function() {
-      var audioTrack, audioTracks, bool, _i, _len;
+      var audioTracks;
       audioTracks = this.localstream.getAudioTracks();
-      console.log(audioTracks);
       if (audioTracks.length === 0) {
         console.log("[MEDIA] No local audio available.");
         return;
       }
-      if (this.isAudioMuted) {
-        bool = true;
-        console.log("[MEDIA] Audio unmuted.");
+      if (this.isAudioActive) {
+        return this.muteAudio();
       } else {
-        bool = false;
-        console.log("[MEDIA] Audio muted.");
+        return this.unmuteAudio();
       }
+    };
+
+    RTC.prototype.muteAudio = function() {
+      var audioTrack, audioTracks, _i, _len;
+      audioTracks = this.localstream.getAudioTracks();
       for (_i = 0, _len = audioTracks.length; _i < _len; _i++) {
         audioTrack = audioTracks[_i];
-        audioTrack.enabled = bool;
+        audioTrack.enabled = false;
       }
-      return this.isAudioMuted = !bool;
+      return this.isAudioActive = false;
+    };
+
+    RTC.prototype.unmuteAudio = function() {
+      var audioTrack, audioTracks, _i, _len;
+      audioTracks = this.localstream.getAudioTracks();
+      for (_i = 0, _len = audioTracks.length; _i < _len; _i++) {
+        audioTrack = audioTracks[_i];
+        audioTrack.enabled = true;
+      }
+      return this.isAudioActive = true;
+    };
+
+    RTC.prototype.muteVideo = function() {
+      var videoTrack, videoTracks, _i, _len;
+      videoTracks = this.localstream.getVideoTracks();
+      for (_i = 0, _len = videoTracks.length; _i < _len; _i++) {
+        videoTrack = videoTracks[_i];
+        videoTrack.enabled = false;
+      }
+      return this.isVideoActive = false;
+    };
+
+    RTC.prototype.unmuteVideo = function() {
+      var videoTrack, videoTracks, _i, _len;
+      videoTracks = this.localstream.getVideoTracks();
+      for (_i = 0, _len = videoTracks.length; _i < _len; _i++) {
+        videoTrack = videoTracks[_i];
+        videoTrack.enabled = true;
+      }
+      return this.isVideoActive = true;
     };
 
     RTC.prototype.toggleMuteVideo = function() {
-      var bool, videoTrack, videoTracks, _i, _len;
+      var videoTracks;
       videoTracks = this.localstream.getVideoTracks();
-      console.log(videoTracks);
       if (videoTracks.length === 0) {
         console.log("[MEDIA] No local audio available.");
         return;
       }
-      if (this.isVideoMuted) {
-        bool = true;
-        console.log("Video unmuted.");
+      if (this.isVideoActive) {
+        return this.muteVideo();
       } else {
-        bool = false;
-        console.log("Video muted.");
+        return this.unmuteVideo();
       }
-      for (_i = 0, _len = videoTracks.length; _i < _len; _i++) {
-        videoTrack = videoTracks[_i];
-        videoTrack.enabled = bool;
-      }
-      return this.isVideoMuted = !bool;
+    };
+
+    RTC.prototype.mediaState = function() {
+      return {
+        video: Boolean(this.isVideoActive),
+        audio: Boolean(this.isAudioActive)
+      };
     };
 
     return RTC;
@@ -473,7 +513,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     Parser.parseFrom = function(pkt) {
       var lineFromRE;
-      lineFromRE = /From:(\s?".+"\s?)?\s*<?sips?:((.+)@[A-z0-9\.]+)>?(;tag=(.+))?/i;
+      lineFromRE = /From:(\s?".+"\s?)?\s*<?sips?:((.+)@[A-z0-9\.]+(\:[0-9]+)?)>?(;tag=(.+))?/i;
       return this.getRegExprResult(pkt, lineFromRE, {
         from: 2,
         ext: 3,
@@ -543,19 +583,25 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     Parser.parseChallenge = function(pkt) {
-      var line, lineRe, nonce, nonceRe, realm, realmRe;
+      var line, lineRe, nonce, nonceRe, opaque, opaqueRe, qop, qopRe, realm, realmRe, _ref, _ref1, _ref2, _ref3;
       lineRe = /^WWW-Authenticate\:.+$|^Proxy-Authenticate\:.+$/m;
-      realmRe = /realm="(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|(([a-z]+\.)+[a-z]{2,3})|(\w+))"/;
-      nonceRe = /nonce="(.{4,})"/;
+      realmRe = /realm="(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|(([a-z\-]+\.)+[a-z\-]{2,3})|(\w+))"/;
+      nonceRe = /nonce="([^"]{4,})"/;
+      opaqueRe = /opaque="([^"]{4,})"/;
+      qopRe = /qop="([^"]{4,})"/;
       line = lineRe.exec(pkt);
       if (line != null) {
         line = line[0];
-        realm = realmRe.exec(line)[1];
-        nonce = nonceRe.exec(line)[1];
+        realm = (_ref = realmRe.exec(line)) != null ? _ref[1] : void 0;
+        nonce = (_ref1 = nonceRe.exec(line)) != null ? _ref1[1] : void 0;
+        opaque = (_ref2 = opaqueRe.exec(line)) != null ? _ref2[1] : void 0;
+        qop = (_ref3 = qopRe.exec(line)) != null ? _ref3[1] : void 0;
       }
       return {
         realm: realm,
-        nonce: nonce
+        nonce: nonce,
+        opaque: opaque,
+        qop: qop
       };
     };
 
@@ -756,12 +802,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     function SipStack() {
       this.setState = __bind(this.setState, this);
 
-      this.publish = __bind(this.publish, this);
-
-      this.getPidf = __bind(this.getPidf, this);
-
-      this.subscribe = __bind(this.subscribe, this);
-
       this.sendInstantMessage = __bind(this.sendInstantMessage, this);
 
       this.sendWithSDP = __bind(this.sendWithSDP, this);
@@ -830,7 +870,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         return _this.onopen();
       };
       this.websocket.onmessage = function(evt) {
-        var ack, busy, instantMessage, message, ok, register, ringing, t, transaction, _ref2, _ref3;
+        var ack, busy, instantMessage, message, ok, register, ringing, transaction, _ref2, _ref3;
         message = Parser.parse(evt.data);
         _this.info("Input message", message);
         if ((_this.state > 2) && (message.cseq.meth === "REGISTER")) {
@@ -909,14 +949,17 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires / 2;
                 _this.reRegister = function() {
-                  return _this.send(_this.createMessage(_this.getTransaction(transaction)));
+                  var newRegister;
+                  newRegister = _this.getTransaction(transaction);
+                  newRegister.cseq.number += 1;
+                  return _this.send(_this.createMessage(newRegister));
                 };
-                t = setInterval(_this.reRegister, transaction.expires * 1000);
+                _this.t = setInterval(_this.reRegister, transaction.expires * 1000);
                 _this.unregister = function() {
                   console.log("[INFO] unregistering");
                   transaction = _this.getTransaction(message);
                   transaction.expires = 0;
-                  clearInterval(t);
+                  clearInterval(_this.t);
                   message = _this.createMessage(transaction);
                   _this.send(message);
                   return _this.setState(0, message);
@@ -951,6 +994,15 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                   return _this.send(_this.createMessage(newRegister));
                 };
                 _this.t = setInterval(_this.reRegister, transaction.expires * 1000);
+                _this.unregister = function() {
+                  console.log("[INFO] unregistering");
+                  transaction = _this.getTransaction(message);
+                  transaction.expires = 0;
+                  clearInterval(_this.t);
+                  message = _this.createMessage(transaction);
+                  _this.send(message);
+                  return _this.setState(0, message);
+                };
                 return _this.gruu = message.gruu;
               case 401:
                 _this.info("register-fail", message);
@@ -1101,6 +1153,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             _this.info("HANGING UP", message);
             _this.info("Call ended", message);
+            _this.rtc.close();
             return _this.setState(3, message);
         }
       };
@@ -1118,7 +1171,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     SipStack.prototype.createMessage = function(transaction) {
-      var address, authUri, data, opaque, rr, _i, _len, _ref;
+      var address, authExt, authUri, data, opaque, rr, _i, _len, _ref;
       transaction = new SipTransaction(transaction);
       transaction.uri = "sip:" + transaction.ext + "@" + (this.domain || this.sipServer);
       transaction.uri2 = "sip:" + transaction.ext2 + "@" + (transaction.domain2 || this.sipServer);
@@ -1131,14 +1184,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           transaction.requestUri = transaction.targetUri;
           data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
           break;
-        case "PUBLISH":
-          transaction.requestUri = transaction.uri;
-          data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
-          break;
         case "INVITE":
         case "MESSAGE":
         case "CANCEL":
-        case "SUBSCRIBE":
           transaction.requestUri = transaction.uri2;
           data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
           break;
@@ -1168,8 +1216,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           case "INVITE":
           case "MESSAGE":
           case "CANCEL":
-          case "SUBSCRIBE":
-          case "PUBLISH":
             data += "Route: <sip:" + this.sipServer + ":" + this.port + ";transport=ws;lr>\r\n";
             break;
           case "ACK":
@@ -1188,13 +1234,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       data += "From: " + transaction.uri + ";tag=" + transaction.fromTag + "\r\n";
       switch (transaction.meth) {
         case "REGISTER":
-        case "PUBLISH":
           data += "To: " + transaction.uri + "\r\n";
           break;
         case "INVITE":
         case "MESSAGE":
         case "CANCEL":
-        case "SUBSCRIBE":
           data += "To: " + transaction.uri2 + "\r\n";
           break;
         default:
@@ -1219,10 +1263,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }
       data += "Max-Forwards: 70\r\n";
       if (transaction.meth === "REGISTER" || transaction.meth === "INVITE") {
-        data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE, NOTIFY\r\n";
+        data += "Allow: INVITE, ACK, CANCEL, BYE, MESSAGE\r\n";
       }
-      data += "Supported: path, outbound, gruu\r\n";
-      data += "User-Agent: QoffeeSIP 0.5\r\n";
+      data += "Supported: path, gruu\r\n";
+      data += "User-Agent: QoffeeSIP 0.7\r\n";
       address = (this.hackIpContact && transaction.IP) || transaction.domainName;
       switch (transaction.meth) {
         case "Ringing":
@@ -1242,11 +1286,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           }
           break;
         case "REGISTER":
-        case "PUBLISH":
-          data += "Contact: <sip:" + transaction.ext + "@" + address + ";transport=ws>\r\n";
+          data += "Contact: <sip:" + transaction.ext + "@" + address + ";transport=ws>";
           break;
         case "INVITE":
-        case "SUBSCRIBE":
           if (this.gruu) {
             data += "Contact: <" + this.gruu + ";ob>\r\n";
           } else {
@@ -1277,22 +1319,15 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         }
         if (transaction.proxyAuth === true) {
           authUri = transaction.uri2;
-          if (transaction.meth === "PUBLISH") {
-            authUri = transaction.uri;
-          }
           data += "Proxy-Authorization:";
         }
         transaction.response = this.getDigest(transaction);
-        data += " Digest username=\"" + transaction.ext + "\",realm=\"" + transaction.realm + "\",";
+        authExt = transaction.ext;
+        if (transaction.privId) {
+          authExt = transaction.privId;
+        }
+        data += " Digest username=\"" + authExt + "\",realm=\"" + transaction.realm + "\",";
         data += "nonce=\"" + transaction.nonce + "\"," + opaque + "uri=\"" + authUri + "\",response=\"" + transaction.response + "\",algorithm=MD5\r\n";
-      }
-      switch (transaction.meth) {
-        case "SUBSCRIBE":
-        case "PUBLISH":
-          data += "Event: presence\r\n";
-          if (transaction.meth === "SUBSCRIBE") {
-            data += "Accept: application/pidf+xml\r\n";
-          }
       }
       switch (transaction.meth) {
         case "INVITE":
@@ -1308,27 +1343,24 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           data += "Content-Type: text/plain\r\n\r\n";
           data += transaction.content;
           break;
-        case "PUBLISH":
-          data += "Content-Length: " + (transaction.content.length || 0) + "\r\n";
-          data += "Content-Type: application/pidf+xml\r\n\r\n";
-          data += transaction.content;
-          break;
         default:
           data += "Content-Length: 0\r\n\r\n";
       }
       return data;
     };
 
-    SipStack.prototype.register = function(ext, pass, domain) {
+    SipStack.prototype.register = function(ext, pass, domain, privateId) {
       var message, transaction;
       this.ext = ext;
       this.pass = pass;
       this.domain = domain;
+      this.privateId = privateId;
       transaction = new SipTransaction({
         meth: "REGISTER",
         ext: this.ext,
         domain: this.domain,
-        pass: this.pass || ""
+        pass: this.pass || "",
+        privId: this.privateId || ""
       });
       this.addTransaction(transaction);
       this.setState(1, transaction);
@@ -1365,6 +1397,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     SipStack.prototype.hangup = function(branch) {
       var busy, bye, cancel, invite, swap;
+      this.rtc.unbind("sdp");
       swap = function(d, p1, p2) {
         var _ref;
         return _ref = [d[p2], d[p1]], d[p1] = _ref[0], d[p2] = _ref[1], _ref;
@@ -1464,53 +1497,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.send(this.createMessage(message));
     };
 
-    SipStack.prototype.subscribe = function(ext2, domain2) {
-      var message, transaction;
-      transaction = new SipTransaction({
-        meth: "SUBSCRIBE",
-        ext: this.ext,
-        pass: this.pass,
-        ext2: ext2,
-        domain2: domain2 || this.domain
-      });
-      this.addTransaction(transaction);
-      message = this.createMessage(transaction);
-      return this.send(message);
-    };
-
-    SipStack.prototype.getPidf = function(status, ext, domain, tupleId) {
-      var data, pstate;
-      if (status === "Online") {
-        pstate = "open";
-      } else {
-        pstate = "close";
-      }
-      data = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
-      data = "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\"\n";
-      data += "\tentity=\"sip:" + ext + "@" + domain + "\">\n";
-      data += "\t<tuple id=\"" + tupleId + "\">\n";
-      data += "\t\t<status>\n";
-      data += "\t\t\t<basic>" + pstate + "</basic>\n";
-      data += "\t\t</status>\n";
-      data += "\t\t<contact priority=\"0.8\">" + ext + "@" + domain + "</contact>\n";
-      data += "\t</tuple>\n";
-      return data += "</presence>";
-    };
-
-    SipStack.prototype.publish = function(status) {
-      var message, transaction;
-      transaction = new SipTransaction({
-        meth: "PUBLISH",
-        ext: this.ext,
-        pass: this.pass,
-        domain: this.domain
-      });
-      transaction.content = this.getPidf(status, this.ext, this.domain || this.sipServer, transaction.tupleId);
-      this.addTransaction(transaction);
-      message = this.createMessage(transaction);
-      return this.send(message);
-    };
-
     SipStack.prototype.setState = function(state, data) {
       this.state = state;
       console.log("[INFO] New state  " + this.states[this.state] + ("(" + this.state + ")"));
@@ -1530,6 +1516,16 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     function API(options) {
       this.attachStream = __bind(this.attachStream, this);
 
+      this.mediaState = __bind(this.mediaState, this);
+
+      this.unmuteAudio = __bind(this.unmuteAudio, this);
+
+      this.muteAudio = __bind(this.muteAudio, this);
+
+      this.unmuteVideo = __bind(this.unmuteVideo, this);
+
+      this.muteVideo = __bind(this.muteVideo, this);
+
       this.toggleMuteAudio = __bind(this.toggleMuteAudio, this);
 
       this.toggleMuteVideo = __bind(this.toggleMuteVideo, this);
@@ -1537,10 +1533,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this.off = __bind(this.off, this);
 
       this.on = __bind(this.on, this);
-
-      this.publish = __bind(this.publish, this);
-
-      this.subscribe = __bind(this.subscribe, this);
 
       this.chat = __bind(this.chat, this);
 
@@ -1568,8 +1560,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       });
     }
 
-    API.prototype.register = function(ext, pass, domain) {
-      return this.sipStack.register(ext, pass, domain);
+    API.prototype.register = function(ext, pass, domain, privateId) {
+      return this.sipStack.register(ext, pass, domain, privateId);
     };
 
     API.prototype.call = function(ext, domain) {
@@ -1592,14 +1584,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.sipStack.sendInstantMessage(ext, content);
     };
 
-    API.prototype.subscribe = function(ext, domain) {
-      return this.sipStack.subscribe(ext, domain);
-    };
-
-    API.prototype.publish = function(pstatus, domain) {
-      return this.sipStack.publish(pstatus);
-    };
-
     API.prototype.on = function(eventName, callback) {
       return this.sipStack.bind(eventName, callback);
     };
@@ -1614,6 +1598,26 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     API.prototype.toggleMuteAudio = function() {
       return this.sipStack.rtc.toggleMuteAudio();
+    };
+
+    API.prototype.muteVideo = function() {
+      return this.sipStack.rtc.muteVideo();
+    };
+
+    API.prototype.unmuteVideo = function() {
+      return this.sipStack.rtc.unmuteVideo();
+    };
+
+    API.prototype.muteAudio = function() {
+      return this.sipStack.rtc.muteAudio();
+    };
+
+    API.prototype.unmuteAudio = function() {
+      return this.sipStack.rtc.unmuteAudio();
+    };
+
+    API.prototype.mediaState = function() {
+      return this.sipStack.rtc.mediaState();
     };
 
     API.prototype.attachStream = function($d, stream) {

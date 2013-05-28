@@ -583,19 +583,25 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     Parser.parseChallenge = function(pkt) {
-      var line, lineRe, nonce, nonceRe, realm, realmRe;
+      var line, lineRe, nonce, nonceRe, opaque, opaqueRe, qop, qopRe, realm, realmRe, _ref, _ref1, _ref2, _ref3;
       lineRe = /^WWW-Authenticate\:.+$|^Proxy-Authenticate\:.+$/m;
       realmRe = /realm="(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|(([a-z\-]+\.)+[a-z\-]{2,3})|(\w+))"/;
-      nonceRe = /nonce="(.{4,})"/;
+      nonceRe = /nonce="([^"]{4,})"/;
+      opaqueRe = /opaque="([^"]{4,})"/;
+      qopRe = /qop="([^"]{4,})"/;
       line = lineRe.exec(pkt);
       if (line != null) {
         line = line[0];
-        realm = realmRe.exec(line)[1];
-        nonce = nonceRe.exec(line)[1];
+        realm = (_ref = realmRe.exec(line)) != null ? _ref[1] : void 0;
+        nonce = (_ref1 = nonceRe.exec(line)) != null ? _ref1[1] : void 0;
+        opaque = (_ref2 = opaqueRe.exec(line)) != null ? _ref2[1] : void 0;
+        qop = (_ref3 = qopRe.exec(line)) != null ? _ref3[1] : void 0;
       }
       return {
         realm: realm,
-        nonce: nonce
+        nonce: nonce,
+        opaque: opaque,
+        qop: qop
       };
     };
 
