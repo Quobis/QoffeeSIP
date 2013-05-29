@@ -228,7 +228,7 @@ class SipStack extends Spine.Controller
 						# Unsusccessful register.
 						when 401
 							@setState 2, message
-							_.extend transaction, _.pick message, "realm", "nonce", "toTag"
+							_.extend transaction, _.pick message, "realm", "nonce", "toTag", "qop", "opaque"
 							transaction.cseq.number += 1
 							transaction.auth = true
 							@send @createMessage transaction
@@ -574,9 +574,10 @@ class SipStack extends Spine.Controller
 		# Challenge
 		if transaction.nonce?
 			opaque = ""
-			opaque = "opaque=\"#{transaction.opaque}\", " if transaction.opaque?
-			qop = ""
-			qop = "qop=\"#{transaction.qop}\"" if transaction.qop?
+			opaque = ",opaque=\"#{transaction.opaque}\"" if transaction.opaque?
+			qop = "qop=\"\""
+			# TODO: This value will be used somehaow someday.
+			# qop = ",qop=\"#{transaction.qop}\"" if transaction.qop?
 
 			if transaction.auth is true
 				if transaction.cseq.meth is "REGISTER"
@@ -592,7 +593,7 @@ class SipStack extends Spine.Controller
 			# if IMS
 			authExt = transaction.privId if transaction.privId
 			data += " Digest username=\"#{authExt}\",realm=\"#{transaction.realm}\","
-			data += "nonce=\"#{transaction.nonce}\"#{opaque}\",uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5#{qop}\r\n"		
+			data += "nonce=\"#{transaction.nonce}\"#{opaque},uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5,#{qop}\r\n"		
 		
 					
 		# Content-type and content

@@ -967,7 +967,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 return _this.gruu = message.gruu;
               case 401:
                 _this.setState(2, message);
-                _.extend(transaction, _.pick(message, "realm", "nonce", "toTag"));
+                _.extend(transaction, _.pick(message, "realm", "nonce", "toTag", "qop", "opaque"));
                 transaction.cseq.number += 1;
                 transaction.auth = true;
                 return _this.send(_this.createMessage(transaction));
@@ -1307,12 +1307,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if (transaction.nonce != null) {
         opaque = "";
         if (transaction.opaque != null) {
-          opaque = "opaque=\"" + transaction.opaque + "\", ";
+          opaque = ",opaque=\"" + transaction.opaque + "\"";
         }
-        qop = "";
-        if (transaction.qop) {
-          qop = "qop=\"" + transaction.qop + "\", ";
-        }
+        qop = "qop=\"\"";
         if (transaction.auth === true) {
           if (transaction.cseq.meth === "REGISTER") {
             authUri = transaction.targetUri;
@@ -1331,7 +1328,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           authExt = transaction.privId;
         }
         data += " Digest username=\"" + authExt + "\",realm=\"" + transaction.realm + "\",";
-        data += "nonce=\"" + transaction.nonce + "\"" + opaque + "\",uri=\"" + authUri + "\",response=\"" + transaction.response + "\",algorithm=MD5" + qop + "\r\n";
+        data += "nonce=\"" + transaction.nonce + "\"" + opaque + ",uri=\"" + authUri + "\",response=\"" + transaction.response + "\",algorithm=MD5," + qop + "\r\n";
       }
       switch (transaction.meth) {
         case "INVITE":
