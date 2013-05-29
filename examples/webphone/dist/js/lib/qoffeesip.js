@@ -1171,7 +1171,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     SipStack.prototype.createMessage = function(transaction) {
-      var address, authExt, authUri, data, opaque, rr, _i, _len, _ref;
+      var address, authExt, authUri, data, opaque, qop, rr, _i, _len, _ref;
       transaction = new SipTransaction(transaction);
       transaction.uri = "sip:" + transaction.ext + "@" + (this.domain || this.sipServer);
       transaction.uri2 = "sip:" + transaction.ext2 + "@" + (transaction.domain2 || this.sipServer);
@@ -1309,6 +1309,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         if (transaction.opaque != null) {
           opaque = "opaque=\"" + transaction.opaque + "\", ";
         }
+        qop = "";
+        if (transaction.qop) {
+          qop = "qop=\"" + transaction.qop + "\", ";
+        }
         if (transaction.auth === true) {
           if (transaction.cseq.meth === "REGISTER") {
             authUri = transaction.targetUri;
@@ -1327,7 +1331,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           authExt = transaction.privId;
         }
         data += " Digest username=\"" + authExt + "\",realm=\"" + transaction.realm + "\",";
-        data += "nonce=\"" + transaction.nonce + "\"," + opaque + "uri=\"" + authUri + "\",response=\"" + transaction.response + "\",algorithm=MD5\r\n";
+        data += "nonce=\"" + transaction.nonce + "\"" + opaque + "\",uri=\"" + authUri + "\",response=\"" + transaction.response + "\",algorithm=MD5" + qop + "\r\n";
       }
       switch (transaction.meth) {
         case "INVITE":

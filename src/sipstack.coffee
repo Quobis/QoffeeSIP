@@ -575,6 +575,8 @@ class SipStack extends Spine.Controller
 		if transaction.nonce?
 			opaque = ""
 			opaque = "opaque=\"#{transaction.opaque}\", " if transaction.opaque?
+			qop = ""
+			qop = "qop=\"#{transaction.qop}\"" if transaction.qop?
 
 			if transaction.auth is true
 				if transaction.cseq.meth is "REGISTER"
@@ -590,7 +592,7 @@ class SipStack extends Spine.Controller
 			# if IMS
 			authExt = transaction.privId if transaction.privId
 			data += " Digest username=\"#{authExt}\",realm=\"#{transaction.realm}\","
-			data += "nonce=\"#{transaction.nonce}\",#{opaque}uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5\r\n"		
+			data += "nonce=\"#{transaction.nonce}\"#{opaque}\",uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5#{qop}\r\n"		
 		
 					
 		# Content-type and content
