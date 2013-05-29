@@ -111,8 +111,17 @@ class SipStack extends Spine.Controller
 		@hackIpContact ?= false
 
 		# A new websocket connection is created.
-		@websocket = new WebSocket("#{@transport}://#{@sipServer}:#{@port}#{@path}", "sip")
 		console.log("#{@transport}://#{@sipServer}:#{@port}#{@path}")
+		try
+			@websocket = new WebSocket("#{@transport}://#{@sipServer}:#{@port}#{@path}", "sip")
+		catch e
+			throw "#{@transport}://#{@sipServer}:#{@port}#{@path} not open"
+		
+		@websocket.onerror (e) ->
+			console.error "Websocket failed."
+			console.log e.data
+
+
 		@info "websocket created"
 
 		# When websocket connection is opened.
