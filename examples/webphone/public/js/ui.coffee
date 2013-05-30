@@ -343,6 +343,7 @@ class UI extends Spine.Controller
 		console.log "[STATE] #{@state}"
 		switch @state
 			when 3
+				@stopSounds() if @previousState > 3
 				callback = => 
 						@stopTimer()
 						@$videos.removeClass "active"
@@ -355,7 +356,6 @@ class UI extends Spine.Controller
 				@$messages.children().remove()
 				@$chat.hide()
 
-				@stopSounds()
 				@updateStatus "Registered"
 
 				@nextForm @$formCall
@@ -364,11 +364,13 @@ class UI extends Spine.Controller
 					.html("<p>Your extension number is <strong>#{@register.ext}</strong>, share this URL to a friend and tell him to call you. If you want to connect to our demo webcam, just dial extension 1234.</p>")
 					.fadeIn(200)
 				$("#local-legend").text "Local extension is #{@register.ext}"
+				@previousState = @state
 
 			when 5
 				@updateStatus "Calling #{@ext2}"
 				document.getElementById("sound-calling").play()
-				@hangup = => @api.hangup data.branch	
+				@hangup = => @api.hangup data.branch
+				@previousState = @state
 			
 			when 6
 				@ext2 = data.ext
@@ -380,6 +382,7 @@ class UI extends Spine.Controller
 				document.getElementById("sound-ringing").play()
 				if window.autoanswering
 					setTimeout (-> $("#answer").click()), 1000
+				@previousState = @state
 
 			when 7, 8
 				@updateStatus "Call established with #{@ext2}"
@@ -412,8 +415,11 @@ class UI extends Spine.Controller
 			when 9
 				@updateStatus "Hanging up"
 				@stopTimer()
+				@previousState = @state
+
 
 			when 10
 				@updateStatus "Cancelling"
+				@previousState = @state
 
 window.UI = UI

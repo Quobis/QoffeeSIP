@@ -459,6 +459,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       console.log("[STATE] " + this.state);
       switch (this.state) {
         case 3:
+          if (this.previousState > 3) {
+            this.stopSounds();
+          }
           callback = function() {
             _this.stopTimer();
             _this.$videos.removeClass("active");
@@ -473,17 +476,18 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           });
           this.$messages.children().remove();
           this.$chat.hide();
-          this.stopSounds();
           this.updateStatus("Registered");
           this.nextForm(this.$formCall);
           $("#register-info").html("<p>Your extension number is <strong>" + this.register.ext + "</strong>, share this URL to a friend and tell him to call you. If you want to connect to our demo webcam, just dial extension 1234.</p>").fadeIn(200);
-          return $("#local-legend").text("Local extension is " + this.register.ext);
+          $("#local-legend").text("Local extension is " + this.register.ext);
+          return this.previousState = this.state;
         case 5:
           this.updateStatus("Calling " + this.ext2);
           document.getElementById("sound-calling").play();
-          return this.hangup = function() {
+          this.hangup = function() {
             return _this.api.hangup(data.branch);
           };
+          return this.previousState = this.state;
         case 6:
           this.ext2 = data.ext;
           this.updateStatus("Incoming call from " + this.ext2);
@@ -496,11 +500,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           this.nextForm(this.$formIncomingCall);
           document.getElementById("sound-ringing").play();
           if (window.autoanswering) {
-            return setTimeout((function() {
+            setTimeout((function() {
               return $("#answer").click();
             }), 1000);
           }
-          break;
+          return this.previousState = this.state;
         case 7:
         case 8:
           this.updateStatus("Call established with " + this.ext2);
@@ -540,9 +544,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           return _.delay(callback, 200);
         case 9:
           this.updateStatus("Hanging up");
-          return this.stopTimer();
+          this.stopTimer();
+          return this.previousState = this.state;
         case 10:
-          return this.updateStatus("Cancelling");
+          this.updateStatus("Cancelling");
+          return this.previousState = this.state;
       }
     };
 
