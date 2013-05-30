@@ -387,10 +387,24 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     UI.prototype.stopSounds = function() {
-      this.$soundRinging.get(0).pause();
-      this.$soundCalling.get(0).pause();
-      this.$soundRinging.get(0).currentTime = 0;
-      return this.$soundCalling.get(0).currentTime = 0;
+      var _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8;
+
+      if ((_ref1 = this.$soundRinging) != null) {
+        if ((_ref2 = _ref1.get(0)) != null) {
+          _ref2.pause();
+        }
+      }
+      if ((_ref3 = this.$soundCalling) != null) {
+        if ((_ref4 = _ref3.get(0)) != null) {
+          _ref4.pause();
+        }
+      }
+      if ((_ref5 = this.$soundRinging) != null) {
+        if ((_ref6 = _ref5.get(0)) != null) {
+          _ref6.currentTime = 0;
+        }
+      }
+      return (_ref7 = this.$soundCalling) != null ? (_ref8 = _ref7.get(0)) != null ? _ref8.currentTime = 0 : void 0 : void 0;
     };
 
     UI.prototype.nextForm = function($el) {

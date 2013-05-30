@@ -308,10 +308,10 @@ class UI extends Spine.Controller
 		false
 
 	stopSounds: () =>
-		@$soundRinging.get(0).pause()
-		@$soundCalling.get(0).pause()
-		@$soundRinging.get(0).currentTime = 0
-		@$soundCalling.get(0).currentTime = 0
+		@$soundRinging?.get(0)?.pause()
+		@$soundCalling?.get(0)?.pause()
+		@$soundRinging?.get(0)?.currentTime = 0
+		@$soundCalling?.get(0)?.currentTime = 0
 
 	nextForm: ($el) =>
 		$(".disabled").removeClass "disabled"
