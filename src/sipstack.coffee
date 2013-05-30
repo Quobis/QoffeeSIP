@@ -117,7 +117,7 @@ class SipStack extends Spine.Controller
 		catch e
 			throw "#{@transport}://#{@sipServer}:#{@port}#{@path} not open"
 		
-		@websocket.onerror (e) ->
+		@websocket.onerror = (e) ->
 			console.error "Websocket failed."
 			console.log e.data
 

@@ -862,8 +862,16 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if ((_ref1 = this.hackIpContact) == null) {
         this.hackIpContact = false;
       }
-      this.websocket = new WebSocket("" + this.transport + "://" + this.sipServer + ":" + this.port + this.path, "sip");
       console.log("" + this.transport + "://" + this.sipServer + ":" + this.port + this.path);
+      try {
+        this.websocket = new WebSocket("" + this.transport + "://" + this.sipServer + ":" + this.port + this.path, "sip");
+      } catch (e) {
+        throw "" + this.transport + "://" + this.sipServer + ":" + this.port + this.path + " not open";
+      }
+      this.websocket.onerror = function(e) {
+        console.error("Websocket failed.");
+        return console.log(e.data);
+      };
       this.info("websocket created");
       this.websocket.onopen = function(evt) {
         _this.info("websocket opened");
