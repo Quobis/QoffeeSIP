@@ -49,6 +49,9 @@ class SipTransaction
 		@regid = 1
 		SipTransaction::uuid ?= @getUuid()
 		@tupleId ?= @randomString 8
+		@cnonce ?= ""
+		@nc ?= 0
+		@ncHex ?= "00000000"
 
 	# It receives a dictionary and set all key-value pairs
 	# as pairs of instance variable - value.
@@ -84,6 +87,16 @@ class SipTransaction
 		array = []
 		array.push  _.random 1, 255 for i in [0..3]
 		return array.join('.')
+	
+	updateCnonceNcHex: () ->
+		@cnonce = @randomString 8
+		@nc += 1
+		hex = Number(@nc).toString(16)
+		@ncHex = "00000000".substr(0, 8 - hex.length) + hex
+					
+		if @nc is 4294967296
+			@nc = 1
+			@ncHex = "00000001"
 
 # Exports the SipTransaction class.
 window.SipTransaction = SipTransaction

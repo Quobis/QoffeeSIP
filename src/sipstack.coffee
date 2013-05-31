@@ -237,9 +237,10 @@ class SipStack extends Spine.Controller
 						# Unsusccessful register.
 						when 401
 							@setState 2, message
-							_.extend transaction, _.pick message, "realm", "nonce", "toTag", "qop", "opaque"
 							transaction.cseq.number += 1
+							_.extend transaction, _.pick message, "realm", "nonce", "toTag", "qop", "opaque"
 							transaction.auth = true
+							transaction.updateCnonceNcHex() if transaction.qop is "auth"
 							@send @createMessage transaction
 
 						else
@@ -437,12 +438,25 @@ class SipStack extends Spine.Controller
 
 	# SIP digest calculator as defined is RFC 3261.
 	getDigest: (transaction) =>
-		ha1 = CryptoJS.MD5 "#{transaction.ext}:#{transaction.realm}:#{transaction.pass}"
+		authExtension = transaction.ext
+		if transaction.qop is "auth"
+			ha1 = CryptoJS.MD5 "#{transaction.privId}:#{transaction.realm}:#{transaction.pass}"
+			console.log "HA1 = md5(#{transaction.privId}:#{transaction.realm}:#{transaction.pass})"			
+
+		else
+			ha1 = CryptoJS.MD5 "#{transaction.ext}:#{transaction.realm}:#{transaction.pass}"
+			console.log "HA1 = md5(#{transaction.ext}:#{transaction.realm}:#{transaction.pass})"
+		console.log "HA1 = #{ha1}"
 		ha2 = CryptoJS.MD5 "#{transaction.meth}:#{transaction.requestUri}"
-		sol = CryptoJS.MD5 "#{ha1}:#{transaction.nonce}:#{ha2}"
-		# console.log "HA1 = md5(#{transaction.ext}:#{transaction.realm}:#{transaction.pass})"
-		# console.log "HA2 = md5(#{transaction.meth}:#{transaction.requestUri})"
-		# console.log "response = md5(#{ha1}:#{transaction.nonce}:#{ha2})"
+		console.log "HA2 = md5(#{transaction.meth}:#{transaction.requestUri})"
+		console.log "HA2 = #{ha2}"
+		if transaction.qop is "auth"
+			sol = CryptoJS.MD5 "#{ha1}:#{transaction.nonce}:#{transaction.ncHex}:#{transaction.cnonce}:auth:#{ha2}"
+			console.log "response = md5(#{ha1}:#{transaction.nonce}:#{transaction.ncHex}:#{transaction.cnonce}:auth:#{ha2})"
+		else
+			sol = CryptoJS.MD5 "#{ha1}:#{transaction.nonce}:#{ha2}"
+			console.log "response = md5(#{ha1}:#{transaction.nonce}:#{ha2})"
+		console.log "response = #{sol}"
 		return sol
 
 	# SIP websockets request creator as defined in draft-ietf-sipcore-sip-websocket-06 and XXXX
@@ -584,9 +598,8 @@ class SipStack extends Spine.Controller
 		if transaction.nonce?
 			opaque = ""
 			opaque = ",opaque=\"#{transaction.opaque}\"" if transaction.opaque?
-			qop = "qop=\"\""
-			# TODO: This value will be used somehaow someday.
-			# qop = ",qop=\"#{transaction.qop}\"" if transaction.qop?
+			qop = ""
+			qop = ",qop=#{transaction.qop},cnonce=\"#{transaction.cnonce}\",nc=#{transaction.ncHex}" if transaction.qop?
 
 			if transaction.auth is true
 				if transaction.cseq.meth is "REGISTER"
@@ -602,7 +615,7 @@ class SipStack extends Spine.Controller
 			# if IMS
 			authExt = transaction.privId if transaction.privId
 			data += " Digest username=\"#{authExt}\",realm=\"#{transaction.realm}\","
-			data += "nonce=\"#{transaction.nonce}\"#{opaque},uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5,#{qop}\r\n"		
+			data += "nonce=\"#{transaction.nonce}\"#{opaque},uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5#{qop}\r\n"		
 		
 					
 		# Content-type and content

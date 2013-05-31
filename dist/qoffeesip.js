@@ -638,7 +638,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     function SipTransaction(args) {
       this.set = __bind(this.set, this);
 
-      var _base, _base1, _base2, _base3, _ref, _ref1, _ref10, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+      var _base, _base1, _base2, _base3, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
       this.set(args);
       if ((_ref = this.domainName) == null) {
         this.domainName = "" + (this.randomString(12)) + ".invalid";
@@ -676,6 +676,15 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }
       if ((_ref10 = this.tupleId) == null) {
         this.tupleId = this.randomString(8);
+      }
+      if ((_ref11 = this.cnonce) == null) {
+        this.cnonce = "";
+      }
+      if ((_ref12 = this.nc) == null) {
+        this.nc = 0;
+      }
+      if ((_ref13 = this.ncHex) == null) {
+        this.ncHex = "00000000";
       }
     }
 
@@ -732,6 +741,18 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         array.push(_.random(1, 255));
       }
       return array.join('.');
+    };
+
+    SipTransaction.prototype.updateCnonceNcHex = function() {
+      var hex;
+      this.cnonce = this.randomString(8);
+      this.nc += 1;
+      hex = Number(this.nc).toString(16);
+      this.ncHex = "00000000".substr(0, 8 - hex.length) + hex;
+      if (this.nc === 4294967296) {
+        this.nc = 1;
+        return this.ncHex = "00000001";
+      }
     };
 
     return SipTransaction;
@@ -975,9 +996,12 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 return _this.gruu = message.gruu;
               case 401:
                 _this.setState(2, message);
-                _.extend(transaction, _.pick(message, "realm", "nonce", "toTag", "qop", "opaque"));
                 transaction.cseq.number += 1;
+                _.extend(transaction, _.pick(message, "realm", "nonce", "toTag", "qop", "opaque"));
                 transaction.auth = true;
+                if (transaction.qop === "auth") {
+                  transaction.updateCnonceNcHex();
+                }
                 return _this.send(_this.createMessage(transaction));
               default:
                 return _this.warning("Unexpected message", message);
@@ -1171,10 +1195,27 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     }
 
     SipStack.prototype.getDigest = function(transaction) {
-      var ha1, ha2, sol;
-      ha1 = CryptoJS.MD5("" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass);
+      var authExtension, ha1, ha2, sol;
+      authExtension = transaction.ext;
+      if (transaction.qop === "auth") {
+        ha1 = CryptoJS.MD5("" + transaction.privId + ":" + transaction.realm + ":" + transaction.pass);
+        console.log("HA1 = md5(" + transaction.privId + ":" + transaction.realm + ":" + transaction.pass + ")");
+      } else {
+        ha1 = CryptoJS.MD5("" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass);
+        console.log("HA1 = md5(" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass + ")");
+      }
+      console.log("HA1 = " + ha1);
       ha2 = CryptoJS.MD5("" + transaction.meth + ":" + transaction.requestUri);
-      sol = CryptoJS.MD5("" + ha1 + ":" + transaction.nonce + ":" + ha2);
+      console.log("HA2 = md5(" + transaction.meth + ":" + transaction.requestUri + ")");
+      console.log("HA2 = " + ha2);
+      if (transaction.qop === "auth") {
+        sol = CryptoJS.MD5("" + ha1 + ":" + transaction.nonce + ":" + transaction.ncHex + ":" + transaction.cnonce + ":auth:" + ha2);
+        console.log("response = md5(" + ha1 + ":" + transaction.nonce + ":" + transaction.ncHex + ":" + transaction.cnonce + ":auth:" + ha2 + ")");
+      } else {
+        sol = CryptoJS.MD5("" + ha1 + ":" + transaction.nonce + ":" + ha2);
+        console.log("response = md5(" + ha1 + ":" + transaction.nonce + ":" + ha2 + ")");
+      }
+      console.log("response = " + sol);
       return sol;
     };
 
@@ -1317,7 +1358,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         if (transaction.opaque != null) {
           opaque = ",opaque=\"" + transaction.opaque + "\"";
         }
-        qop = "qop=\"\"";
+        qop = "";
+        if (transaction.qop != null) {
+          qop = ",qop=" + transaction.qop + ",cnonce=\"" + transaction.cnonce + "\",nc=" + transaction.ncHex;
+        }
         if (transaction.auth === true) {
           if (transaction.cseq.meth === "REGISTER") {
             authUri = transaction.targetUri;
@@ -1336,7 +1380,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           authExt = transaction.privId;
         }
         data += " Digest username=\"" + authExt + "\",realm=\"" + transaction.realm + "\",";
-        data += "nonce=\"" + transaction.nonce + "\"" + opaque + ",uri=\"" + authUri + "\",response=\"" + transaction.response + "\",algorithm=MD5," + qop + "\r\n";
+        data += "nonce=\"" + transaction.nonce + "\"" + opaque + ",uri=\"" + authUri + "\",response=\"" + transaction.response + "\",algorithm=MD5" + qop + "\r\n";
       }
       switch (transaction.meth) {
         case "INVITE":
