@@ -33,6 +33,7 @@ class Parser
 		_.extend message, @parseFrom pkt
 		_.extend message, @parseTo pkt
 		_.extend message, @parseRecordRoutes pkt
+		_.extend message, @parseServiceRoute pkt
 		_.extend message, @parseRoute pkt
 		_.extend message, @parseContact pkt
 		_.extend message, @parseCallId pkt
@@ -101,7 +102,7 @@ class Parser
 				\s*
 				<?sips?:((.+)@[A-z0-9\.]+(\:[0-9]+)?)>?(;tag=(.+))?
 			///i
-		return @getRegExprResult pkt, lineFromRE, {from: 2, ext: 3, fromTag: 5}
+		return @getRegExprResult pkt, lineFromRE, {from: 2, ext: 3, fromTag: 6}
 
 	@parseTo: (pkt) ->
 		# TODO: We must check domains and IPs correctly. This RE is too much permisive.
@@ -175,6 +176,14 @@ class Parser
 	@parseContent: (pkt) ->
 		# A blank line separates header and body (content).
 		return content: (pkt.split "\r\n\r\n")[1]
+
+	@parseServiceRoute: (pkt) ->
+		pkt = " To: Lawyer <sip:UA1@HOME.EXAMPLE.COM>;tag=87654\r\nFrom: Lawyer <sip:UA1@HOME.EXAMPLE.COM>;tag=981211\r\nCall-ID: 843817637684230@998sdasdh09\r\nCSeq: 1826 REGISTER\r\nContact: <sip:UA1@UADDR1.VISITED.EXAMPLE.ORG>\r\nService-Route: <sip:P2.HOME.EXAMPLE.COM;lr>,<sip:HSP.HOME.EXAMPLE.COM;lr>\r\nCall-ID: 843817637684230@998sdasdh09"
+		lineRe = /Service-Route:\s+(.+)$/m
+		line     = (lineRe.exec pkt)
+		serviceRoutes = []
+		serviceRoutes = line[1].split(",") if line?.length > 1
+		return {serviceRoutes}
 
 # Exporting the Parser
 window.Parser = Parser

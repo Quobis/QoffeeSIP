@@ -234,6 +234,8 @@ class SipStack extends Spine.Controller
 								@send message
 								@setState 0, message # Offline
 							@gruu = message.gruu
+							# Store record-routes to use as INVITE's routes.
+							@serviceRoutes = message.serviceRoutes if message.serviceRoutes.length
 
 						# Unsusccessful register.
 						when 401
@@ -275,6 +277,8 @@ class SipStack extends Spine.Controller
 								@send message
 								@setState 0, message # Offline							
 							@gruu = message.gruu
+							@serviceRoutes = message.serviceRoutes if message.serviceRoutes.length
+
 						# Unsusccessful register.
 						when 401
 							@info "register-fail", message
@@ -441,8 +445,8 @@ class SipStack extends Spine.Controller
 	getDigest: (transaction) =>
 		authExtension = transaction.ext
 		if transaction.qop is "auth"
-			ha1 = CryptoJS.MD5 "#{transaction.privId}:#{transaction.realm}:#{transaction.pass}"
-			console.log "HA1 = md5(#{transaction.privId}:#{transaction.realm}:#{transaction.pass})"			
+			ha1 = CryptoJS.MD5 "#{transaction.userAuthName}:#{transaction.realm}:#{transaction.pass}"
+			console.log "HA1 = md5(#{transaction.userAuthName}:#{transaction.realm}:#{transaction.pass})"			
 
 		else
 			ha1 = CryptoJS.MD5 "#{transaction.ext}:#{transaction.realm}:#{transaction.pass}"
@@ -490,7 +494,7 @@ class SipStack extends Spine.Controller
 		# SIP frame is filled.
 		switch transaction.meth
 			when "REGISTER"
-				transaction.requestUri = transaction.targetUri
+				transaction.requestUri = "sip:#{@domain or @sipServer}"
 				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"
 			when "INVITE", "MESSAGE", "CANCEL"
 				transaction.requestUri = transaction.uri2
@@ -511,8 +515,13 @@ class SipStack extends Spine.Controller
 		
 		# Route
 		else switch transaction.meth
-			when "REGISTER", "INVITE", "MESSAGE", "CANCEL"
+			when "REGISTER", "MESSAGE", "CANCEL"
 				data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr>\r\n"
+			when "INVITE"
+				if transaction.recordRoutes.length
+					data += "Route: #{serviceRoute}\r\n" for serviceRoute in @serviceRoutes
+				else
+					data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr>\r\n"
 			when "ACK", "OK", "BYE"
 				if transaction.cseq.meth isnt "MESSAGE"
 					data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
@@ -586,7 +595,8 @@ class SipStack extends Spine.Controller
 				if @gruu
 					data += "Contact: <#{@gruu};ob>\r\n"
 				else
-					data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws;ob>\r\n"
+					# !!!!!! ;ob removed
+					data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws>\r\n"
 		switch transaction.meth
 			when "REGISTER"
 				data += ";reg-id=#{transaction.regid}"
@@ -604,7 +614,7 @@ class SipStack extends Spine.Controller
 
 			if transaction.auth is true
 				if transaction.cseq.meth is "REGISTER"
-					authUri = transaction.targetUri
+					authUri = transaction.requestUri
 				else
 					authUri = transaction.uri2
 				data += "Authorization:"
@@ -614,7 +624,7 @@ class SipStack extends Spine.Controller
 			transaction.response = @getDigest transaction
 			authExt = transaction.ext
 			# if IMS
-			authExt = transaction.privId if transaction.privId
+			authExt = transaction.userAuthName if transaction.userAuthName
 			data += " Digest username=\"#{authExt}\",realm=\"#{transaction.realm}\","
 			data += "nonce=\"#{transaction.nonce}\"#{opaque},uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5#{qop}\r\n"		
 		
@@ -634,8 +644,8 @@ class SipStack extends Spine.Controller
 				data += "Content-Length: 0\r\n\r\n"	
 		return data
 
-	register: (@ext, @pass, @domain, @privateId) =>
-		transaction = new SipTransaction {meth: "REGISTER", ext: @ext, domain: @domain, pass: @pass or "", privId: @privateId or ""}
+	register: (@ext, @pass, @domain, @userAuthName) =>
+		transaction = new SipTransaction {meth: "REGISTER", ext: @ext, domain: @domain, pass: @pass or "", userAuthName: @userAuthName or ""}
 		@addTransaction transaction
 		@setState 1, transaction
 		message = @createMessage transaction

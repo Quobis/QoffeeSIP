@@ -133,8 +133,8 @@ class QS extends Spine.Controller
 	# +   *pass*  mandatory User password
 	# +   *domain* optional
 	# 
-	register: (ext, pass, domain) =>
-		@sipStack.register ext, pass, domain
+	register: (ext, pass, domain, userAuthName) =>
+		@sipStack.register ext, pass, domain, userAuthName
 
 	#### capabilities
 	# Get stack capabilities
