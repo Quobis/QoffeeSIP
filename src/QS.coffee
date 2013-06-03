@@ -43,7 +43,7 @@ class QS extends Spine.Controller
 			'qs-remotestream': {stack:'remotestream', cb: @cbRemotestream}
 			'qs-register-fail': {stack:'register-fail', cb: @cbRegisterFail}
 			'qs-register-success': {stack:'register-success', cb: @cbRegisterSuccess}
-			'qs-another-incoming-call', {stack:"another-incoming-call"}
+			'qs-another-incoming-call': {stack:"another-incoming-call"}
 
 		@sipStack = new SipStack
 			server: @server
