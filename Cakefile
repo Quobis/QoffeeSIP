@@ -29,7 +29,7 @@ appFiles = [
 	"src/parser.coffee"
 	"src/siptransaction.coffee"
 	"src/sipstack.coffee"
-	"src/API.coffee"
+	"src/QS.coffee"
 ]
 
 task "build", "Build the stack from source files", ->

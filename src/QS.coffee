@@ -10,14 +10,18 @@ class QS extends Spine.Controller
 		super
 		@lastState = ""
 		@stateflow = []
+		
+		# 1 to 1 relation with SipStack's events.
 		@mappedEvents = [
 			'qs-instant-message',
 			'qs-localstream',
 			'qs-remotestream',
 			'qs-register-fail',
-			'qs-register-success']
+			'qs-register-success',
+			'qs-another-incoming-call'] # -- !!!
 
 
+		# 1 to many relation with SipsStack's event.
 		@customEvents =
 			'qs-ringing': {stack:'new-state', cb: @cbStateChange}
 			'qs-calling': {stack:'new-state', cb: @cbStateChange}
@@ -39,7 +43,7 @@ class QS extends Spine.Controller
 			'qs-remotestream': {stack:'remotestream', cb: @cbRemotestream}
 			'qs-register-fail': {stack:'register-fail', cb: @cbRegisterFail}
 			'qs-register-success': {stack:'register-success', cb: @cbRegisterSuccess}
-
+			'qs-another-incoming-call', {stack:"another-incoming-call"}
 
 		@sipStack = new SipStack
 			server: @server

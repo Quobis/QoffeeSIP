@@ -121,7 +121,6 @@ class SipStack extends Spine.Controller
 			console.error "Websocket failed."
 			console.log e.data
 
-
 		@info "websocket created"
 
 		# When websocket connection is opened.
@@ -171,10 +170,12 @@ class SipStack extends Spine.Controller
 							content: message.content
 						@trigger "instant-message", instantMessage
 						@send @createMessage new SipTransaction _.extend message, {meth: "OK"}
+					
 					when "OK"
 						console.log "[MESSAGE] OK"
 						# After receiving a 200 OK we don't need the instant message anymore.
 						@deleteTransaction message
+					
 					else
 						# return if not @checkTransaction message
 						return unless message.responseCode in [401,407]
@@ -192,7 +193,7 @@ class SipStack extends Spine.Controller
 			if 3 < @state < 9
 				# TODO: This INVITE could be a RE-INVITE. We don't manage this case yet.
 				if message.meth is "INVITE"
-					@info "Another incoming call (BUSY)", message
+					@info "another-incoming-call", message
 					busy = _.clone message
 					_.extend busy, {meth: "Busy here"}
 					@send @createMessage busy
