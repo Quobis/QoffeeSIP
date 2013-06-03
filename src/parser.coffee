@@ -101,7 +101,7 @@ class Parser
 				\s*
 				<?sips?:((.+)@[A-z0-9\.]+(\:[0-9]+)?)>?(;tag=(.+))?
 			///i
-		return @getRegExprResult pkt, lineFromRE, {from: 2, ext: 3, fromTag: 5}
+		return @getRegExprResult pkt, lineFromRE, {from: 2, ext: 3, fromTag: 6}
 
 	@parseTo: (pkt) ->
 		# TODO: We must check domains and IPs correctly. This RE is too much permisive.
