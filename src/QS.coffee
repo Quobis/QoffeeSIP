@@ -45,6 +45,7 @@ class QS extends Spine.Controller
 			'qs-register-success': {stack:'register-success', cb: @cbRegisterSuccess}
 			'qs-another-incoming-call': {stack:"another-incoming-call", cb: @cbAnotherIncomingCall}
 
+
 		@sipStack = new SipStack
 			server: @server
 			stunServer: @stunServer
@@ -56,8 +57,8 @@ class QS extends Spine.Controller
 			onopen: @onopen or -> false
 
 	cbInstantMessage: (data) =>
-		lines = data.content.split(/\n/)
-		header = JSON.parse lines[0]
+		lines    = data.content.split(/\n/)
+		header   = JSON.parse lines[0]
 		chattext = lines[1]
 
 		if header.hasOwnProperty "presenceState"
@@ -66,7 +67,7 @@ class QS extends Spine.Controller
 		if header.hasOwnProperty "mediaState"
 			@trigger 'qs-mediastate-update', header.mediaState.video
 
-		if chattext.length isnt 0
+		if chattext.length
 			@trigger 'qs-instant-message', data.from, chattext
 
 	cbStateChange: (@state, message) =>
