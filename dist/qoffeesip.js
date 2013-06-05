@@ -1592,6 +1592,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.cbRegisterFail = __bind(this.cbRegisterFail, this);
 
+      this.cbAnotherIncomingCall = __bind(this.cbAnotherIncomingCall, this);
+
       this.cbRemotestream = __bind(this.cbRemotestream, this);
 
       this.cbLocalstream = __bind(this.cbLocalstream, this);
@@ -1681,7 +1683,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           cb: this.cbRegisterSuccess
         },
         'qs-another-incoming-call': {
-          stack: "another-incoming-call"
+          stack: "another-incoming-call",
+          cb: this.cbAnotherIncomingCall
         }
       };
       this.sipStack = new SipStack({
@@ -1704,7 +1707,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       header = JSON.parse(lines[0]);
       chattext = lines[1];
       if (header.hasOwnProperty("presenceState")) {
-        this.trigger('qs-presence-update', data.from, header.presenceState);
+        this.trigger('qs-presence-update', data.from, header.presenceState, header.answerme);
       }
       if (header.hasOwnProperty("mediaState")) {
         this.trigger('qs-mediastate-update', header.mediaState.video);
@@ -1786,11 +1789,15 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.sipStack.unregister();
     };
 
-    QS.prototype.updatePresenceState = function(to, state) {
+    QS.prototype.updatePresenceState = function(to, state, answerme) {
       var content;
+      if (answerme == null) {
+        answerme = false;
+      }
       this.lastState = state;
       content = JSON.stringify({
-        presenceState: state
+        presenceState: state,
+        answerme: Boolean(answerme)
       }) + "\n";
       return this.sipStack.sendInstantMessage(to, content);
     };
@@ -1817,6 +1824,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     QS.prototype.cbRemotestream = function(remotestream) {
       return this.trigger("qs-remotestream", remotestream);
+    };
+
+    QS.prototype.cbAnotherIncomingCall = function(data) {
+      return this.trigger("qs-another-incoming-call", data);
     };
 
     QS.prototype.cbRegisterFail = function() {

@@ -43,7 +43,7 @@ class QS extends Spine.Controller
 			'qs-remotestream': {stack:'remotestream', cb: @cbRemotestream}
 			'qs-register-fail': {stack:'register-fail', cb: @cbRegisterFail}
 			'qs-register-success': {stack:'register-success', cb: @cbRegisterSuccess}
-			'qs-another-incoming-call': {stack:"another-incoming-call"}
+			'qs-another-incoming-call': {stack:"another-incoming-call", cb: @cbAnotherIncomingCall}
 
 		@sipStack = new SipStack
 			server: @server
@@ -61,7 +61,7 @@ class QS extends Spine.Controller
 		chattext = lines[1]
 
 		if header.hasOwnProperty "presenceState"
-			@trigger 'qs-presence-update', data.from, header.presenceState
+			@trigger 'qs-presence-update', data.from, header.presenceState, header.answerme
 
 		if header.hasOwnProperty "mediaState"
 			@trigger 'qs-mediastate-update', header.mediaState.video
@@ -163,9 +163,9 @@ class QS extends Spine.Controller
 		@sipStack.unregister()
 
 	#### updatePresenceState
-	updatePresenceState: (to, state) =>
+	updatePresenceState: (to, state, answerme = false) =>
 		@lastState = state
-		content = JSON.stringify({presenceState: state}) + "\n"
+		content = JSON.stringify({presenceState: state, answerme: Boolean(answerme)}) + "\n"
 		@sipStack.sendInstantMessage to, content
 
 	#### updateMediaState
@@ -183,6 +183,9 @@ class QS extends Spine.Controller
 
 	cbRemotestream: (remotestream) =>
 		@trigger "qs-remotestream", remotestream
+
+	cbAnotherIncomingCall: (data) =>
+		@trigger "qs-another-incoming-call", data
 
 	cbRegisterFail: () =>
 		@trigger 'qs-register-fail'
