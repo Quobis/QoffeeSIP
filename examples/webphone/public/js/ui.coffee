@@ -407,10 +407,10 @@ class UI extends Spine.Controller
 		@previousState = @state
 
 	cbRinging: (message) =>
-		@ext2 = data.ext
+		@ext2 = message.ext
 		@updateStatus "Incoming call from #{@ext2}"
-		@answer = => @qs.answer data.branch
-		@hangup = => @qs.hangup data.branch
+		@answer = => @qs.answer message.branch
+		@hangup = => @qs.hangup message.branch
 		@nextForm @$formIncomingCall
 		document.getElementById("sound-ringing").play()
 		if window.autoanswering

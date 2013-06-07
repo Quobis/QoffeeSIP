@@ -223,6 +223,7 @@ class SipStack extends Spine.Controller
 							@reRegister = () =>
 								newRegister = @getTransaction transaction
 								newRegister.cseq.number += 1
+								newRegister.updateCnonceNcHex()
 								@send @createMessage newRegister
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@unregister = () =>
@@ -266,6 +267,7 @@ class SipStack extends Spine.Controller
 							@reRegister = () =>
 								newRegister = @getTransaction transaction
 								newRegister.cseq.number += 1
+								newRegister.updateCnonceNcHex()
 								@send @createMessage newRegister
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@unregister = () =>
@@ -518,7 +520,7 @@ class SipStack extends Spine.Controller
 			when "REGISTER", "MESSAGE", "CANCEL"
 				data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr>\r\n"
 			when "INVITE"
-				if transaction.recordRoutes.length
+				if transaction.recordRoutes?.length
 					data += "Route: #{serviceRoute}\r\n" for serviceRoute in @serviceRoutes
 				else
 					data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr>\r\n"
