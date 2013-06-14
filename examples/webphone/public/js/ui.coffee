@@ -6,7 +6,7 @@
 ##
 
 class User extends Spine.Model
-	@configure "User", "user", "password", "sipServer", "userAuthName", "turnServer", "turnCredential", "stunServer", "audioSession"
+	@configure "User", "user", "password", "sipServer", "userPriv", "turnServer", "turnCredential", "stunServer", "audioSession"
 	@extend Spine.Model.Local
 
 # Class to manage UI.
@@ -85,7 +85,7 @@ class UI extends Spine.Controller
 				from: @register.ext
 				to: @ext2
 				content: $("#chat > .messages").append("<img src=#{url}>")
-			@renderInstantMessage message
+			@renderInstantMessage @register.ext message
 		@toggleActiveClass(e)
 		false
 
@@ -108,7 +108,7 @@ class UI extends Spine.Controller
 			$("#user-reg").val user.user
 			$("#pass-reg").val user.password
 			$("#server-reg").val user.sipServer
-			$("#user-auth-name").val user.userAuthName
+			$("#user-reg-priv").val user.userPriv
 			$("#only-audio").attr("checked", true) if user.audioSession
 			$("#stun-server").val user.stunServer
 			$("#turn-server").val user.turnServer
@@ -156,16 +156,18 @@ class UI extends Spine.Controller
 
 	# Put a chat message in the chat and scroll to the bottom.
 	# TODO: We should take care of HTML content in the message, for example a script tag.
-	renderInstantMessage: (message) =>
-		message.content = @linkify message.content
-		message.content = @emoticonify message.content
+	renderInstantMessage: (from, text) =>
+		message={}
+		message.content = @linkify text
+		message.content = @emoticonify text
+		message.from = from
 		# If sending message...
-		if message.from is @register.ext
-			contact = message.to
+		if from is @register.ext
+#			contact = message.to
 			type = "label-success"
 		# If receive message...
 		else
-			contact = message.from
+#			contact = message.from
 			type = "label-info"
 
 		@$messages
@@ -218,7 +220,7 @@ class UI extends Spine.Controller
 			user: $("#user-reg").val()
 			password: $("#pass-reg").val()
 			sipServer: $("#server-reg").val()
-			userAuthName: $("#user-auth-name").val()
+			userPriv: $("#user-reg-priv").val()
 			audioSession: $("#only-audio").is(":checked")
 			stunServer: $("#stun-server").val()
 			turnServer: $("#stun-server").val()
@@ -228,7 +230,7 @@ class UI extends Spine.Controller
 		# Trick to speed up tests.
 		@register.pass = $("#pass-reg").val() or @register.ext
 		server         = $("#server-reg").val()
-		@register.userAuthName = $("#user-auth-name").val()
+		@register.userPriv = $("#user-reg-priv").val()
 		onlyAudio      = $("#only-audio").is(":checked")
 		stunServer     = url: "stun:" + $("#stun-server").val()
 		turnServer     = 
@@ -266,11 +268,14 @@ class UI extends Spine.Controller
 			@qs.on "qs-lost-call", @cbEndCall
 			@qs.on "qs-established", @cbEstablished
 			@qs.on "qs-instant-message", @renderInstantMessage
-			@qs.on "qs-presence-update", @presenceUpdate
-			@qs.on "qs-mediastate-update", @mediastateUpdate
 			@qs.on "qs-register-success", @cbRegisterSuccess
 
-			@qs.register @register.ext, @register.pass, @register.domain, @register.userAuthName
+# NOT IMPLEMENT IN THIS WEBPHONE			
+#			@qs.on "qs-presence-update", @presenceUpdate 
+#			@qs.on "qs-mediastate-update", @mediastateUpdate
+
+
+			@qs.register @register.ext, @register.pass, @register.domain, @register.userPriv
 			@$registerButton.addClass "disabled"
 			@$registerButton.addClass "disabled"
 
@@ -362,7 +367,8 @@ class UI extends Spine.Controller
 				content: @$chat.find("input:first").val()
 			@$chat.find("input:first").val ""
 			@qs.chat @ext2, message.content
-			@renderInstantMessage message
+			@renderInstantMessage @register.ext, message.content
+
 		@previousState = @state
 	
 		callback = => 
