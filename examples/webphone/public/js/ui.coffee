@@ -85,7 +85,7 @@ class UI extends Spine.Controller
 				from: @register.ext
 				to: @ext2
 				content: $("#chat > .messages").append("<img src=#{url}>")
-			@renderInstantMessage message
+			@renderInstantMessage @register.ext message
 		@toggleActiveClass(e)
 		false
 
@@ -156,16 +156,18 @@ class UI extends Spine.Controller
 
 	# Put a chat message in the chat and scroll to the bottom.
 	# TODO: We should take care of HTML content in the message, for example a script tag.
-	renderInstantMessage: (message) =>
-		message.content = @linkify message.content
-		message.content = @emoticonify message.content
+	renderInstantMessage: (from, text) =>
+		message={}
+		message.content = @linkify text
+		message.content = @emoticonify text
+		message.from = from
 		# If sending message...
-		if message.from is @register.ext
-			contact = message.to
+		if from is @register.ext
+#			contact = message.to
 			type = "label-success"
 		# If receive message...
 		else
-			contact = message.from
+#			contact = message.from
 			type = "label-info"
 
 		@$messages
@@ -266,9 +268,12 @@ class UI extends Spine.Controller
 			@qs.on "qs-lost-call", @cbEndCall
 			@qs.on "qs-established", @cbEstablished
 			@qs.on "qs-instant-message", @renderInstantMessage
-			@qs.on "qs-presence-update", @presenceUpdate
-			@qs.on "qs-mediastate-update", @mediastateUpdate
 			@qs.on "qs-register-success", @cbRegisterSuccess
+
+# NOT IMPLEMENT IN THIS WEBPHONE			
+#			@qs.on "qs-presence-update", @presenceUpdate 
+#			@qs.on "qs-mediastate-update", @mediastateUpdate
+
 
 			@qs.register @register.ext, @register.pass, @register.domain, @register.userPriv
 			@$registerButton.addClass "disabled"
@@ -362,7 +367,8 @@ class UI extends Spine.Controller
 				content: @$chat.find("input:first").val()
 			@$chat.find("input:first").val ""
 			@qs.chat @ext2, message.content
-			@renderInstantMessage message
+			@renderInstantMessage @register.ext, message.content
+
 		@previousState = @state
 	
 		callback = => 

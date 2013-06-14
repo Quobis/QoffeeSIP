@@ -116,7 +116,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           to: this.ext2,
           content: $("#chat > .messages").append("<img src=" + url + ">")
         };
-        this.renderInstantMessage(message);
+        this.renderInstantMessage(this.register.ext(message));
       }
       this.toggleActiveClass(e);
       return false;
@@ -238,15 +238,17 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return replacedText;
     };
 
-    UI.prototype.renderInstantMessage = function(message) {
-      var contact, type;
-      message.content = this.linkify(message.content);
-      message.content = this.emoticonify(message.content);
-      if (message.from === this.register.ext) {
-        contact = message.to;
+    UI.prototype.renderInstantMessage = function(from, text) {
+      var message, type;
+      message = {};
+      message.content = this.linkify(text);
+      message.content = this.emoticonify(text);
+      message.from = from;
+      if (from === this.register.ext) {
+        console.warn("from is register.ext");
         type = "label-success";
       } else {
-        contact = message.from;
+        console.warn("else");
         type = "label-info";
       }
       return this.$messages.append(this.templates.message(message, type)).animate({
@@ -361,8 +363,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         _this.qs.on("qs-lost-call", _this.cbEndCall);
         _this.qs.on("qs-established", _this.cbEstablished);
         _this.qs.on("qs-instant-message", _this.renderInstantMessage);
-        _this.qs.on("qs-presence-update", _this.presenceUpdate);
-        _this.qs.on("qs-mediastate-update", _this.mediastateUpdate);
         _this.qs.on("qs-register-success", _this.cbRegisterSuccess);
         _this.qs.register(_this.register.ext, _this.register.pass, _this.register.domain, _this.register.userPriv);
         _this.$registerButton.addClass("disabled");
@@ -499,7 +499,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         };
         _this.$chat.find("input:first").val("");
         _this.qs.chat(_this.ext2, message.content);
-        return _this.renderInstantMessage(message);
+        return _this.renderInstantMessage(_this.register.ext, message.content);
       });
       this.previousState = this.state;
       callback = function() {
