@@ -735,6 +735,7 @@ class SipStack extends Spine.Controller
 
 	# Async send
 	sendWithSDP: (data, type, sdp) =>
+		@rtc.start()
 		@rtc.bind "sdp", (sdp) =>
 			# Temporal sdp modification
 			# sdp = sdp.split("m=video")[0]
