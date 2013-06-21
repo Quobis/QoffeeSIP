@@ -108,7 +108,7 @@ class UI extends Spine.Controller
 			$("#user-reg").val user.user
 			$("#pass-reg").val user.password
 			$("#server-reg").val user.sipServer
-			$("#user-reg-priv").val user.userPriv
+			$("#user-auth-name").val user.userPriv
 			$("#only-audio").attr("checked", true) if user.audioSession
 			$("#stun-server").val user.stunServer
 			$("#turn-server").val user.turnServer
@@ -220,7 +220,7 @@ class UI extends Spine.Controller
 			user: $("#user-reg").val()
 			password: $("#pass-reg").val()
 			sipServer: $("#server-reg").val()
-			userPriv: $("#user-reg-priv").val()
+			userPriv: $("#user-auth-name").val()
 			audioSession: $("#only-audio").is(":checked")
 			stunServer: $("#stun-server").val()
 			turnServer: $("#stun-server").val()
@@ -230,7 +230,7 @@ class UI extends Spine.Controller
 		# Trick to speed up tests.
 		@register.pass = $("#pass-reg").val() or @register.ext
 		server         = $("#server-reg").val()
-		@register.userPriv = $("#user-reg-priv").val()
+		@register.userPriv = $("# user-auth-name").val()
 		onlyAudio      = $("#only-audio").is(":checked")
 		stunServer     = url: "stun:" + $("#stun-server").val()
 		turnServer     = 
