@@ -81,14 +81,15 @@ class SipStack extends Spine.Controller
 	# - onopen :: function
 	constructor: () ->
 		super
-		@rtc = new RTC
-			mediaElements: @mediaElements
-			mediaConstraints: @mediaConstraints
-			turnServer: @turnServer
-			stunServer: @stunServer
+		if @mediaConstraints.audio + @mediaConstraints.video > 0
+			@rtc = new RTC
+				mediaElements: @mediaElements
+				mediaConstraints: @mediaConstraints
+				turnServer: @turnServer
+				stunServer: @stunServer
 
-		@rtc.bind "localstream", (localstream) => @trigger "localstream", localstream
-		@rtc.bind "remotestream", (remotestream) => @trigger "remotestream", remotestream
+			@rtc?.bind "localstream", (localstream) => @trigger "localstream", localstream
+			@rtc?.bind "remotestream", (remotestream) => @trigger "remotestream", remotestream
 
 
 		@sipServer = @server.ip
@@ -215,7 +216,7 @@ class SipStack extends Spine.Controller
 						# Successful register.
 						when 200
 							@info "register-success", message
-							@rtc.start()
+							@rtc?.start()
 							@setState 3, message
 							# Manage reregisters. Important: @t should be clean on unregistering.
 							transaction.expires = message.proposedExpires / 2
@@ -257,7 +258,7 @@ class SipStack extends Spine.Controller
 						# Successful register.
 						when 200
 							@info "register-success", message
-							@rtc.start()
+							@rtc?.start()
 							@setState 3, message
 							# Manage reregisters.
 							transaction.expires = message.proposedExpires / 2
@@ -333,7 +334,7 @@ class SipStack extends Spine.Controller
 
 								when 200
 									@info "Establishing call", message
-									@rtc.receiveAnswer message.content
+									@rtc?.receiveAnswer message.content
 									_.extend transaction, _.pick message, "from", "to", "fromTag", "toTag"
 									ack      = new SipTransaction message
 									ack.meth = "ACK"
@@ -411,7 +412,7 @@ class SipStack extends Spine.Controller
 							# Send OK
 							ok = _.clone transaction
 							@send @createMessage ok
-							@rtc.close()
+							@rtc?.close()
 							@setState 3, message
 
 				# ### HANGING UP
@@ -420,14 +421,14 @@ class SipStack extends Spine.Controller
 					return if not @getTransaction message
 					@info "HANGING UP", message
 					@info "Call ended", message
-					@rtc.close()
+					@rtc?.close()
 					@setState 3, message # Registered
 
 				when 10
 					return if not @getTransaction message
 					@info "HANGING UP", message
 					@info "Call ended", message
-					@rtc.close()
+					@rtc?.close()
 					@setState 3, message # Registered
 
 
@@ -667,7 +668,7 @@ class SipStack extends Spine.Controller
 		# It is possible to call hangup before the INVITE has been sent (PeerConnection 
 		# is still getting ICE candidates), so we must unbind "sdp" event to avoid 
 		# sending CANCEL before INVITE.
-		@rtc.unbind "sdp"
+		@rtc?.unbind "sdp"
 
 		# If user is the callee, fromTag of "INVITE" belongs to caller, ext2 in this method.
 		# Tags must be swapped.
@@ -708,7 +709,7 @@ class SipStack extends Spine.Controller
 				@send @createMessage bye
 				@addTransaction bye
 				@setState 9, bye # Hanging
-				@rtc.close()
+				@rtc?.close()
 
 			when 8
 				bye = new SipTransaction
@@ -721,7 +722,7 @@ class SipStack extends Spine.Controller
 				@send @createMessage bye
 				@addTransaction bye
 				@setState 9, bye # Hanging
-				@rtc.close()
+				@rtc?.close()
 
 	send: (data) =>
 		if data?
@@ -735,20 +736,20 @@ class SipStack extends Spine.Controller
 
 	# Async send
 	sendWithSDP: (data, type, sdp) =>
-		@rtc.start()
-		@rtc.bind "sdp", (sdp) =>
+		@rtc?.start()
+		@rtc?.bind "sdp", (sdp) =>
 			# Temporal sdp modification
 			# sdp = sdp.split("m=video")[0]
 			# Media
 			data += "Content-Length: #{sdp.length}\r\n\r\n"
 			data += sdp
 			@send data
-			@rtc.unbind "sdp"
+			@rtc?.unbind "sdp"
 
 		if type is "offer"
-			@rtc.createOffer()
+			@rtc?.createOffer()
 		if type is "answer"
-			@rtc.receiveOffer sdp, => @rtc.createAnswer()
+			@rtc?.receiveOffer sdp, => @rtc?.createAnswer()
 
 	sendInstantMessage: (ext2, text) =>
 		message = new SipTransaction 
