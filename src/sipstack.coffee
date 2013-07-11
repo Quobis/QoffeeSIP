@@ -629,8 +629,9 @@ class SipStack extends Spine.Controller
 					data += "Content-Length: 0\r\n\r\n"		
 			when "MESSAGE"
 				specialCharsRE = /[ñçáéíóúàèìòùâêîôûäëïöü]/gi
-				length = transaction.content.length + (transaction.content.match specialCharsRE)?.length
-				data += "Content-Length: #{length or 0}\r\n"
+				specialCharsLength = (transaction.content.match specialCharsRE)?.length
+				transaction.content.length += specialCharsLength if specialCharsLength?
+				data += "Content-Length: #{transaction.content.length or 0}\r\n"
 				data += "Content-Type: text/plain;charset=utf-8\r\n\r\n"
 				data += transaction.content
 			else
