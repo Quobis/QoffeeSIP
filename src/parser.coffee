@@ -143,23 +143,19 @@ class Parser
 	@parseChallenge: (pkt) ->
 		lineRe   = /^WWW-Authenticate\:.+$|^Proxy-Authenticate\:.+$/m
 		# security checks
-		realmRe  = 
-			///
-			realm="(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|(([a-z\-]+\.)+[a-z\-]{2,3})|(\w+))"
-			///
-		# Too much restrictive, Kamailio includes reserverd characters
-		# like "/" or "+" in nonces. :|
-		nonceRe  = /nonce="([^"]{4,})"/
-		opaqueRe = /opaque="([^"]{4,})"/
-		qopRe    = /qop="([^"]{4,})"/
-		
+		#We use this RE to check if this fieldas are present in the message (not only in the line)
+		#some stacks use different consecutives lines to send Authroization headers.
+		realmRe   = /realm=\"([a-zA-Z0-9\.\-]*)\"\,*/ 
+ 		nonceRe  = /nonce="([^"]{4,})"/
+ 		opaqueRe = /opaque="([^"]{4,})"/
+		qopRe = /qop=\"*([a-zA-Z]*)\"*/	
+
 		line     = (lineRe.exec pkt)
 		if line?
-			line   = line[0]
-			realm  = realmRe.exec(line)?[1]
-			nonce  = nonceRe.exec(line)?[1]
-			opaque = opaqueRe.exec(line)?[1]
-			qop    = qopRe.exec(line)?[1]
+			realm  = realmRe.exec(pkt)?[1]
+			nonce  = nonceRe.exec(pkt)?[1]
+			opaque = opaqueRe.exec(pkt)?[1]
+			qop    = qopRe.exec(pkt)?[1]
 
 		return {realm, nonce, opaque, qop}
 
