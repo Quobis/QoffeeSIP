@@ -639,9 +639,11 @@ class SipStack extends Spine.Controller
 		return data
 
 	register: (@ext, @pass, @domain, @privateId) =>
+		@domain   or= @sipServer
 		transaction = new SipTransaction {meth: "REGISTER", ext: @ext, domain: @domain, pass: @pass or "", privId: @privateId or ""}
 		@addTransaction transaction
 		@setState 1, transaction
+		
 		message = @createMessage transaction
 		@send message
 
