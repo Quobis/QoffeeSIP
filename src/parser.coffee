@@ -143,12 +143,12 @@ class Parser
 	@parseChallenge: (pkt) ->
 		lineRe   = /^WWW-Authenticate\:.+$|^Proxy-Authenticate\:.+$/m
 		# security checks
-		#We use this RE to check if this fieldas are present in the message (not only in the line)
-		#some stacks use different consecutives lines to send Authroization headers.
-		realmRe   = /realm=\"([a-zA-Z0-9\.\-]*)\"\,*/ 
-		nonceRe  = /nonce="([^"]{4,})"/
-		opaqueRe = /opaque="([^"]{4,})"/
-		qopRe = /qop=\"*([a-zA-Z]*)\"*/	
+		# We use this RE to check if this fieldas are present in the message (not only in the line)
+		# some stacks use different consecutives lines to send Authroization headers.
+		realmRe  = /realm="([^\"^\\]+)"/ 
+		nonceRe  = /nonce="([^\"^\\]+)"/
+		opaqueRe = /opaque="([^\"^\\]+)"/
+		qopRe    = /qop=\"(auth|auth-int)\"/
 
 		line     = (lineRe.exec pkt)
 		if line?
