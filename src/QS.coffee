@@ -164,20 +164,20 @@ class QS extends Spine.Controller
 		@sipStack.unregister()
 
 	#### updatePresenceState
-	updatePresenceState: (to, state, answerme = false) =>
+	updatePresenceState: (ext, domain, state, answerme = false) =>
 		@lastState = state
 		content = JSON.stringify({presenceState: state, answerme: Boolean(answerme)}) + "\n"
-		@sipStack.sendInstantMessage to, content
+		@sipStack.sendInstantMessage ext, domain, content
 
 	#### updateMediaState
-	updateMediaState: (to) =>
+	updateMediaState: (ext, domain) =>
 		content = JSON.stringify({presenceState: @sipStack.rtc.mediaState()}) + "\n"
-		@sipStack.sendInstantMessage to, content
+		@sipStack.sendInstantMessage ext, domain, content
 
 	#### chat
-	chat: (ext, text) =>
+	chat: (ext, domain, text) =>
 		content =  JSON.stringify({presenceState: @lastState}) + "\n" + text
-		@sipStack.sendInstantMessage ext, content
+		@sipStack.sendInstantMessage ext, domain, content
 
 	cbLocalstream: (localstream) =>
 		@trigger "qs-localstream", localstream

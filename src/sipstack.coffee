@@ -756,12 +756,13 @@ class SipStack extends Spine.Controller
 		if type is "answer"
 			@rtc?.receiveOffer sdp, => @rtc?.createAnswer()
 
-	sendInstantMessage: (ext2, text) =>
+	sendInstantMessage: (ext2, domain2, text) =>
 		message = new SipTransaction 
 			meth: "MESSAGE"
 			ext: @ext
 			pass: @pass
 			ext2: ext2
+			domain2: domain2
 			content: text
 		@addTransaction message
 		@send @createMessage message
