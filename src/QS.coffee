@@ -276,4 +276,8 @@ class QS extends Spine.Controller
 	attachStream: ($d, stream) =>
 		@sipStack.rtc.attachStream $d, stream
 
+	insertDTMF: (tone) =>
+		@sipStack.rtc.insertDTMF tone
+
+
 window.QS = QS

@@ -79,6 +79,7 @@ class RTC extends Spine.Module
 		console.log "PeerConnection starting"
 		# Firefox does not provide *onicecandidate* callback.
 		@noMoreCandidates = @browser is "firefox"
+		@dtmfSender       = null
 		@createPeerConnection()
 
 	createPeerConnection: =>
@@ -93,6 +94,13 @@ class RTC extends Spine.Module
 		@pc.onaddstream = (event) =>
 			console.log "[MEDIA] Stream added"
 			@remotestream = event.stream
+			
+			@dtmfSender   = @pc.createDTMFSender(@localstream.getAudioTracks()[0])
+			@dtmfSender.ontonechange = (dtmf) -> 
+				console.log dtmf
+				console.log "[INFO] DTMF send - #{dtmf.tone}"
+			window.test = @insertDTMF
+
 			@attachStream @$dom2, @remotestream 
 			@trigger "remotestream", @remotestream
 
@@ -225,7 +233,7 @@ class RTC extends Spine.Module
 			console.log "[ERROR] Error closing peerconnection"
 			console.log e
 		finally
-			@pc = null
+			@pc         = null
 			@start()
 
 	toggleMuteAudio: () =>
@@ -276,5 +284,9 @@ class RTC extends Spine.Module
 
 	mediaState: () =>
 		video: Boolean(@isVideoActive), audio: Boolean(@isAudioActive)
+
+	insertDTMF: (tone) =>
+		if @dtmfSender?
+			@dtmfSender.insertDTMF tone, 500, 50
 
 window.RTC = RTC
