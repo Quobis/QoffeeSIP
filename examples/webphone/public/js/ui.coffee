@@ -366,6 +366,7 @@ class UI extends Spine.Controller
 				to: @ext2
 				content: @$chat.find("input:first").val()
 			@$chat.find("input:first").val ""
+			alert @domain2
 			@qs.chat @ext2, @domain2, message.content
 			@renderInstantMessage @register.ext, message.content
 
