@@ -514,7 +514,7 @@ class SipStack extends Spine.Controller
 		else switch transaction.meth
 			when "REGISTER", "INVITE", "MESSAGE", "CANCEL"
 				data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr>\r\n"
-			when "ACK", "OK", "BYE"
+			when "OK"
 				if transaction.cseq.meth isnt "MESSAGE"
 					data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
 
