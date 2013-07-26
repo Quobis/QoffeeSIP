@@ -286,6 +286,8 @@ class UI extends Spine.Controller
 			stunServer: stunServer
 			mediaElements: @mediaElements
 			onopen: onopen
+			hackno_Route_ACK_BYE: true
+			hackContact_ACK_MESSAGES: true
 			mediaConstraints: {audio: true, video: not onlyAudio}
 
 		@qs.on "qs-localstream", =>

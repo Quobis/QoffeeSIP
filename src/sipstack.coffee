@@ -110,6 +110,11 @@ class SipStack extends Spine.Controller
 		@hackViaTCP    ?= false
 		# Some SIP server try to resolve our random domain. Use a random IP.
 		@hackIpContact ?= false
+		#Some vendors need doesn't support receiving Route headers in ACK and BYE
+		@hackno_Route_ACK_BYE ?= false
+		#Some IMS cores needs to receive Contact in in-session messages to acept them
+		@hackContact_ACK_MESSAGES ?= false
+	
 
 		# A new websocket connection is created.
 		console.log("#{@transport}://#{@sipServer}:#{@port}#{@path}")
@@ -514,10 +519,15 @@ class SipStack extends Spine.Controller
 		else switch transaction.meth
 			when "REGISTER", "INVITE", "MESSAGE", "CANCEL"
 				data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr>\r\n"
-			when "OK"
+			when "OK"  
 				if transaction.cseq.meth isnt "MESSAGE"
 					data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
-
+			when "BYE", "ACK"
+				if not @hackno_Route_ACK_BYE
+                                	if transaction.cseq.meth isnt "MESSAGE"
+                                        	data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
+				else 
+					console.log "ANTON: hackno_Route_ACK_BYE= false\n"
 		# Via
 		if _.isArray(transaction.vias)# and transaction.meth isnt "ACK"
 			data += (transaction.vias.join "\r\n") + "\r\n"
@@ -588,6 +598,13 @@ class SipStack extends Spine.Controller
 					data += "Contact: <#{@gruu};ob>\r\n"
 				else
 					data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws;ob>\r\n"
+			when "ACK", "MESSAGE"
+				if @hackContact_ACK_MESSAGES
+                                	if @gruu
+                                        	data += "Contact: <#{@gruu};ob>\r\n"
+                                	else
+                                        	data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws;ob>\r\n"
+				
 		switch transaction.meth
 			when "REGISTER"
 				data += ";reg-id=#{transaction.regid}"

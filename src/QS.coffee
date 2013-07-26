@@ -52,6 +52,8 @@ class QS extends Spine.Controller
 			turnServer: @turnServer
 			hackViaTCP: @hackViaTCP
 			hackIpContact: @hackIpContact
+			hackno_Route_ACK_BYE: @hackno_Route_ACK_BYE
+			hackContact_ACK_MESSAGES: @hackContact_ACK_MESSAGES
 			mediaConstraints: @mediaConstraints
 			mediaElements: @mediaElements
 			onopen: @onopen or -> false
