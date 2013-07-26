@@ -368,7 +368,6 @@ class UI extends Spine.Controller
 				to: @ext2
 				content: @$chat.find("input:first").val()
 			@$chat.find("input:first").val ""
-			alert @domain2
 			@qs.chat @ext2, @domain2, message.content
 			@renderInstantMessage @register.ext, message.content
 
@@ -417,6 +416,7 @@ class UI extends Spine.Controller
 
 	cbRinging: (message) =>
 		@ext2 = message.ext
+		@domain2 = message.ext.split(@)
 		@updateStatus "Incoming call from #{@ext2}"
 		@answer = => @qs.answer message.branch
 		@hangup = => @qs.hangup message.branch
