@@ -224,7 +224,7 @@ class SipStack extends Spine.Controller
 							@rtc?.start()
 							@setState 3, message
 							# Manage reregisters. Important: @t should be clean on unregistering.
-							transaction.expires = message.proposedExpires
+							transaction.expires = message.proposedExpires or 3600
 							# A re-register petition is created and sent.
 							@reRegister = () =>
 								newRegister = @getTransaction transaction
