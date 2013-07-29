@@ -46,7 +46,7 @@ task "build", "Build distribution files of the example.", ->
 						throw err if err
 						console.log stdout + stderr
 	# Copy needed libraries to dist/lib/ folder
-	exec "cp -R public/js/lib/ dist/js/; cp ../../dist/qoffeesip.js dist/js/lib/", (err, stdout, stderr) ->
+	exec "cp -R public/js/lib/ dist/js/", (err, stdout, stderr) ->
 		throw err if err
 		console.log stdout + stderr
 	# Copy images, favicon and audio.
