@@ -99,13 +99,13 @@ class Parser
 			From:
 				(\s?".+"\s?)?
 				\s*
-				<?sips?:((.+)@[A-z0-9\.]+(\:[0-9]+)?)>?(;tag=(.+))?
+				<?sips?:((.+)@[A-z0-9\.\-]+(\:[0-9]+)?)>?(;tag=(.+))?
 			///i
 		return @getRegExprResult pkt, lineFromRE, {from: 2, ext: 3, fromTag: 6}
 
 	@parseTo: (pkt) ->
 		# TODO: We must check domains and IPs correctly. This RE is too much permisive.
-		lineToRE = /To:(\s?".+"\s?)?\s*<?sips?:((.+)@[A-z0-9\.]+)>?(;tag=(.+))?/i
+		lineToRE = /To:(\s?".+"\s?)?\s*<?sips?:((.+)@[A-z0-9\.\-]+)>?(;tag=(.+))?/i
 		return @getRegExprResult pkt, lineToRE, {to: 2, ext2: 3, toTag: 5}
 
 	@parseCallId: (pkt) ->

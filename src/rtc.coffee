@@ -141,7 +141,7 @@ class RTC extends Spine.Module
 		console.log "[INFO] createStream"
 		# Localstream already exists, so we just add it to current PeerConnection object.
 		if @localstream?
-			console.log "[INFO] Using media previously getted."
+			console.log "[INFO] Using media previously got."
 			@pc.addStream @localstream
 			@attachStream @$dom1, @localstream
 		# If there is not previous localstream, get it, add it to current PeerConnection object.
