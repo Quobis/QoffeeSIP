@@ -410,7 +410,7 @@ class SipStack extends Spine.Controller
 					@info "CALL ESTABLISHED", message
 					switch message.meth
 						when "BYE"
-							@info "Call ended", message
+							@info "Call finished", message
 							transaction      = new SipTransaction message
 							transaction.vias = message.vias
 							transaction.meth = "OK"
@@ -526,8 +526,6 @@ class SipStack extends Spine.Controller
 				if not @hackno_Route_ACK_BYE
                                 	if transaction.cseq.meth isnt "MESSAGE"
                                         	data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
-				else 
-					console.log "ANTON: hackno_Route_ACK_BYE= false\n"
 		# Via
 		if _.isArray(transaction.vias)# and transaction.meth isnt "ACK"
 			data += (transaction.vias.join "\r\n") + "\r\n"
@@ -536,16 +534,16 @@ class SipStack extends Spine.Controller
 			data += "Via: SIP/2.0/#{(@hackViaTCP and "TCP") or @transport.toUpperCase()} #{transaction.domainName};branch=#{transaction.branch}\r\n"
 
 		# From
-		data += "From: #{transaction.uri};tag=#{transaction.fromTag}\r\n"
+		data += "From: <#{transaction.uri};tag=#{transaction.fromTag}>\r\n"
 
 		# To
 		switch transaction.meth
 			when "REGISTER"
-				data += "To: #{transaction.uri}\r\n"
+				data += "To: <#{transaction.uri}>\r\n"
 			when "INVITE", "MESSAGE", "CANCEL"
-				data += "To: #{transaction.uri2}\r\n"
+				data += "To:  <#{transaction.uri2}>\r\n"
 			else
-				data += "To: #{transaction.uri2};tag=#{transaction.toTag}\r\n"
+				data += "To: <#{transaction.uri2}>;tag=#{transaction.toTag}\r\n"
 
 		# Call-ID
 		data += "Call-ID: #{transaction.callId}\r\n"

@@ -286,7 +286,7 @@ class UI extends Spine.Controller
 			stunServer: stunServer
 			mediaElements: @mediaElements
 			onopen: onopen
-			hackno_Route_ACK_BYE: true
+			hackno_Route_ACK_BYE: false
 			hackContact_ACK_MESSAGES: true
 			mediaConstraints: {audio: true, video: not onlyAudio}
 

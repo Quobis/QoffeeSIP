@@ -94,19 +94,14 @@ class Parser
 		return {recordRoutes}
 
 	@parseFrom: (pkt) ->
-		# TODO: We must check domains and IPs correctly. This RE is too much permisive.
-		lineFromRE = ///
-			From:
-				(\s?".+"\s?)?
-				\s*
-				<?sips?:((.+)@[A-z0-9\.\-]+(\:[0-9]+)?)>?(;tag=(.+))?
-			///i
-		return @getRegExprResult pkt, lineFromRE, {from: 2, ext: 3, fromTag: 6}
+		# verification URL: http://rubular.com/r/QDAr1fmsfj
+		lineFromRE = /(From|^f):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
+		return @getRegExprResult pkt, lineFromRE, {from: 5, ext: 6, fromTag: 10}
 
 	@parseTo: (pkt) ->
-		# TODO: We must check domains and IPs correctly. This RE is too much permisive.
-		lineToRE = /To:(\s?".+"\s?)?\s*<?sips?:((.+)@[A-z0-9\.\-]+)>?(;tag=(.+))?/i
-		return @getRegExprResult pkt, lineToRE, {to: 2, ext2: 3, toTag: 5}
+		# verification URL: http://rubular.com/r/JbKTIKPTli
+		lineToRE = /(To|^t):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
+		return @getRegExprResult pkt, lineToRE, {to: 5, ext2: 6, toTag: 10}
 
 	@parseCallId: (pkt) ->
 		lineCallIdRE = /Call-ID:\s(.+)/i
@@ -126,10 +121,14 @@ class Parser
 		return {route}
 
 	# Challenge parser, it gets Contact values.
+	#verification URL: http://rubular.com/r/x46OPwgWBd
 	@parseContact: (pkt) ->
-		contactRE = /Contact\:\s<(.*)>/g
+		contactRE = /(Contact|^m):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(.*)/
 		gruuRE = /pub\-gruu=\"(.+?)\"/
-		result = @getRegExprResult pkt, contactRE, {contact: 1}
+		result = @getRegExprResult pkt, contactRE, {contact: 3}
+		result2= @getRegExprResult pkt, contactRE, {contact: 8}
+		console.warn result 	
+		console.warn result2	
 		return _.extend result, @getRegExprResult pkt, gruuRE, {gruu: 1}
 
 	# Challenge parser, it gets method from CSeq values.
