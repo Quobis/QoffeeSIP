@@ -20,8 +20,6 @@ $ ->
     new UI conf
     window.autoanswering = false
 
-    if window.autoanswering
-        ext = 1234
-        $("#user-reg").val ext
-        $("#pass-reg").val ext
-        $("#register").click()
+    # $("#user-reg").val ext
+    # $("#pass-reg").val ext
+    # $("#register").click()

@@ -244,16 +244,10 @@ class UI extends Spine.Controller
 
 		line = serverRE.exec server
 		sipServer        = {}
-		if line?
-			sipServer.transport = line[1]
-			sipServer.ip        = line[2]
-			sipServer.port      = line[4]
-			sipServer.path      = line[5] or ""
-		else
-			sipServer.ip        = "212.145.159.109"
-			sipServer.port      = "80"
-			sipServer.path      = ""
-			sipServer.transport = "ws"
+		sipServer.transport = line[1]
+		sipServer.ip        = line[2]
+		sipServer.port      = line[4]
+		sipServer.path      = line[5] or ""
 
 		onopen = =>
 			@api.on "new-state", @newState
