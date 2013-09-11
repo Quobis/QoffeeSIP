@@ -57,7 +57,7 @@ task "build", "Build distribution files of the example.", ->
 		throw err if err
 		console.log stdout + stderr
 	# Compile .jade (HTML) files
-	exec "jade -P -O dist/ views/index.jade; ", (err, stdout, stderr) ->
+	exec "jade -P -o dist/ views/index.jade; ", (err, stdout, stderr) ->
 		throw err if err
 		console.log stdout + stderr
 	# Compile own .styl (CSS) file
