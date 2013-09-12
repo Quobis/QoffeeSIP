@@ -517,7 +517,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.getRegExprResult(pkt, lineFromRE, {
         from: 2,
         ext: 3,
-        fromTag: 5
+        fromTag: 6
       });
     };
 
