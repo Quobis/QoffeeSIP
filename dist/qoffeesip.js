@@ -1264,7 +1264,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     SipStack.prototype.createMessage = function(transaction) {
-      var address, authExt, authUri, data, opaque, qop, rr, specialCharsLength, specialCharsRE, _i, _len, _ref, _ref1;
+      var address, authExt, authUri, data, length, opaque, qop, rr, specialCharsLength, specialCharsRE, _i, _len, _ref, _ref1;
       transaction = new SipTransaction(transaction);
       transaction.uri = "sip:" + transaction.ext + "@" + (this.domain || this.sipServer);
       transaction.uri2 = "sip:" + transaction.ext2 + "@" + (transaction.domain2 || this.sipServer);
@@ -1454,10 +1454,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         case "MESSAGE":
           specialCharsRE = /[ñçáéíóúàèìòùâêîôûäëïöü]/gi;
           specialCharsLength = (_ref1 = transaction.content.match(specialCharsRE)) != null ? _ref1.length : void 0;
-          if (specialCharsLength != null) {
-            transaction.content.length += specialCharsLength;
-          }
-          data += "Content-Length: " + (transaction.content.length || 0) + "\r\n";
+          length = transaction.content.length + (specialCharsLength || 0);
+          data += "Content-Length: " + (length || 0) + "\r\n";
           data += "Content-Type: text/plain;charset=utf-8\r\n\r\n";
           data += transaction.content;
           break;
