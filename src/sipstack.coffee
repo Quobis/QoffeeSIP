@@ -453,7 +453,7 @@ class SipStack extends Spine.Controller
 			console.log "HA1 = md5(#{transaction.privId}:#{transaction.realm}:#{transaction.pass})"			
 
 		else
-			ha1 = CryptoJS.MD5 "#{transaction.ext}:#{transaction.realm}:#{transaction.pass}"
+			ha1 = CryptoJS.MD5 "#{transaction.username}:#{transaction.realm}:#{transaction.pass}"
 			console.log "HA1 = md5(#{transaction.ext}:#{transaction.realm}:#{transaction.pass})"
 		console.log "HA1 = #{ha1}"
 		ha2 = CryptoJS.MD5 "#{transaction.meth}:#{transaction.requestUri}"
@@ -519,8 +519,8 @@ class SipStack extends Spine.Controller
 				transaction.requestUri = transaction.uri2
 				data = "#{transaction.meth} #{transaction.requestUri}#{transaction.UserPhone} SIP/2.0\r\n"
 			when "BYE"
-				transaction.requestUri = transaction.contact or transaction.uri2
-				data = "#{transaction.meth} #{transaction.requestUri}#{transaction.UserPhone} SIP/2.0\r\n"
+				transaction.requestUri = transaction.contact or transaction.uri2+transaction.UserPhone
+				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"
 			when "ACK"
 				transaction.requestUri = transaction.contact or transaction.uri2
 				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"

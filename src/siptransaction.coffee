@@ -53,7 +53,10 @@ class SipTransaction
 
 		@fromTag ?= ";tag="+@randomString 20
 		@toTag ?= ";tag="+@randomString 20
-		
+
+		#Get username to be used in authentication
+		@username = args.ext+"@"+args.domain
+
 		#Get domain from To, it can include user params, like user=phone 	 
 		if args.to?
 			@domain2 ?= args.to.split("@")[1]		
