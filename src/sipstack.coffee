@@ -490,8 +490,9 @@ class SipStack extends Spine.Controller
 
 		transaction.uri         = "sip:#{transaction.ext}@#{@domain or @sipServer}"
 		transaction.uri2        = "sip:#{transaction.ext2}@#{transaction.domain2 or @sipServer}"
-		transaction.targetUri   = "sip:#{@sipServer}"
+		transaction.targetUri   = "sip:#{@domain or @sipServer}"
 		transaction.cseq.number += 1 if transaction.meth is "BYE"
+
 			
 		# SIP frame is filled.
 		switch transaction.meth
@@ -534,7 +535,11 @@ class SipStack extends Spine.Controller
 			data += "Via: SIP/2.0/#{(@hackViaTCP and "TCP") or @transport.toUpperCase()} #{transaction.domainName};branch=#{transaction.branch}\r\n"
 
 		# From
-		data += "From: <#{transaction.uri};tag=#{transaction.fromTag}>\r\n"
+		switch transaction.meth
+			when "Ringing","OK", "BYE","ACK" 
+				data += "From: <#{transaction.from}>#{transaction.fromTag} \r\n"
+			else
+				data += "From: <#{transaction.uri}>#{transaction.fromTag}\r\n"
 
 		# To
 		switch transaction.meth
@@ -543,7 +548,7 @@ class SipStack extends Spine.Controller
 			when "INVITE", "MESSAGE", "CANCEL"
 				data += "To:  <#{transaction.uri2}>\r\n"
 			else
-				data += "To: <#{transaction.uri2}>;tag=#{transaction.toTag}\r\n"
+				data += "To: <#{transaction.uri2}>#{transaction.toTag}\r\n"
 
 		# Call-ID
 		data += "Call-ID: #{transaction.callId}\r\n"

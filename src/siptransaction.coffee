@@ -42,9 +42,22 @@ class SipTransaction
 			@cseq.number ?= _.random 0, 1000
 			@cseq.meth   ?= @meth
 			@cseq.meth   ?= ""
+        
+		#Storing tag strings always starting with ";tag=""
+		#TODO this variable may contain other header param	
+		if args.toTag? and !/^;tag=/.test(args.toTag)
+			@toTag = ";tag="+args.toTag
+			
+		if args.fromTag? and !/^;tag=/.test(args.fromTag)
+			@fromTag = ";tag="+args.fromTag
 
-		@fromTag ?= @randomString 20
-		@toTag ?= @randomString 20
+		@fromTag ?= ";tag="+@randomString 20
+		@toTag ?= ";tag="+@randomString 20
+
+		#Get domain from To, it can include user params, like user=phone 	 
+		if args.to?
+			@domain2 ?= args.to.split("@")[1]		
+
 		@callId ?= @randomString 16
 		@regid = 1
 		SipTransaction::uuid ?= @getUuid()

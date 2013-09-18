@@ -95,13 +95,44 @@ class Parser
 
 	@parseFrom: (pkt) ->
 		# verification URL: http://rubular.com/r/QDAr1fmsfj
-		lineFromRE = /(From|^f):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
-		return @getRegExprResult pkt, lineFromRE, {from: 5, ext: 6, fromTag: 10}
+		#lineFromRE = /(From|^f):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
+		#return @getRegExprResult pkt, lineFromRE, {from: 5, ext: 6, fromTag: 10}
+		#verification URL: http://rubular.com/r/gytoL5gDUO
+		lineFromRE = /(From|^f):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;]*))(;.*)?/
+		
+		if !((lineFrom = lineFromRE.exec pkt)?)
+			console.log "Error parsing From!!"
+		else 
+			#The URI (cand be a sip uri or tel uri) will only be in one of these variables
+			useruri = lineFrom[5]||lineFrom[6]||lineFrom[7] 
+			#display name can be present or not (undefined)
+			displayName = lineFrom[4] 
+			#we get the tag, an the rest of header parameters
+			tag= lineFrom[8] 
+			user = /sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?)/.exec(useruri)[2]
+
+		return {from: useruri, ext: user, fromTag: tag, displayNameFrom: displayName} 		
 
 	@parseTo: (pkt) ->
-		# verification URL: http://rubular.com/r/JbKTIKPTli
-		lineToRE = /(To|^t):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
-		return @getRegExprResult pkt, lineToRE, {to: 5, ext2: 6, toTag: 10}
+		# verification URL: http://rubular.com/r/zn54bdQtiL
+		#lineToRE = /(To|^t):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
+		#return @getRegExprResult pkt, lineToRE, {to: 5, ext2: 6, toTag: 10}
+
+		lineToRE = /(To|^t):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;]*))(;.*)?/
+		
+		if !((lineTo = lineToRE.exec pkt)?)
+			console.log "Error parsing To!!"
+		else 
+			#The URI (cand be a sip uri or tel uri) will only be in one of these variables
+			useruri = lineTo[5]||lineTo[6]||lineTo[7] 
+			#display name can be present or not (undefined)
+			displayName = lineTo[4] 
+			#we get the tag, an the rest of header parameters
+			tag= lineTo[8] 
+			user = /sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?)/.exec(useruri)[2]
+
+		return {to: useruri, ext2: user, toTag: tag, displayNameTo: displayName}
+
 
 	@parseCallId: (pkt) ->
 		lineCallIdRE = /Call-ID:\s(.+)/i
