@@ -54,6 +54,7 @@ class QS extends Spine.Controller
 			hackIpContact: @hackIpContact
 			hackno_Route_ACK_BYE: @hackno_Route_ACK_BYE
 			hackContact_ACK_MESSAGES: @hackContact_ACK_MESSAGES
+			hackUserPhone: @hackUserPhone
 			mediaConstraints: @mediaConstraints
 			mediaElements: @mediaElements
 			onopen: @onopen or -> false

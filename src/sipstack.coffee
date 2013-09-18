@@ -114,7 +114,9 @@ class SipStack extends Spine.Controller
 		@hackno_Route_ACK_BYE ?= false
 		#Some IMS cores needs to receive Contact in in-session messages to acept them
 		@hackContact_ACK_MESSAGES ?= false
-		console.log("Creating QS with @hackViaTCP= #{@hackViaTCP} @hackIpContact=#{@hackIpContact} @hackno_Route_ACK_BYE=#{@hackno_Route_ACK_BYE} @hackContact_ACK_MESSAGES=#{@hackContact_ACK_MESSAGES}")	
+		#To send all To and R-URI with user=phone
+		@hackUserPhone ?= false
+		console.log("Creating QS with @hackViaTCP= #{@hackViaTCP} @hackIpContact=#{@hackIpContact} @hackno_Route_ACK_BYE=#{@hackno_Route_ACK_BYE} @hackContact_ACK_MESSAGES=#{@hackContact_ACK_MESSAGES} @hackUserPhone=#{@hackUserPhone}")	
 
 		# A new websocket connection is created.
 		console.log("#{@transport}://#{@sipServer}:#{@port}#{@path}")
@@ -493,7 +495,21 @@ class SipStack extends Spine.Controller
 		transaction.targetUri   = "sip:#{@domain or @sipServer}"
 		transaction.cseq.number += 1 if transaction.meth is "BYE"
 
-			
+		transaction.ltFrom = ""
+		transaction.gtFrom = ""
+		transaction.ltTo = ""
+		transaction.gtTo= ""
+
+		if @hackUserPhone
+			transaction.ltFrom = "<"
+			transaction.gtFrom = ">"
+			transaction.ltTo = "<"
+			transaction.gtTo= ">"
+			transaction.UserPhone = ";user=phone"
+		else 
+			transaction.UserPhone = ""
+
+
 		# SIP frame is filled.
 		switch transaction.meth
 			when "REGISTER"
@@ -501,8 +517,11 @@ class SipStack extends Spine.Controller
 				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"
 			when "INVITE", "MESSAGE", "CANCEL"
 				transaction.requestUri = transaction.uri2
-				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"
-			when "ACK", "BYE"
+				data = "#{transaction.meth} #{transaction.requestUri}#{transaction.UserPhone} SIP/2.0\r\n"
+			when "BYE"
+				transaction.requestUri = transaction.contact or transaction.uri2
+				data = "#{transaction.meth} #{transaction.requestUri}#{transaction.UserPhone} SIP/2.0\r\n"
+			when "ACK"
 				transaction.requestUri = transaction.contact or transaction.uri2
 				data = "#{transaction.meth} #{transaction.requestUri} SIP/2.0\r\n"
 			when "OK"
@@ -539,16 +558,18 @@ class SipStack extends Spine.Controller
 			when "Ringing","OK", "BYE","ACK" 
 				data += "From: <#{transaction.from}>#{transaction.fromTag} \r\n"
 			else
-				data += "From: <#{transaction.uri}>#{transaction.fromTag}\r\n"
+				data += "From: #{transaction.ltFrom}#{transaction.uri}#{transaction.UserPhone}#{transaction.gtFrom}#{transaction.fromTag}\r\n"
 
 		# To
 		switch transaction.meth
 			when "REGISTER"
-				data += "To: <#{transaction.uri}>\r\n"
+				data += "To: #{transaction.ltTo}#{transaction.uri}#{transaction.UserPhone}#{transaction.gtTo}\r\n"
 			when "INVITE", "MESSAGE", "CANCEL"
-				data += "To:  <#{transaction.uri2}>\r\n"
+				data += "To:  #{transaction.ltTo}#{transaction.uri2}#{transaction.UserPhone}#{transaction.gtTo}\r\n"
+			when "Ringing", "OK", "BYE","ACK"
+				data += "To: <#{transaction.to}>#{transaction.toTag}\r\n"	
 			else
-				data += "To: <#{transaction.uri2}>#{transaction.toTag}\r\n"
+				data += "To: #{transaction.ltTo}#{transaction.uri2}#{transaction.UserPhone}#{transaction.gtTo}#{transaction.toTag}\r\n"
 
 		# Call-ID
 		data += "Call-ID: #{transaction.callId}\r\n"
