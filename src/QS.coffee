@@ -45,7 +45,7 @@ class QS extends Spine.Controller
 			'qs-register-success': {stack:'register-success', cb: @cbRegisterSuccess}
 			'qs-another-incoming-call': {stack:"another-incoming-call", cb: @cbAnotherIncomingCall}
 
-
+		
 		@sipStack = new SipStack
 			server: @server
 			stunServer: @stunServer

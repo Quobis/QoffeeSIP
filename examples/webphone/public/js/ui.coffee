@@ -280,13 +280,15 @@ class UI extends Spine.Controller
 			@$registerButton.addClass "disabled"
 
 		# Both video and audio on, let to true what you need
+		hackno_Route_ACK_BYE = true
+
 		@qs = new QS
 			server: sipServer
 			turnServer: turnServer
 			stunServer: stunServer
 			mediaElements: @mediaElements
 			onopen: onopen
-			hackno_Route_ACK_BYE: false
+			hackno_Route_ACK_BYE: true
 			hackContact_ACK_MESSAGES: true
 			mediaConstraints: {audio: true, video: not onlyAudio}
 
@@ -368,7 +370,7 @@ class UI extends Spine.Controller
 				to: @ext2
 				content: @$chat.find("input:first").val()
 			@$chat.find("input:first").val ""
-			@qs.chat @ext2, @domain2, message.content
+			@qs.chat @ext2, @register.domain, message.content
 			@renderInstantMessage @register.ext, message.content
 
 		@previousState = @state
@@ -416,7 +418,7 @@ class UI extends Spine.Controller
 
 	cbRinging: (message) =>
 		@ext2 = message.ext
-		@domain2 = message.ext.split(@)
+		@domain2 = message.to.split("@")[1]
 		@updateStatus "Incoming call from #{@ext2}"
 		@answer = => @qs.answer message.branch
 		@hangup = => @qs.hangup message.branch

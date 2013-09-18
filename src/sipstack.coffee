@@ -114,7 +114,7 @@ class SipStack extends Spine.Controller
 		@hackno_Route_ACK_BYE ?= false
 		#Some IMS cores needs to receive Contact in in-session messages to acept them
 		@hackContact_ACK_MESSAGES ?= false
-	
+		console.log("Creating QS with @hackViaTCP= #{@hackViaTCP} @hackIpContact=#{@hackIpContact} @hackno_Route_ACK_BYE=#{@hackno_Route_ACK_BYE} @hackContact_ACK_MESSAGES=#{@hackContact_ACK_MESSAGES}")	
 
 		# A new websocket connection is created.
 		console.log("#{@transport}://#{@sipServer}:#{@port}#{@path}")
