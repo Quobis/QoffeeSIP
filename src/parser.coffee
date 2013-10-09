@@ -94,11 +94,10 @@ class Parser
 		return {recordRoutes}
 
 	@parseFrom: (pkt) ->
-		# verification URL: http://rubular.com/r/QDAr1fmsfj
 		#lineFromRE = /(From|^f):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
 		#return @getRegExprResult pkt, lineFromRE, {from: 5, ext: 6, fromTag: 10}
 		#verification URL: http://rubular.com/r/gytoL5gDUO
-		lineFromRE = /(From|^f):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;]*))(;.*)?/
+		lineFromRE = /(From|^f):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/
 		
 		if !((lineFrom = lineFromRE.exec pkt)?)
 			console.log "Error parsing From!!"
@@ -114,11 +113,11 @@ class Parser
 		return {from: useruri, ext: user, fromTag: tag, displayNameFrom: displayName} 		
 
 	@parseTo: (pkt) ->
-		# verification URL: http://rubular.com/r/zn54bdQtiL
+		# verification URL: http://rubular.com/r/1HeCJoSSJn
 		#lineToRE = /(To|^t):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
 		#return @getRegExprResult pkt, lineToRE, {to: 5, ext2: 6, toTag: 10}
 
-		lineToRE = /(To|^t):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;]*))(;.*)?/
+		lineToRE = /(To|^t):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/
 		
 		if !((lineTo = lineToRE.exec pkt)?)
 			console.log "Error parsing To!!"

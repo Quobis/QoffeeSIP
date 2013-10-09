@@ -157,7 +157,7 @@ class SipStack extends Spine.Controller
 						
 					# Here we receive a 401 for a REGISTER we sent.
 					# Once processed, we send an authenticated REGISTER.
-					when 401
+					when 401, 407
 						register      =  @getTransaction message
 						register.vias = message.vias
 						register.cseq.number += 1
@@ -197,7 +197,7 @@ class SipStack extends Spine.Controller
 				
 								
 			# Busy manager
-			# We can receive a INVITE method in any within-dialog state (>= 3) and answer Busy.
+			# We can receive an INVITE method in any within-dialog state (>= 3) and answer Busy.
 			if 3 < @state < 9
 				# TODO: This INVITE could be a RE-INVITE. We don't manage this case yet.
 				if message.meth is "INVITE"
@@ -244,7 +244,7 @@ class SipStack extends Spine.Controller
 							@gruu = message.gruu
 
 						# Unsusccessful register.
-						when 401
+						when 401, 407
 							@setState 2, message
 							transaction.cseq.number += 1
 							_.extend transaction, _.pick message, "realm", "nonce", "toTag", "qop", "opaque"
@@ -253,7 +253,7 @@ class SipStack extends Spine.Controller
 							@send @createMessage transaction
 
 						else
-							@warning "Unexpected message", message
+							@warning "Unexpected answer for REGISTER: #{message.responseCode}", message
 
 				# ### REGISTERING (after challenging)
 				when 2
@@ -447,14 +447,14 @@ class SipStack extends Spine.Controller
 
 	# SIP digest calculator as defined is RFC 3261.
 	getDigest: (transaction) =>
-		authExtension = transaction.ext
+
 		if transaction.qop is "auth"
-			ha1 = CryptoJS.MD5 "#{transaction.privId}:#{transaction.realm}:#{transaction.pass}"
-			console.log "HA1 = md5(#{transaction.privId}:#{transaction.realm}:#{transaction.pass})"			
+			ha1 = CryptoJS.MD5 "#{transaction.username}:#{transaction.realm}:#{transaction.pass}"
+			console.log "HA1 = md5(#{transaction.username}:#{transaction.realm}:#{transaction.pass})"			
 
 		else
 			ha1 = CryptoJS.MD5 "#{transaction.username}:#{transaction.realm}:#{transaction.pass}"
-			console.log "HA1 = md5(#{transaction.ext}:#{transaction.realm}:#{transaction.pass})"
+			console.log "HA1 = md5(#{transaction.username}:#{transaction.realm}:#{transaction.pass})"
 		console.log "HA1 = #{ha1}"
 		ha2 = CryptoJS.MD5 "#{transaction.meth}:#{transaction.requestUri}"
 		console.log "HA2 = md5(#{transaction.meth}:#{transaction.requestUri})"
@@ -654,10 +654,8 @@ class SipStack extends Spine.Controller
 				authUri = transaction.uri2
 				data += "Proxy-Authorization:"
 			transaction.response = @getDigest transaction
-			authExt = transaction.ext
-			# if IMS
-			authExt = transaction.privId if transaction.privId
-			data += " Digest username=\"#{authExt}\",realm=\"#{transaction.realm}\","
+			
+			data += " Digest username=\"#{transaction.userAuthName}\",realm=\"#{transaction.realm}\","
 			data += "nonce=\"#{transaction.nonce}\"#{opaque},uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5#{qop}\r\n"		
 		
 					
@@ -679,9 +677,9 @@ class SipStack extends Spine.Controller
 				data += "Content-Length: 0\r\n\r\n"	
 		return data
 
-	register: (@ext, @pass, @domain, @privateId) =>
+	register: (@ext, @pass, @domain, @userAuthName) =>
 		@domain   or= @sipServer
-		transaction = new SipTransaction {meth: "REGISTER", ext: @ext, domain: @domain, pass: @pass or "", privId: @privateId or ""}
+		transaction = new SipTransaction {meth: "REGISTER", ext: @ext, domain: @domain, pass: @pass or "", userAuthName: @userAuthName or ""}
 		@addTransaction transaction
 		@setState 1, transaction
 		
@@ -695,6 +693,7 @@ class SipStack extends Spine.Controller
 			pass : @pass,
 			ext2 : ext2
 			domain2: domain2 or @domain
+			userAuthName: @userAuthName
 		@addTransaction transaction
 		@setState 5, transaction
 		message = @createMessage transaction
