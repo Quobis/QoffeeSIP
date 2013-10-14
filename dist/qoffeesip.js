@@ -528,23 +528,41 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     Parser.parseFrom = function(pkt) {
-      var lineFromRE;
-      lineFromRE = /(From|^f):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/;
-      return this.getRegExprResult(pkt, lineFromRE, {
-        from: 5,
-        ext: 6,
-        fromTag: 10
-      });
+      var displayName, lineFrom, lineFromRE, tag, user, useruri;
+      lineFromRE = /(From|^f):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;]*))(;.*)?/;
+      if (!((lineFrom = lineFromRE.exec(pkt)) != null)) {
+        console.log("Error parsing From!!");
+      } else {
+        useruri = lineFrom[5] || lineFrom[6] || lineFrom[7];
+        displayName = lineFrom[4];
+        tag = lineFrom[8];
+        user = /sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?)/.exec(useruri)[2];
+      }
+      return {
+        from: useruri,
+        ext: user,
+        fromTag: tag,
+        displayNameFrom: displayName
+      };
     };
 
     Parser.parseTo = function(pkt) {
-      var lineToRE;
-      lineToRE = /(To|^t):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/;
-      return this.getRegExprResult(pkt, lineToRE, {
-        to: 5,
-        ext2: 6,
-        toTag: 10
-      });
+      var displayName, lineTo, lineToRE, tag, user, useruri;
+      lineToRE = /(To|^t):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;]*))(;.*)?/;
+      if (!((lineTo = lineToRE.exec(pkt)) != null)) {
+        console.log("Error parsing To!!");
+      } else {
+        useruri = lineTo[5] || lineTo[6] || lineTo[7];
+        displayName = lineTo[4];
+        tag = lineTo[8];
+        user = /sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?)/.exec(useruri)[2];
+      }
+      return {
+        to: useruri,
+        ext2: user,
+        toTag: tag,
+        displayNameTo: displayName
+      };
     };
 
     Parser.parseCallId = function(pkt) {
@@ -658,7 +676,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     function SipTransaction(args) {
       this.set = __bind(this.set, this);
 
-      var _base, _base1, _base2, _base3, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+      var _base, _base1, _base2, _base3, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
       this.set(args);
       if ((_ref = this.domainName) == null) {
         this.domainName = "" + (this.randomString(12)) + ".invalid";
@@ -681,29 +699,41 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           _base2.meth = "";
         }
       }
+      if ((args.toTag != null) && !/^;tag=/.test(args.toTag)) {
+        this.toTag = ";tag=" + args.toTag;
+      }
+      if ((args.fromTag != null) && !/^;tag=/.test(args.fromTag)) {
+        this.fromTag = ";tag=" + args.fromTag;
+      }
       if ((_ref6 = this.fromTag) == null) {
-        this.fromTag = this.randomString(20);
+        this.fromTag = ";tag=" + this.randomString(20);
       }
       if ((_ref7 = this.toTag) == null) {
-        this.toTag = this.randomString(20);
+        this.toTag = ";tag=" + this.randomString(20);
       }
-      if ((_ref8 = this.callId) == null) {
+      this.username = args.ext + "@" + args.domain;
+      if (args.to != null) {
+        if ((_ref8 = this.domain2) == null) {
+          this.domain2 = args.to.split("@")[1];
+        }
+      }
+      if ((_ref9 = this.callId) == null) {
         this.callId = this.randomString(16);
       }
       this.regid = 1;
-      if ((_ref9 = (_base3 = SipTransaction.prototype).uuid) == null) {
+      if ((_ref10 = (_base3 = SipTransaction.prototype).uuid) == null) {
         _base3.uuid = this.getUuid();
       }
-      if ((_ref10 = this.tupleId) == null) {
+      if ((_ref11 = this.tupleId) == null) {
         this.tupleId = this.randomString(8);
       }
-      if ((_ref11 = this.cnonce) == null) {
+      if ((_ref12 = this.cnonce) == null) {
         this.cnonce = "";
       }
-      if ((_ref12 = this.nc) == null) {
+      if ((_ref13 = this.nc) == null) {
         this.nc = 0;
       }
-      if ((_ref13 = this.ncHex) == null) {
+      if ((_ref14 = this.ncHex) == null) {
         this.ncHex = "00000000";
       }
     }
@@ -875,7 +905,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.addTransaction = __bind(this.addTransaction, this);
 
-      var _ref, _ref1, _ref2, _ref3, _ref4, _ref5,
+      var _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6,
         _this = this;
       SipStack.__super__.constructor.apply(this, arguments);
       if (this.mediaConstraints.audio + this.mediaConstraints.video > 0) {
@@ -915,6 +945,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if ((_ref5 = this.hackContact_ACK_MESSAGES) == null) {
         this.hackContact_ACK_MESSAGES = false;
       }
+      if ((_ref6 = this.hackUserPhone) == null) {
+        this.hackUserPhone = false;
+      }
+      console.log("Creating QS with @hackViaTCP= " + this.hackViaTCP + " @hackIpContact=" + this.hackIpContact + " @hackno_Route_ACK_BYE=" + this.hackno_Route_ACK_BYE + " @hackContact_ACK_MESSAGES=" + this.hackContact_ACK_MESSAGES + " @hackUserPhone=" + this.hackUserPhone);
       console.log("" + this.transport + "://" + this.sipServer + ":" + this.port + this.path);
       try {
         this.websocket = new WebSocket("" + this.transport + "://" + this.sipServer + ":" + this.port + this.path, "sip");
@@ -931,7 +965,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         return _this.onopen();
       };
       this.websocket.onmessage = function(evt) {
-        var ack, busy, instantMessage, message, ok, register, ringing, transaction, _ref10, _ref11, _ref12, _ref13, _ref6, _ref7, _ref8, _ref9;
+        var ack, busy, instantMessage, message, ok, register, ringing, transaction, _ref10, _ref11, _ref12, _ref13, _ref14, _ref7, _ref8, _ref9;
         message = Parser.parse(evt.data);
         _this.info("Input message", message);
         if ((_this.state > 2) && (message.cseq.meth === "REGISTER")) {
@@ -971,7 +1005,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
               _this.deleteTransaction(message);
               break;
             default:
-              if ((_ref6 = message.responseCode) !== 401 && _ref6 !== 407) {
+              if ((_ref7 = message.responseCode) !== 401 && _ref7 !== 407) {
                 return;
               }
               if (!_this.getTransaction(message)) {
@@ -985,7 +1019,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           }
           return;
         }
-        if ((3 < (_ref7 = _this.state) && _ref7 < 9)) {
+        if ((3 < (_ref8 = _this.state) && _ref8 < 9)) {
           if (message.meth === "INVITE") {
             _this.info("another-incoming-call", message);
             busy = _.clone(message);
@@ -1006,8 +1040,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             switch (message.responseCode) {
               case 200:
                 _this.info("register-success", message);
-                if ((_ref8 = _this.rtc) != null) {
-                  _ref8.start();
+                if ((_ref9 = _this.rtc) != null) {
+                  _ref9.start();
                 }
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires || 3600;
@@ -1050,8 +1084,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             switch (message.responseCode) {
               case 200:
                 _this.info("register-success", message);
-                if ((_ref9 = _this.rtc) != null) {
-                  _ref9.start();
+                if ((_ref10 = _this.rtc) != null) {
+                  _ref10.start();
                 }
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires;
@@ -1125,8 +1159,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                     return transaction.contact = message.contact;
                   case 200:
                     _this.info("Establishing call", message);
-                    if ((_ref10 = _this.rtc) != null) {
-                      _ref10.receiveAnswer(message.content);
+                    if ((_ref11 = _this.rtc) != null) {
+                      _ref11.receiveAnswer(message.content);
                     }
                     _.extend(transaction, _.pick(message, "from", "to", "fromTag", "toTag"));
                     ack = new SipTransaction(message);
@@ -1205,8 +1239,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 transaction.meth = "OK";
                 ok = _.clone(transaction);
                 _this.send(_this.createMessage(ok));
-                if ((_ref11 = _this.rtc) != null) {
-                  _ref11.close();
+                if ((_ref12 = _this.rtc) != null) {
+                  _ref12.close();
                 }
                 return _this.setState(3, message);
             }
@@ -1217,8 +1251,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             _this.info("HANGING UP", message);
             _this.info("Call ended", message);
-            if ((_ref12 = _this.rtc) != null) {
-              _ref12.close();
+            if ((_ref13 = _this.rtc) != null) {
+              _ref13.close();
             }
             return _this.setState(3, message);
           case 10:
@@ -1227,8 +1261,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             _this.info("HANGING UP", message);
             _this.info("Call ended", message);
-            if ((_ref13 = _this.rtc) != null) {
-              _ref13.close();
+            if ((_ref14 = _this.rtc) != null) {
+              _ref14.close();
             }
             return _this.setState(3, message);
         }
@@ -1245,7 +1279,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         ha1 = CryptoJS.MD5("" + transaction.privId + ":" + transaction.realm + ":" + transaction.pass);
         console.log("HA1 = md5(" + transaction.privId + ":" + transaction.realm + ":" + transaction.pass + ")");
       } else {
-        ha1 = CryptoJS.MD5("" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass);
+        ha1 = CryptoJS.MD5("" + transaction.username + ":" + transaction.realm + ":" + transaction.pass);
         console.log("HA1 = md5(" + transaction.ext + ":" + transaction.realm + ":" + transaction.pass + ")");
       }
       console.log("HA1 = " + ha1);
@@ -1264,13 +1298,26 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     SipStack.prototype.createMessage = function(transaction) {
-      var address, authExt, authUri, data, length, opaque, qop, rr, specialCharsLength, specialCharsRE, _i, _len, _ref, _ref1;
+      var address, authExt, authUri, data, length, opaque, qop, rr, _i, _len, _ref;
       transaction = new SipTransaction(transaction);
       transaction.uri = "sip:" + transaction.ext + "@" + (this.domain || this.sipServer);
       transaction.uri2 = "sip:" + transaction.ext2 + "@" + (transaction.domain2 || this.sipServer);
-      transaction.targetUri = "sip:" + this.sipServer;
+      transaction.targetUri = "sip:" + (this.domain || this.sipServer);
       if (transaction.meth === "BYE") {
         transaction.cseq.number += 1;
+      }
+      transaction.ltFrom = "";
+      transaction.gtFrom = "";
+      transaction.ltTo = "";
+      transaction.gtTo = "";
+      if (this.hackUserPhone) {
+        transaction.ltFrom = "<";
+        transaction.gtFrom = ">";
+        transaction.ltTo = "<";
+        transaction.gtTo = ">";
+        transaction.UserPhone = ";user=phone";
+      } else {
+        transaction.UserPhone = "";
       }
       switch (transaction.meth) {
         case "REGISTER":
@@ -1281,10 +1328,13 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         case "MESSAGE":
         case "CANCEL":
           transaction.requestUri = transaction.uri2;
+          data = "" + transaction.meth + " " + transaction.requestUri + transaction.UserPhone + " SIP/2.0\r\n";
+          break;
+        case "BYE":
+          transaction.requestUri = transaction.contact || transaction.uri2 + transaction.UserPhone;
           data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
           break;
         case "ACK":
-        case "BYE":
           transaction.requestUri = transaction.contact || transaction.uri2;
           data = "" + transaction.meth + " " + transaction.requestUri + " SIP/2.0\r\n";
           break;
@@ -1330,18 +1380,33 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       } else {
         data += "Via: SIP/2.0/" + ((this.hackViaTCP && "TCP") || this.transport.toUpperCase()) + " " + transaction.domainName + ";branch=" + transaction.branch + "\r\n";
       }
-      data += "From: <" + transaction.uri + ";tag=" + transaction.fromTag + ">\r\n";
+      switch (transaction.meth) {
+        case "Ringing":
+        case "OK":
+        case "BYE":
+        case "ACK":
+          data += "From: <" + transaction.from + ">" + transaction.fromTag + " \r\n";
+          break;
+        default:
+          data += "From: " + transaction.ltFrom + transaction.uri + transaction.UserPhone + transaction.gtFrom + transaction.fromTag + "\r\n";
+      }
       switch (transaction.meth) {
         case "REGISTER":
-          data += "To: <" + transaction.uri + ">\r\n";
+          data += "To: " + transaction.ltTo + transaction.uri + transaction.UserPhone + transaction.gtTo + "\r\n";
           break;
         case "INVITE":
         case "MESSAGE":
         case "CANCEL":
-          data += "To:  <" + transaction.uri2 + ">\r\n";
+          data += "To:  " + transaction.ltTo + transaction.uri2 + transaction.UserPhone + transaction.gtTo + "\r\n";
+          break;
+        case "Ringing":
+        case "OK":
+        case "BYE":
+        case "ACK":
+          data += "To: <" + transaction.to + ">" + transaction.toTag + "\r\n";
           break;
         default:
-          data += "To: <" + transaction.uri2 + ">;tag=" + transaction.toTag + "\r\n";
+          data += "To: " + transaction.ltTo + transaction.uri2 + transaction.UserPhone + transaction.gtTo + transaction.toTag + "\r\n";
       }
       data += "Call-ID: " + transaction.callId + "\r\n";
       switch (transaction.meth) {
@@ -1452,9 +1517,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           }
           break;
         case "MESSAGE":
-          specialCharsRE = /[ñçáéíóúàèìòùâêîôûäëïöü]/gi;
-          specialCharsLength = (_ref1 = transaction.content.match(specialCharsRE)) != null ? _ref1.length : void 0;
-          length = transaction.content.length + (specialCharsLength || 0);
+          length = transaction.content.length + (encodeURI(s).split(/%..|./).length - 1);
           data += "Content-Length: " + (length || 0) + "\r\n";
           data += "Content-Type: text/plain;charset=utf-8\r\n\r\n";
           data += transaction.content;
@@ -1773,6 +1836,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         hackIpContact: this.hackIpContact,
         hackno_Route_ACK_BYE: this.hackno_Route_ACK_BYE,
         hackContact_ACK_MESSAGES: this.hackContact_ACK_MESSAGES,
+        hackUserPhone: this.hackUserPhone,
         mediaConstraints: this.mediaConstraints,
         mediaElements: this.mediaElements,
         onopen: this.onopen || function() {
