@@ -55,7 +55,14 @@ class SipTransaction
 		@toTag ?= ";tag="+@randomString 20
 
 		#Get username to be used in authentication
-		@username = args.ext+"@"+args.domain
+		
+		if args.userAuthName? and args.userAuthName !=""
+			@username = args.userAuthName
+			console.log "Using provided userAuthName for authentication: #{args.userAuthName}"
+		else	
+			@username = args.ext
+			console.log "Using user name for authentication: #{args.ext}"
+
 
 		#Get domain from To, it can include user params, like user=phone 	 
 		if args.to?
