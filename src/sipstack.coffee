@@ -666,7 +666,6 @@ class SipStack extends Spine.Controller
 				authUri = transaction.uri2
 				data += "Proxy-Authorization:"
 			transaction.response = @getDigest transaction
-			console.log "ANTON: auth username: #{transaction.userAuthName}"
 			
 			data += " Digest username=\"#{transaction.userAuthName}\",realm=\"#{transaction.realm}\","
 			data += "nonce=\"#{transaction.nonce}\"#{opaque},uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5#{qop}\r\n"		
