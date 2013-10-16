@@ -234,6 +234,8 @@ class SipStack extends Spine.Controller
 								@send @createMessage newRegister
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@unregister = () =>
+								# Hangup before reregistering.
+								@hangup @currentCall.branch if @currentCall
 								console.log "[INFO] unregistering"
 								transaction = @getTransaction message
 								transaction.expires = 0
@@ -275,6 +277,8 @@ class SipStack extends Spine.Controller
 								@send @createMessage newRegister
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@unregister = () =>
+								# Hangup before reregistering.
+								@hangup @currentCall.branch if @currentCall
 								console.log "[INFO] unregistering"
 								transaction = @getTransaction message
 								transaction.expires = 0
@@ -325,6 +329,7 @@ class SipStack extends Spine.Controller
 				when 5
 					return if not @getTransaction message
 					transaction = @getTransaction message
+					@currentCall = message
 					switch message.type
 						when "response"
 							# If the message is a known response
@@ -380,6 +385,8 @@ class SipStack extends Spine.Controller
 										@setState 3
 										# Remove the current invite transaction.
 										@deleteTransaction "INVITE"
+										@currentCall = message
+
 
 						when "request"
 							switch message.meth
@@ -390,12 +397,15 @@ class SipStack extends Spine.Controller
 									# Send OK
 									@send @createMessage ok
 									@setState 3, message
+									@currentCall = message
+
 								else
 									@warning "Unexpected message", message
 
 				# ### RINGING
 				when 6
 					return if not @checkDialog message
+					@currentCall = message
 					@info "RINGING", message
 					switch message.meth
 						when "CANCEL"
@@ -430,6 +440,7 @@ class SipStack extends Spine.Controller
 					@info "Call ended", message
 					@rtc?.close()
 					@setState 3, message # Registered
+					@currentCall = null
 
 				when 10
 					return if not @getTransaction message
@@ -437,6 +448,7 @@ class SipStack extends Spine.Controller
 					@info "Call ended", message
 					@rtc?.close()
 					@setState 3, message # Registered
+					@currentCall = null
 
 
 			# # End of Finite State Machine
@@ -668,9 +680,8 @@ class SipStack extends Spine.Controller
 				else
 					data += "Content-Length: 0\r\n\r\n"		
 			when "MESSAGE"
-				specialCharsRE = /[ñçáéíóúàèìòùâêîôûäëïöü]/gi
-				specialCharsLength = (transaction.content.match specialCharsRE)?.length
-				length = transaction.content.length + (specialCharsLength or 0)
+				
+				length = (encodeURI(transaction.content).split(/%..|./).length - 1)
 				data += "Content-Length: #{length or 0}\r\n"
 				data += "Content-Type: text/plain;charset=utf-8\r\n\r\n"
 				data += transaction.content
@@ -715,7 +726,7 @@ class SipStack extends Spine.Controller
 		# is still getting ICE candidates), so we must unbind "sdp" event to avoid 
 		# sending CANCEL before INVITE.
 		@rtc?.unbind "sdp"
-
+		alert "aaa"
 		# If user is the callee, fromTag of "INVITE" belongs to caller, ext2 in this method.
 		# Tags must be swapped.
 		swap = (d, p1, p2)-> [d[p1], d[p2]] = [d[p2], d[p1]]
@@ -769,6 +780,8 @@ class SipStack extends Spine.Controller
 				@addTransaction bye
 				@setState 9, bye # Hanging
 				@rtc?.close()
+
+		@currentCall = null
 
 	send: (data) =>
 		if data?
