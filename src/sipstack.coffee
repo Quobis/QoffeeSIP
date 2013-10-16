@@ -449,12 +449,12 @@ class SipStack extends Spine.Controller
 	getDigest: (transaction) =>
 
 		if transaction.qop is "auth"
-			ha1 = CryptoJS.MD5 "#{transaction.username}:#{transaction.realm}:#{transaction.pass}"
-			console.log "HA1 = md5(#{transaction.username}:#{transaction.realm}:#{transaction.pass})"			
+			ha1 = CryptoJS.MD5 "#{transaction.userAuthName}:#{transaction.realm}:#{transaction.pass}"
+			console.log "HA1 = md5(#{transaction.userAuthName}:#{transaction.realm}:#{transaction.pass})"			
 
 		else
-			ha1 = CryptoJS.MD5 "#{transaction.username}:#{transaction.realm}:#{transaction.pass}"
-			console.log "HA1 = md5(#{transaction.username}:#{transaction.realm}:#{transaction.pass})"
+			ha1 = CryptoJS.MD5 "#{transaction.userAuthName}:#{transaction.realm}:#{transaction.pass}"
+			console.log "HA1 = md5(#{transaction.userAuthName}:#{transaction.realm}:#{transaction.pass})"
 		console.log "HA1 = #{ha1}"
 		ha2 = CryptoJS.MD5 "#{transaction.meth}:#{transaction.requestUri}"
 		console.log "HA2 = md5(#{transaction.meth}:#{transaction.requestUri})"
@@ -654,6 +654,7 @@ class SipStack extends Spine.Controller
 				authUri = transaction.uri2
 				data += "Proxy-Authorization:"
 			transaction.response = @getDigest transaction
+			console.log "ANTON: auth username: #{transaction.userAuthName}"
 			
 			data += " Digest username=\"#{transaction.userAuthName}\",realm=\"#{transaction.realm}\","
 			data += "nonce=\"#{transaction.nonce}\"#{opaque},uri=\"#{authUri}\",response=\"#{transaction.response}\",algorithm=MD5#{qop}\r\n"		

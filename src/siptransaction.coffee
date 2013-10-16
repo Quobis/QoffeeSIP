@@ -57,10 +57,10 @@ class SipTransaction
 		#Get username to be used in authentication
 		
 		if args.userAuthName? and args.userAuthName !=""
-			@username = args.userAuthName
+			@userAuthName = args.userAuthName
 			console.log "Using provided userAuthName for authentication: #{args.userAuthName}"
 		else	
-			@username = args.ext
+			@userAuthName = args.ext
 			console.log "Using user name for authentication: #{args.ext}"
 
 
