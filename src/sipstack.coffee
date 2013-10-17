@@ -172,8 +172,9 @@ class SipStack extends Spine.Controller
 				switch message.meth
 					when "MESSAGE"
 						console.log "[MESSAGE] #{message.content}"
+						console.log message
 						instantMessage =
-							from: message.ext,
+							from: message.from,
 							to: message.ext2,
 							content: message.content
 						@trigger "instant-message", instantMessage
