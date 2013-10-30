@@ -557,8 +557,8 @@ class SipStack extends Spine.Controller
 					data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
 			when "BYE", "ACK"
 				if not @hackno_Route_ACK_BYE
-                                	if transaction.cseq.meth isnt "MESSAGE"
-                                        	data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
+									if transaction.cseq.meth isnt "MESSAGE"
+											data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
 		# Via
 		if _.isArray(transaction.vias)# and transaction.meth isnt "ACK"
 			data += (transaction.vias.join "\r\n") + "\r\n"
@@ -637,10 +637,10 @@ class SipStack extends Spine.Controller
 					data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws;ob>\r\n"
 			when "ACK", "MESSAGE"
 				if @hackContact_ACK_MESSAGES
-                                	if @gruu
-                                        	data += "Contact: <#{@gruu};ob>\r\n"
-                                	else
-                                        	data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws;ob>\r\n"
+					if @gruu
+							data += "Contact: <#{@gruu};ob>\r\n"
+					else
+							data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws;ob>\r\n"
 				
 		switch transaction.meth
 			when "REGISTER"
@@ -680,7 +680,6 @@ class SipStack extends Spine.Controller
 				else
 					data += "Content-Length: 0\r\n\r\n"		
 			when "MESSAGE"
-				
 				length = (encodeURI(transaction.content).split(/%..|./).length - 1)
 				data += "Content-Length: #{length or 0}\r\n"
 				data += "Content-Type: text/plain;charset=utf-8\r\n\r\n"
@@ -689,23 +688,25 @@ class SipStack extends Spine.Controller
 				data += "Content-Length: 0\r\n\r\n"	
 		return data
 
-	register: (@ext, @pass, @domain, @userAuthName) =>
-		@domain   or= @sipServer
-		transaction = new SipTransaction {meth: "REGISTER", ext: @ext, domain: @domain, pass: @pass or "", userAuthName: @userAuthName or ""}
+	register: (uri, @pass, @userAuthName) =>
+		transaction  = new SipTransaction {meth: "REGISTER", uri: uri, pass: @pass or "", userAuthName: @userAuthName or ""}
+		@ext         = transaction.ext
+		@domain      = transaction.domain or @sipServer
+
 		@addTransaction transaction
 		@setState 1, transaction
 		
 		message = @createMessage transaction
 		@send message
 
-	call: (ext2, domain2) =>
+	call: (uri2) =>
 		transaction = new SipTransaction
 			meth: "INVITE",
-			ext: @ext,
+			uri: @ext,
 			pass : @pass,
-			ext2 : ext2
-			domain2: domain2 or @domain
+			uri2 : uri2
 			userAuthName: @userAuthName
+	
 		@addTransaction transaction
 		@setState 5, transaction
 		message = @createMessage transaction
@@ -810,14 +811,14 @@ class SipStack extends Spine.Controller
 		if type is "answer"
 			@rtc?.receiveOffer sdp, => @rtc?.createAnswer()
 
-	sendInstantMessage: (ext2, domain2, text) =>
+	sendInstantMessage: (uri2, text) =>
 		message = new SipTransaction 
 			meth: "MESSAGE"
 			ext: @ext
 			pass: @pass
-			ext2: ext2
-			domain2: domain2
+			uri2: uri2
 			content: text
+	
 		@addTransaction message
 		@send @createMessage message
 

@@ -8,7 +8,6 @@
 
 # This class contain all variables needed in one transaction.
 class SipTransaction
-	# Next variables are unique for each transaction.
 	#
 	# - meth
 	# - cseq
@@ -17,8 +16,12 @@ class SipTransaction
 	# - nonce
 	# - fromTag
 	# - toTag
+	# - uri
 	# - ext
+	# - domain
+	# - uri2
 	# - ext2
+	# - domain2
 	# - route
 	# - contact
 	# - expires
@@ -27,6 +30,11 @@ class SipTransaction
 	# The argument must be a dicionary. All keys of this dictionary will be attributes of the object.
 	constructor: (args) ->
 		@set args
+
+		# Get extension and domian from uris.
+		[@ext, @domain]   = @uri.split "@" if @uri 
+		[@ext2, @domain2] = @uri2.split "@" if @uri2
+
 
 		# This variables are common for all transactions.
 		# If domainName or IP or branch does not exist, create them.

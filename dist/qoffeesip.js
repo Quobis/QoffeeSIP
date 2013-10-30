@@ -676,26 +676,32 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     function SipTransaction(args) {
       this.set = __bind(this.set, this);
 
-      var _base, _base1, _base2, _base3, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+      var _base, _base1, _base2, _base3, _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
       this.set(args);
-      if ((_ref = this.domainName) == null) {
+      if (this.uri) {
+        _ref = this.uri.split("@"), this.ext = _ref[0], this.domain = _ref[1];
+      }
+      if (this.uri2) {
+        _ref1 = this.uri2.split("@"), this.ext2 = _ref1[0], this.domain2 = _ref1[1];
+      }
+      if ((_ref2 = this.domainName) == null) {
         this.domainName = "" + (this.randomString(12)) + ".invalid";
       }
-      if ((_ref1 = this.IP) == null) {
+      if ((_ref3 = this.IP) == null) {
         this.IP = this.randomIP();
       }
-      if ((_ref2 = this.branch) == null) {
+      if ((_ref4 = this.branch) == null) {
         this.branch = "z9hG4bK" + this.randomString(30);
       }
       if (!(this.cseq != null)) {
         this.cseq = {};
-        if ((_ref3 = (_base = this.cseq).number) == null) {
+        if ((_ref5 = (_base = this.cseq).number) == null) {
           _base.number = _.random(0, 1000);
         }
-        if ((_ref4 = (_base1 = this.cseq).meth) == null) {
+        if ((_ref6 = (_base1 = this.cseq).meth) == null) {
           _base1.meth = this.meth;
         }
-        if ((_ref5 = (_base2 = this.cseq).meth) == null) {
+        if ((_ref7 = (_base2 = this.cseq).meth) == null) {
           _base2.meth = "";
         }
       }
@@ -705,10 +711,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if ((args.fromTag != null) && !/^;tag=/.test(args.fromTag)) {
         this.fromTag = ";tag=" + args.fromTag;
       }
-      if ((_ref6 = this.fromTag) == null) {
+      if ((_ref8 = this.fromTag) == null) {
         this.fromTag = ";tag=" + this.randomString(20);
       }
-      if ((_ref7 = this.toTag) == null) {
+      if ((_ref9 = this.toTag) == null) {
         this.toTag = ";tag=" + this.randomString(20);
       }
       if ((args.userAuthName != null) && args.userAuthName !== "") {
@@ -719,27 +725,27 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         console.log("Using user name for authentication: " + args.ext);
       }
       if (args.to != null) {
-        if ((_ref8 = this.domain2) == null) {
+        if ((_ref10 = this.domain2) == null) {
           this.domain2 = args.to.split("@")[1];
         }
       }
-      if ((_ref9 = this.callId) == null) {
+      if ((_ref11 = this.callId) == null) {
         this.callId = this.randomString(16);
       }
       this.regid = 1;
-      if ((_ref10 = (_base3 = SipTransaction.prototype).uuid) == null) {
+      if ((_ref12 = (_base3 = SipTransaction.prototype).uuid) == null) {
         _base3.uuid = this.getUuid();
       }
-      if ((_ref11 = this.tupleId) == null) {
+      if ((_ref13 = this.tupleId) == null) {
         this.tupleId = this.randomString(8);
       }
-      if ((_ref12 = this.cnonce) == null) {
+      if ((_ref14 = this.cnonce) == null) {
         this.cnonce = "";
       }
-      if ((_ref13 = this.nc) == null) {
+      if ((_ref15 = this.nc) == null) {
         this.nc = 0;
       }
-      if ((_ref14 = this.ncHex) == null) {
+      if ((_ref16 = this.ncHex) == null) {
         this.ncHex = "00000000";
       }
     }
@@ -1544,34 +1550,31 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return data;
     };
 
-    SipStack.prototype.register = function(ext, pass, domain, userAuthName) {
+    SipStack.prototype.register = function(uri, pass, userAuthName) {
       var message, transaction;
-      this.ext = ext;
       this.pass = pass;
-      this.domain = domain;
       this.userAuthName = userAuthName;
-      this.domain || (this.domain = this.sipServer);
       transaction = new SipTransaction({
         meth: "REGISTER",
-        ext: this.ext,
-        domain: this.domain,
+        uri: uri,
         pass: this.pass || "",
         userAuthName: this.userAuthName || ""
       });
+      this.ext = transaction.ext;
+      this.domain = transaction.domain || this.sipServer;
       this.addTransaction(transaction);
       this.setState(1, transaction);
       message = this.createMessage(transaction);
       return this.send(message);
     };
 
-    SipStack.prototype.call = function(ext2, domain2) {
+    SipStack.prototype.call = function(uri2) {
       var message, transaction;
       transaction = new SipTransaction({
         meth: "INVITE",
-        ext: this.ext,
+        uri: this.ext,
         pass: this.pass,
-        ext2: ext2,
-        domain2: domain2 || this.domain,
+        uri2: uri2,
         userAuthName: this.userAuthName
       });
       this.addTransaction(transaction);
@@ -1702,14 +1705,13 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }
     };
 
-    SipStack.prototype.sendInstantMessage = function(ext2, domain2, text) {
+    SipStack.prototype.sendInstantMessage = function(uri2, text) {
       var message;
       message = new SipTransaction({
         meth: "MESSAGE",
         ext: this.ext,
         pass: this.pass,
-        ext2: ext2,
-        domain2: domain2,
+        uri2: uri2,
         content: text
       });
       this.addTransaction(message);
@@ -1935,16 +1937,19 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }
     };
 
-    QS.prototype.register = function(ext, pass, domain, userAuthName) {
-      return this.sipStack.register(ext, pass, domain, userAuthName);
+    QS.prototype.register = function(uri, pass, userAuthName) {
+      if (pass == null) {
+        pass = "";
+      }
+      return this.sipStack.register(uri, pass, userAuthName);
     };
 
     QS.prototype.capabilities = function() {
       return ['audio', 'video', 'chat', 'presence'];
     };
 
-    QS.prototype.call = function(ext, domain) {
-      return this.sipStack.call(ext, domain);
+    QS.prototype.call = function(uri2) {
+      return this.sipStack.call(uri2);
     };
 
     QS.prototype.answer = function(callid) {
@@ -1959,7 +1964,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.sipStack.unregister();
     };
 
-    QS.prototype.updatePresenceState = function(ext, domain, state, answerme) {
+    QS.prototype.updatePresenceState = function(uri2, state, answerme) {
       var content;
       if (answerme == null) {
         answerme = false;
@@ -1969,23 +1974,23 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         presenceState: state,
         answerme: Boolean(answerme)
       }) + "\n";
-      return this.sipStack.sendInstantMessage(ext, domain, content);
+      return this.sipStack.sendInstantMessage(uri2, content);
     };
 
-    QS.prototype.updateMediaState = function(ext, domain) {
+    QS.prototype.updateMediaState = function(uri2) {
       var content;
       content = JSON.stringify({
         presenceState: this.sipStack.rtc.mediaState()
       }) + "\n";
-      return this.sipStack.sendInstantMessage(ext, domain, content);
+      return this.sipStack.sendInstantMessage(uri2, content);
     };
 
-    QS.prototype.chat = function(ext, domain, text) {
+    QS.prototype.chat = function(uri2, text) {
       var content;
       content = JSON.stringify({
         presenceState: this.lastState
       }) + "\n" + text;
-      return this.sipStack.sendInstantMessage(ext, domain, content);
+      return this.sipStack.sendInstantMessage(uri2, content);
     };
 
     QS.prototype.cbLocalstream = function(localstream) {

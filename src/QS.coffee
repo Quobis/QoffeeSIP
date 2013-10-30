@@ -133,12 +133,12 @@ class QS extends Spine.Controller
 	#
 	# Params:
 	# 
-	# +   *ext* mandatory User extension
-	# +   *pass*  mandatory User password
+	# +   *uri* mandatory `ext@domain` or just `ext`.
+	# +   *pass* optional
 	# +   *domain* optional
 	# 
-	register: (ext, pass, domain, userAuthName) =>
-		@sipStack.register ext, pass, domain, userAuthName
+	register: (uri, pass = "", userAuthName) =>
+		@sipStack.register uri, pass, userAuthName
 
 	#### capabilities
 	# Get stack capabilities
@@ -148,8 +148,8 @@ class QS extends Spine.Controller
 
 	#### call
 	# Call to extension *ext*
-	call: (ext, domain) =>
-		 @sipStack.call ext, domain
+	call: (uri2) =>
+		 @sipStack.call uri2
 
 	#### answer
 	# Answer the call
@@ -167,20 +167,20 @@ class QS extends Spine.Controller
 		@sipStack.unregister()
 
 	#### updatePresenceState
-	updatePresenceState: (ext, domain, state, answerme = false) =>
+	updatePresenceState: (uri2, state, answerme = false) =>
 		@lastState = state
 		content = JSON.stringify({presenceState: state, answerme: Boolean(answerme)}) + "\n"
-		@sipStack.sendInstantMessage ext, domain, content
+		@sipStack.sendInstantMessage uri2, content
 
 	#### updateMediaState
-	updateMediaState: (ext, domain) =>
+	updateMediaState: (uri2) =>
 		content = JSON.stringify({presenceState: @sipStack.rtc.mediaState()}) + "\n"
-		@sipStack.sendInstantMessage ext, domain, content
+		@sipStack.sendInstantMessage uri2, content
 
 	#### chat
-	chat: (ext, domain, text) =>
+	chat: (uri2, text) =>
 		content =  JSON.stringify({presenceState: @lastState}) + "\n" + text
-		@sipStack.sendInstantMessage ext, domain, content
+		@sipStack.sendInstantMessage uri2, content
 
 	cbLocalstream: (localstream) =>
 		@trigger "qs-localstream", localstream
