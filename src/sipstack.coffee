@@ -727,7 +727,6 @@ class SipStack extends Spine.Controller
 		# is still getting ICE candidates), so we must unbind "sdp" event to avoid 
 		# sending CANCEL before INVITE.
 		@rtc?.unbind "sdp"
-		alert "aaa"
 		# If user is the callee, fromTag of "INVITE" belongs to caller, ext2 in this method.
 		# Tags must be swapped.
 		swap = (d, p1, p2)-> [d[p1], d[p2]] = [d[p2], d[p1]]
