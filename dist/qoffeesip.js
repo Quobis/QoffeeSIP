@@ -1600,7 +1600,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if ((_ref = this.rtc) != null) {
         _ref.unbind("sdp");
       }
-      alert("aaa");
       swap = function(d, p1, p2) {
         var _ref1;
         return _ref1 = [d[p2], d[p1]], d[p1] = _ref1[0], d[p2] = _ref1[1], _ref1;
