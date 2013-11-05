@@ -164,12 +164,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this.pc.onaddstream = function(event) {
         console.log("[MEDIA] Stream added");
         _this.remotestream = event.stream;
-        _this.dtmfSender = _this.pc.createDTMFSender(_this.localstream.getAudioTracks()[0]);
-        _this.dtmfSender.ontonechange = function(dtmf) {
-          console.log(dtmf);
-          return console.log("[INFO] DTMF send - " + dtmf.tone);
-        };
-        window.test = _this.insertDTMF;
         _this.attachStream(_this.$dom2, _this.remotestream);
         return _this.trigger("remotestream", _this.remotestream);
       };
@@ -401,11 +395,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       };
     };
 
-    RTC.prototype.insertDTMF = function(tone) {
-      if (this.dtmfSender != null) {
-        return this.dtmfSender.insertDTMF(tone, 500, 50);
-      }
-    };
+    RTC.prototype.insertDTMF = function(tone) {};
 
     return RTC;
 

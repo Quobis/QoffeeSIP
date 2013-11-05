@@ -95,11 +95,12 @@ class RTC extends Spine.Module
 			console.log "[MEDIA] Stream added"
 			@remotestream = event.stream
 			
-			@dtmfSender   = @pc.createDTMFSender(@localstream.getAudioTracks()[0])
-			@dtmfSender.ontonechange = (dtmf) -> 
-				console.log dtmf
-				console.log "[INFO] DTMF send - #{dtmf.tone}"
-			window.test = @insertDTMF
+			# Temporarily removed cause a Chrome 30 issue. !!!
+			# @dtmfSender   = @pc.createDTMFSender(@localstream.getAudioTracks()[0])
+			# @dtmfSender.ontonechange = (dtmf) -> 
+			# 	console.log dtmf
+			# 	console.log "[INFO] DTMF send - #{dtmf.tone}"
+			# window.test = @insertDTMF
 
 			@attachStream @$dom2, @remotestream 
 			@trigger "remotestream", @remotestream
@@ -286,7 +287,7 @@ class RTC extends Spine.Module
 		video: Boolean(@isVideoActive), audio: Boolean(@isAudioActive)
 
 	insertDTMF: (tone) =>
-		if @dtmfSender?
-			@dtmfSender.insertDTMF tone, 500, 50
+		# if @dtmfSender?
+		# 	@dtmfSender.insertDTMF tone, 500, 50
 
 window.RTC = RTC
