@@ -318,8 +318,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       try {
         return this.pc.close();
       } catch (e) {
-        console.log("[ERROR] Error closing peerconnection");
-        return console.log(e);
+        console.error("[ERROR] Error closing peerconnection");
+        return console.error(e);
       } finally {
         this.pc = null;
         this.start();
@@ -531,7 +531,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       var displayName, lineFrom, lineFromRE, tag, user, useruri;
       lineFromRE = /(From|^f):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/;
       if (!((lineFrom = lineFromRE.exec(pkt)) != null)) {
-        console.log("Error parsing From!!");
+        console.error("Error parsing From!!");
       } else {
         useruri = lineFrom[5] || lineFrom[6] || lineFrom[7];
         displayName = lineFrom[4];
@@ -550,7 +550,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       var displayName, lineTo, lineToRE, tag, user, useruri;
       lineToRE = /(To|^t):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/;
       if (!((lineTo = lineToRE.exec(pkt)) != null)) {
-        console.log("Error parsing To!!");
+        console.error("Error parsing To!!");
       } else {
         useruri = lineTo[5] || lineTo[6] || lineTo[7];
         displayName = lineTo[4];
