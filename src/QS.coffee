@@ -23,27 +23,27 @@ class QS extends Spine.Controller
 
 		# 1 to many relation with SipsStack's event.
 		@customEvents =
-			'qs-ringing': {stack:'new-state', cb: @cbStateChange}
-			'qs-calling': {stack:'new-state', cb: @cbStateChange}
-			'qs-end-call': {stack:'new-state', cb: @cbStateChange}
-			'qs-lost-call': {stack:'new-state', cb: @cbStateChange}
-			'qs-established': {stack:'new-state', cb: @cbStateChange}
-			'qs-instant-message': {stack:'instant-message', cb: @cbInstantMessage}
-			'qs-presence-update': {stack:'instant-message', cb: @cbInstantMessage}
-			'qs-mediastate-update': {stack:'instant-message', cb: @cbInstantMessage}
+			'qs-ringing'           : {stack:'new-state', cb: @cbStateChange}
+			'qs-calling'           : {stack:'new-state', cb: @cbStateChange}
+			'qs-end-call'          : {stack:'new-state', cb: @cbStateChange}
+			'qs-lost-call'         : {stack:'new-state', cb: @cbStateChange}
+			'qs-established'       : {stack:'new-state', cb: @cbStateChange}
+			'qs-instant-message'   : {stack:'instant-message', cb: @cbInstantMessage}
+			'qs-presence-update'   : {stack:'instant-message', cb: @cbInstantMessage}
+			'qs-mediastate-update' : {stack:'instant-message', cb: @cbInstantMessage}
 
 
 		@customEventsReverse =
-			'new-state': {counter: 0}
-			'instant-message': {counter: 0}
+			'new-state'       : {counter: 0}
+			'instant-message' : {counter: 0}
 
 
 		@libEvents =
-			'qs-localstream': {stack:'localstream', cb: @cbLocalstream}
-			'qs-remotestream': {stack:'remotestream', cb: @cbRemotestream}
-			'qs-register-fail': {stack:'register-fail', cb: @cbRegisterFail}
-			'qs-register-success': {stack:'register-success', cb: @cbRegisterSuccess}
-			'qs-another-incoming-call': {stack:"another-incoming-call", cb: @cbAnotherIncomingCall}
+			'qs-localstream'           : {stack:'localstream', cb: @cbLocalstream}
+			'qs-remotestream'          : {stack:'remotestream', cb: @cbRemotestream}
+			'qs-register-fail'         : {stack:'register-fail', cb: @cbRegisterFail}
+			'qs-register-success'      : {stack:'register-success', cb: @cbRegisterSuccess}
+			'qs-another-incoming-call' : {stack:"another-incoming-call", cb: @cbAnotherIncomingCall}
 
 		
 		@sipStack = new SipStack

@@ -230,8 +230,8 @@ class RTC extends Spine.Module
 		try
 			@pc.close()
 		catch e
-			console.log "[ERROR] Error closing peerconnection"
-			console.log e
+			console.error "[ERROR] Error closing peerconnection"
+			console.error e
 		finally
 			@pc         = null
 			@start()

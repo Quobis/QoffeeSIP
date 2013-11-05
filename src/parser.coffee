@@ -74,13 +74,13 @@ class Parser
 
 	@parseVias: (pkt) ->
 		viaRE = /Via\:\s+SIP\/2\.0\/[A-Z]+\s+([A-z0-9\.\:]+)/
-		tmp  = _.filter pkt.split("\r\n"), (line) -> viaRE.test line
-		vias = _.map tmp, (via) ->  via.replace /;received=[A-z0-9\.\:]+/, ""
+		tmp   = _.filter pkt.split("\r\n"), (line) -> viaRE.test line
+		vias  = _.map tmp, (via) ->  via.replace /;received=[A-z0-9\.\:]+/, ""
 		console.log vias
 		if vias.length > 0
-			ret = @getRegExprResult vias[0], viaRE, sentBy: 1
+			ret      = @getRegExprResult vias[0], viaRE, sentBy: 1
 			branchRE = /branch=([^;\s]+)/
-			ret = @getRegExprResult vias[0], branchRE, branch: 1
+			ret      = @getRegExprResult vias[0], branchRE, branch: 1
 			# branchRE = /branch=([^;\r\n]+)/
 			# tmp      = branchRE.exec vias[0]
 			# branch   = tmp[1] if tmp.length >= 1
@@ -100,7 +100,7 @@ class Parser
 		lineFromRE = /(From|^f):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/
 		
 		if !((lineFrom = lineFromRE.exec pkt)?)
-			console.log "Error parsing From!!"
+			console.error "Error parsing From!!"
 		else 
 			#The URI (cand be a sip uri or tel uri) will only be in one of these variables
 			useruri = lineFrom[5]||lineFrom[6]||lineFrom[7] 
@@ -120,7 +120,7 @@ class Parser
 		lineToRE = /(To|^t):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/
 		
 		if !((lineTo = lineToRE.exec pkt)?)
-			console.log "Error parsing To!!"
+			console.error "Error parsing To!!"
 		else 
 			#The URI (cand be a sip uri or tel uri) will only be in one of these variables
 			useruri = lineTo[5]||lineTo[6]||lineTo[7] 
