@@ -24,17 +24,17 @@ $ ->
 			
 			onopen: ->
 				$("#register").submit ->
-					api.register $("#register-ext").val(), $("#register-pass").val()
+					qs.register $("#register-ext").val(), $("#register-pass").val()
 				
-				$("#call").submit -> api.call $("#call-ext").val()
-				
-		api = new API options
-		api.on "new-state", (state, message) ->
-			switch state
-				when 5,8
-					$("#hangup").submit -> api.hangup message.branch
-				when 6
-					api.answer message.branch
-				when 9
-					# Remove all previous submit handler for hangup.
-					$("#hangup").off "submit"
+				$("#call").submit -> qs.call $("#call-ext").val()
+
+		qs = new QS options
+
+		qs.on "qs-established", (message) ->
+			$("#hangup").submit -> qs.hangup message.branch
+		
+		qs.on "qs-end-call", () ->
+			$("#hangup").off "submit"
+
+		qs.on "qs-ringing", (message) ->
+			qs.answer message.branch

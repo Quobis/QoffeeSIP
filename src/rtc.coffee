@@ -79,6 +79,7 @@ class RTC extends Spine.Module
 		console.log "PeerConnection starting"
 		# Firefox does not provide *onicecandidate* callback.
 		@noMoreCandidates = @browser is "firefox"
+		@dtmfSender       = null
 		@createPeerConnection()
 
 	createPeerConnection: =>
@@ -93,6 +94,14 @@ class RTC extends Spine.Module
 		@pc.onaddstream = (event) =>
 			console.log "[MEDIA] Stream added"
 			@remotestream = event.stream
+			
+			# Temporarily removed cause a Chrome 30 issue. !!!
+			# @dtmfSender   = @pc.createDTMFSender(@localstream.getAudioTracks()[0])
+			# @dtmfSender.ontonechange = (dtmf) -> 
+			# 	console.log dtmf
+			# 	console.log "[INFO] DTMF send - #{dtmf.tone}"
+			# window.test = @insertDTMF
+
 			@attachStream @$dom2, @remotestream 
 			@trigger "remotestream", @remotestream
 
@@ -133,7 +142,7 @@ class RTC extends Spine.Module
 		console.log "[INFO] createStream"
 		# Localstream already exists, so we just add it to current PeerConnection object.
 		if @localstream?
-			console.log "[INFO] Using media previously getted."
+			console.log "[INFO] Using media previously got."
 			@pc.addStream @localstream
 			@attachStream @$dom1, @localstream
 		# If there is not previous localstream, get it, add it to current PeerConnection object.
@@ -222,10 +231,10 @@ class RTC extends Spine.Module
 		try
 			@pc.close()
 		catch e
-			console.log "[ERROR] Error closing peerconnection"
-			console.log e
+			console.error "[ERROR] Error closing peerconnection"
+			console.error e
 		finally
-			@pc = null
+			@pc         = null
 			@start()
 
 	toggleMuteAudio: () =>
@@ -276,5 +285,9 @@ class RTC extends Spine.Module
 
 	mediaState: () =>
 		video: Boolean(@isVideoActive), audio: Boolean(@isAudioActive)
+
+	insertDTMF: (tone) =>
+		# if @dtmfSender?
+		# 	@dtmfSender.insertDTMF tone, 500, 50
 
 window.RTC = RTC

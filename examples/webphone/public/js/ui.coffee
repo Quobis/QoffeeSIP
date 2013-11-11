@@ -6,7 +6,7 @@
 ##
 
 class User extends Spine.Model
-	@configure "User", "user", "password", "sipServer", "turnServer", "turnCredential", "stunServer", "audioSession"
+	@configure "User", "user", "password", "sipServer", "userPriv", "turnServer", "turnCredential", "stunServer", "audioSession"
 	@extend Spine.Model.Local
 
 # Class to manage UI.
@@ -85,7 +85,7 @@ class UI extends Spine.Controller
 				from: @register.ext
 				to: @ext2
 				content: $("#chat > .messages").append("<img src=#{url}>")
-			@renderInstantMessage message
+			@renderInstantMessage @register.ext message
 		@toggleActiveClass(e)
 		false
 
@@ -108,6 +108,7 @@ class UI extends Spine.Controller
 			$("#user-reg").val user.user
 			$("#pass-reg").val user.password
 			$("#server-reg").val user.sipServer
+			$("#user-reg-priv").val user.userPriv
 			$("#only-audio").attr("checked", true) if user.audioSession
 			$("#stun-server").val user.stunServer
 			$("#turn-server").val user.turnServer
@@ -155,16 +156,18 @@ class UI extends Spine.Controller
 
 	# Put a chat message in the chat and scroll to the bottom.
 	# TODO: We should take care of HTML content in the message, for example a script tag.
-	renderInstantMessage: (message) =>
-		message.content = @linkify message.content
-		message.content = @emoticonify message.content
+	renderInstantMessage: (from, text) =>
+		message={}
+		message.content = @linkify text
+		message.content = @emoticonify text
+		message.from = from
 		# If sending message...
-		if message.from is @register.ext
-			contact = message.to
+		if from is @register.ext
+#			contact = message.to
 			type = "label-success"
 		# If receive message...
 		else
-			contact = message.from
+#			contact = message.from
 			type = "label-info"
 
 		@$messages
@@ -193,11 +196,11 @@ class UI extends Spine.Controller
 
 	toggleMuteAudio: () =>
 		console.log "[MEDIA] toggleMuteAudio"
-		@api.toggleMuteAudio()
+		@qs.toggleMuteAudio()
 
 	toggleMuteVideo: () =>
 		console.log "[MEDIA] toggleMuteVideo"
-		@api.toggleMuteVideo()
+		@qs.toggleMuteVideo()
 
 	# Prevent page reloading on form submits.
 	submitForm: (e) =>
@@ -211,11 +214,13 @@ class UI extends Spine.Controller
 		@$expertOptions.toggleClass "hidden"
 
 	registerSubmit: (e) =>
+
 		# Save user in local storage.
 		User.create
 			user: $("#user-reg").val()
 			password: $("#pass-reg").val()
 			sipServer: $("#server-reg").val()
+			userPriv: $("#user-reg-priv").val()
 			audioSession: $("#only-audio").is(":checked")
 			stunServer: $("#stun-server").val()
 			turnServer: $("#stun-server").val()
@@ -225,6 +230,7 @@ class UI extends Spine.Controller
 		# Trick to speed up tests.
 		@register.pass = $("#pass-reg").val() or @register.ext
 		server         = $("#server-reg").val()
+		@register.userPriv = $("#user-reg-priv").val()
 		onlyAudio      = $("#only-audio").is(":checked")
 		stunServer     = url: "stun:" + $("#stun-server").val()
 		turnServer     = 
@@ -250,22 +256,38 @@ class UI extends Spine.Controller
 		sipServer.path      = line[5] or ""
 
 		onopen = =>
-			@api.on "new-state", @newState
-			@api.on "instant-message", @renderInstantMessage
-			@api.register @register.ext, @register.pass, @register.domain
+			@qs.on "qs-ringing", @cbRinging
+			@qs.on "qs-calling", @cbCalling
+			@qs.on "qs-end-call", @cbEndCall
+			@qs.on "qs-lost-call", @cbEndCall
+			@qs.on "qs-established", @cbEstablished
+			@qs.on "qs-instant-message", @renderInstantMessage
+			@qs.on "qs-register-success", @cbRegisterSuccess
+
+# NOT IMPLEMENT IN THIS WEBPHONE			
+#			@qs.on "qs-presence-update", @presenceUpdate 
+#			@qs.on "qs-mediastate-update", @mediastateUpdate
+
+
+			@qs.register @register.ext, @register.pass, @register.domain, @register.userPriv
 			@$registerButton.addClass "disabled"
 			@$registerButton.addClass "disabled"
 
 		# Both video and audio on, let to true what you need
-		@api = new API
+		hackno_Route_ACK_BYE = true
+
+		@qs = new QS
 			server: sipServer
 			turnServer: turnServer
 			stunServer: stunServer
 			mediaElements: @mediaElements
 			onopen: onopen
+			hackno_Route_ACK_BYE: true
+			hackContact_ACK_MESSAGES: true
+			hackUserPhone: false
 			mediaConstraints: {audio: true, video: not onlyAudio}
-		
-		@api.on "localstream", =>
+
+		@qs.on "qs-localstream", =>
 			@$mediaLocal.removeClass "hidden" 	 # if @api.mediaConstraints.video
 		# @api.on "remotestream", => @$mediaRemote.removeClass "hidden" if @api.mediaConstraints.video
 
@@ -273,7 +295,7 @@ class UI extends Spine.Controller
 	callSubmit: (e) =>
 		# Get extension and domain to call.
 		[@ext2, @domain2] = $("#ext-call").val().split "@"
-		@api.call @ext2, @domain2
+		@qs.call @ext2, @domain2
 		@$callButton.addClass "disabled"
 		false
 
@@ -297,10 +319,10 @@ class UI extends Spine.Controller
 		false
 
 	stopSounds: () =>
-		@$soundRinging.get(0).pause()
-		@$soundCalling.get(0).pause()
-		@$soundRinging.get(0).currentTime = 0
-		@$soundCalling.get(0).currentTime = 0
+		@$soundRinging?.get(0)?.pause()
+		@$soundCalling?.get(0)?.pause()
+		@$soundRinging?.get(0)?.currentTime = 0
+		@$soundCalling?.get(0)?.currentTime = 0
 
 	nextForm: ($el) =>
 		$(".disabled").removeClass "disabled"
@@ -328,81 +350,98 @@ class UI extends Spine.Controller
 
 	updateStatus: (msg) => @$status.text msg
 
-	newState: (@state, data) =>
-		console.log "[STATE] #{@state}"
-		switch @state
-			when 3
-				callback = => 
-						@stopTimer()
-						@$videos.removeClass "active"
-						@$mediaRemote.addClass "hidden"
-						@$mediaLocal.css {marginTop: "0px"}
-				callback()
-				# Unregister on closing.
-				$(window).bind "beforeunload", => @api.unregister()
+	cbEstablished: (message) =>
+		@updateStatus "Call established with #{@ext2}"
+		$("#remote-legend").text "Remote extension is #{@ext2}"
+		@stopSounds()
+		@startTimer()
+		@nextForm @$formEstablishedCall
+		if window.autoanswering
+			setTimeout (-> $("#hangup-established").click()), 15000
+		@$chat.show()
+		@$chat.find("form").submit =>
+			message =
+				from: @register.ext
+				to: @ext2
+				content: @$chat.find("input:first").val()
+			@$chat.find("input:first").val ""
+			@qs.chat @ext2, @register.domain, message.content
+			@renderInstantMessage @register.ext, message.content
 
-				@$messages.children().remove()
-				@$chat.hide()
+		@previousState = @state
+	
+		callback = => 
+			@$mediaRemote.removeClass "hidden"
+			@$videos.addClass "active"
+			h = @$mediaLocal.height()
+			@$mediaLocal.css {marginTop: "-#{h}px"}
 
-				@stopSounds()
-				@updateStatus "Registered"
+		_.delay callback, 200
 
-				@nextForm @$formCall
 
-				$("#register-info")
-					.html("<p>Your extension number is <strong>#{@register.ext}</strong>, share this URL to a friend and tell him to call you. If you want to connect to our demo webcam, just dial extension 1234.</p>")
-					.fadeIn(200)
-				$("#local-legend").text "Local extension is #{@register.ext}"
 
-			when 5
-				@updateStatus "Calling #{@ext2}"
-				document.getElementById("sound-calling").play()
-				@hangup = => @api.hangup data.branch	
-			
-			when 6
-				@ext2 = data.ext
-				@updateStatus "Incoming call from #{@ext2}"
-				@answer = => @api.answer data.branch
-				@hangup = => @api.hangup data.branch
+	cbRegisterSuccess: () =>
+		@stopSounds() if @previousState > 3
+		callback = => 
+			@stopTimer()
+			@$videos.removeClass "active"
+			@$mediaRemote.addClass "hidden"
+			@$mediaLocal.css {marginTop: "0px"}
+		callback()
+		# Unregister on closing.
+		$(window).bind "beforeunload", => @qs.unregister()
+	
+		@$messages.children().remove()
+		@$chat.hide()
+	
+		@updateStatus "Registered"
 
-				@nextForm @$formIncomingCall
-				document.getElementById("sound-ringing").play()
-				if window.autoanswering
-					setTimeout (-> $("#answer").click()), 1000
+		@nextForm @$formCall
+	
+		$("#register-info")
+			.html("<p>Your extension number is <strong>#{@register.ext}</strong>, share this URL to a friend and tell him to call you. If you want to connect to our demo webcam, just dial extension 1234.</p>")
+			.fadeIn(200)
+		$("#local-legend").text "Local extension is #{@register.ext}"
+		@previousState = @state
 
-			when 7, 8
-				@updateStatus "Call established with #{@ext2}"
-				$("#remote-legend").text "Remote extension is #{@ext2}"
-				@stopSounds()
-				@startTimer()
-				@nextForm @$formEstablishedCall
-				if window.autoanswering
-					setTimeout (-> $("#hangup-established").click()), 15000
-				@$chat.show()
-				@$chat.find("form").submit =>
-					message =
-						from: @register.ext
-						to: @ext2
-						content: @$chat.find("input:first").val()
-					@$chat.find("input:first").val ""
-					@api.chat @ext2, message.content
-					@renderInstantMessage message
-				@previousState = @state
 
-				callback = => 
-					@$mediaRemote.removeClass "hidden"
-					@$videos.addClass "active"
-					h = @$mediaLocal.height()
-					@$mediaLocal.css {marginTop: "-#{h}px"}
+	cbCalling: (message) =>
+		@updateStatus "Calling #{@ext2}"
+		document.getElementById("sound-calling").play()
+		@hangup = => @qs.hangup message.branch
+		@previousState = @state
 
-				_.delay callback, 200
-					
-				
-			when 9
-				@updateStatus "Hanging up"
-				@stopTimer()
+	cbRinging: (message) =>
+		@ext2 = message.ext
+		@domain2 = message.to.split("@")[1]
+		@updateStatus "Incoming call from #{@ext2}"
+		@answer = => @qs.answer message.branch
+		@hangup = => @qs.hangup message.branch
+		@nextForm @$formIncomingCall
+		document.getElementById("sound-ringing").play()
+		if window.autoanswering
+			setTimeout (-> $("#answer").click()), 1000
+		@previousState = @state
 
-			when 10
-				@updateStatus "Cancelling"
+
+	cbEndCall: (message) =>
+		@updateStatus "Hanging up"
+		@stopTimer()
+		@stopSounds() if @previousState > 3
+		callback = => 
+			@stopTimer()
+			@$videos.removeClass "active"
+			@$mediaRemote.addClass "hidden"
+			@$mediaLocal.css {marginTop: "0px"}
+		callback()
+		# Unregister on closing.
+		$(window).bind "beforeunload", => @qs.unregister()
+
+		@$messages.children().remove()
+		@$chat.hide()
+		@updateStatus "Registered"
+		@nextForm @$formCall
+		@previousState = @state
+
 
 window.UI = UI

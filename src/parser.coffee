@@ -74,13 +74,13 @@ class Parser
 
 	@parseVias: (pkt) ->
 		viaRE = /Via\:\s+SIP\/2\.0\/[A-Z]+\s+([A-z0-9\.\:]+)/
-		tmp  = _.filter pkt.split("\r\n"), (line) -> viaRE.test line
-		vias = _.map tmp, (via) ->  via.replace /;received=[A-z0-9\.\:]+/, ""
+		tmp   = _.filter pkt.split("\r\n"), (line) -> viaRE.test line
+		vias  = _.map tmp, (via) ->  via.replace /;received=[A-z0-9\.\:]+/, ""
 		console.log vias
 		if vias.length > 0
-			ret = @getRegExprResult vias[0], viaRE, sentBy: 1
+			ret      = @getRegExprResult vias[0], viaRE, sentBy: 1
 			branchRE = /branch=([^;\s]+)/
-			ret = @getRegExprResult vias[0], branchRE, branch: 1
+			ret      = @getRegExprResult vias[0], branchRE, branch: 1
 			# branchRE = /branch=([^;\r\n]+)/
 			# tmp      = branchRE.exec vias[0]
 			# branch   = tmp[1] if tmp.length >= 1
@@ -94,19 +94,44 @@ class Parser
 		return {recordRoutes}
 
 	@parseFrom: (pkt) ->
-		# TODO: We must check domains and IPs correctly. This RE is too much permisive.
-		lineFromRE = ///
-			From:
-				(\s?".+"\s?)?
-				\s*
-				<?sips?:((.+)@[A-z0-9\.]+)>?(;tag=(.+))?
-			///i
-		return @getRegExprResult pkt, lineFromRE, {from: 2, ext: 3, fromTag: 6}
+		#lineFromRE = /(From|^f):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
+		#return @getRegExprResult pkt, lineFromRE, {from: 5, ext: 6, fromTag: 10}
+		#verification URL: http://rubular.com/r/gytoL5gDUO
+		lineFromRE = /(From|^f):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/
+		
+		if !((lineFrom = lineFromRE.exec pkt)?)
+			console.error "Error parsing From!!"
+		else 
+			#The URI (cand be a sip uri or tel uri) will only be in one of these variables
+			useruri = lineFrom[5]||lineFrom[6]||lineFrom[7] 
+			#display name can be present or not (undefined)
+			displayName = lineFrom[4] 
+			#we get the tag, an the rest of header parameters
+			tag= lineFrom[8] 
+			user = /sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?)/.exec(useruri)[2]
+
+		return {from: useruri, ext: user, fromTag: tag, displayNameFrom: displayName} 		
 
 	@parseTo: (pkt) ->
-		# TODO: We must check domains and IPs correctly. This RE is too much permisive.
-		lineToRE = /To:(\s?".+"\s?)?\s*<?sips?:((.+)@[A-z0-9\.]+)>?(;tag=(.+))?/i
-		return @getRegExprResult pkt, lineToRE, {to: 2, ext2: 3, toTag: 5}
+		# verification URL: http://rubular.com/r/1HeCJoSSJn
+		#lineToRE = /(To|^t):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
+		#return @getRegExprResult pkt, lineToRE, {to: 5, ext2: 6, toTag: 10}
+
+		lineToRE = /(To|^t):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/
+		
+		if !((lineTo = lineToRE.exec pkt)?)
+			console.error "Error parsing To!!"
+		else 
+			#The URI (cand be a sip uri or tel uri) will only be in one of these variables
+			useruri = lineTo[5]||lineTo[6]||lineTo[7] 
+			#display name can be present or not (undefined)
+			displayName = lineTo[4] 
+			#we get the tag, an the rest of header parameters
+			tag= lineTo[8] 
+			user = /sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?)/.exec(useruri)[2]
+
+		return {to: useruri, ext2: user, toTag: tag, displayNameTo: displayName}
+
 
 	@parseCallId: (pkt) ->
 		lineCallIdRE = /Call-ID:\s(.+)/i
@@ -126,10 +151,14 @@ class Parser
 		return {route}
 
 	# Challenge parser, it gets Contact values.
+	#verification URL: http://rubular.com/r/x46OPwgWBd
 	@parseContact: (pkt) ->
-		contactRE = /Contact\:\s<(.*)>/g
+		contactRE = /(Contact|^m):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(.*)/
 		gruuRE = /pub\-gruu=\"(.+?)\"/
-		result = @getRegExprResult pkt, contactRE, {contact: 1}
+		result = @getRegExprResult pkt, contactRE, {contact: 3}
+		result2= @getRegExprResult pkt, contactRE, {contact: 8}
+		console.warn result 	
+		console.warn result2	
 		return _.extend result, @getRegExprResult pkt, gruuRE, {gruu: 1}
 
 	# Challenge parser, it gets method from CSeq values.
@@ -143,19 +172,21 @@ class Parser
 	@parseChallenge: (pkt) ->
 		lineRe   = /^WWW-Authenticate\:.+$|^Proxy-Authenticate\:.+$/m
 		# security checks
-		realmRe  = 
-			///
-			realm="(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|(([a-z]+\.)+[a-z]{2,3})|(\w+))"
-			///
-		# Too much restrictive, Kamailio includes reserverd characters
-		# like "/" or "+" in nonces. :|
-		nonceRe  = /nonce="(.{4,})"/
-		line = (lineRe.exec pkt)
+		# We use this RE to check if this fieldas are present in the message (not only in the line)
+		# some stacks use different consecutives lines to send Authroization headers.
+		realmRe  = /realm="([^\"^\\]+)"/ 
+		nonceRe  = /nonce="([^\"^\\]+)"/
+		opaqueRe = /opaque="([^\"^\\]+)"/
+		qopRe    = /qop=\"(auth|auth-int)\"/
+
+		line     = (lineRe.exec pkt)
 		if line?
-			line = line[0]
-			realm = realmRe.exec(line)[1]
-			nonce = nonceRe.exec(line)[1]
-		return {realm, nonce}
+			realm  = realmRe.exec(pkt)?[1]
+			nonce  = nonceRe.exec(pkt)?[1]
+			opaque = opaqueRe.exec(pkt)?[1]
+			qop    = qopRe.exec(pkt)?[1]
+
+		return {realm, nonce, opaque, qop}
 
 	# Expires parser
 	@parseExpires: (pkt) ->

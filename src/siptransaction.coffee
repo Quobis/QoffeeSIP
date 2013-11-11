@@ -8,7 +8,6 @@
 
 # This class contain all variables needed in one transaction.
 class SipTransaction
-	# Next variables are unique for each transaction.
 	#
 	# - meth
 	# - cseq
@@ -17,8 +16,12 @@ class SipTransaction
 	# - nonce
 	# - fromTag
 	# - toTag
+	# - uri
 	# - ext
+	# - domain
+	# - uri2
 	# - ext2
+	# - domain2
 	# - route
 	# - contact
 	# - expires
@@ -27,6 +30,11 @@ class SipTransaction
 	# The argument must be a dicionary. All keys of this dictionary will be attributes of the object.
 	constructor: (args) ->
 		@set args
+
+		# Get extension and domian from uris.
+		[@ext, @domain]   = @uri.split "@" if @uri 
+		[@ext2, @domain2] = @uri2.split "@" if @uri2
+
 
 		# This variables are common for all transactions.
 		# If domainName or IP or branch does not exist, create them.
@@ -43,12 +51,38 @@ class SipTransaction
 			@cseq.meth   ?= @meth
 			@cseq.meth   ?= ""
 
-		@fromTag ?= @randomString 20
-		@toTag ?= @randomString 20
-		@callId ?= @randomString 16
-		@regid = 1
+		#Storing tag strings always starting with ";tag=""
+		#TODO this variable may contain other header param	
+		if args.toTag? and !/^;tag=/.test(args.toTag)
+			@toTag = ";tag="+args.toTag
+			
+		if args.fromTag? and !/^;tag=/.test(args.fromTag)
+			@fromTag = ";tag="+args.fromTag
+
+		@fromTag ?= ";tag="+@randomString 20
+		@toTag ?= ";tag="+@randomString 20
+
+		#Get username to be used in authentication
+		
+		if args.userAuthName? and args.userAuthName !=""
+			@userAuthName = args.userAuthName
+			console.log "Using provided userAuthName for authentication: #{args.userAuthName}"
+		else	
+			@userAuthName = args.ext
+			console.log "Using user name for authentication: #{args.ext}"
+
+
+		#Get domain from To, it can include user params, like user=phone 	 
+		if args.to?
+			@domain2 ?= args.to.split("@")[1]		
+
+		@callId 	?= @randomString 16
+		@regid 		 = 1
 		SipTransaction::uuid ?= @getUuid()
-		@tupleId ?= @randomString 8
+		@tupleId 	?= @randomString 8
+		@cnonce 	?= ""
+		@nc 		?= 0
+		@ncHex 		?= "00000000"
 
 	# It receives a dictionary and set all key-value pairs
 	# as pairs of instance variable - value.
@@ -84,6 +118,16 @@ class SipTransaction
 		array = []
 		array.push  _.random 1, 255 for i in [0..3]
 		return array.join('.')
+	
+	updateCnonceNcHex: () ->
+		@cnonce = @randomString 8
+		@nc += 1
+		hex = Number(@nc).toString(16)
+		@ncHex = "00000000".substr(0, 8 - hex.length) + hex
+					
+		if @nc is 4294967296
+			@nc    = 1
+			@ncHex = "00000001"
 
 # Exports the SipTransaction class.
 window.SipTransaction = SipTransaction

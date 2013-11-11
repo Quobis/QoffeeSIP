@@ -29,12 +29,12 @@ appFiles = [
 	"src/parser.coffee"
 	"src/siptransaction.coffee"
 	"src/sipstack.coffee"
-	"src/API.coffee"
+	"src/QS.coffee"
 ]
 
 task "build", "Build the stack from source files", ->
 	# delete old stuff
-	exec "rm -rf dist/*", (err, stdout, stderr) ->
+	exec "rm -rf dist", (err, stdout, stderr) ->
 		throw err if err
 		console.log stdout + stderr
 	# join all .coffee files
@@ -45,6 +45,7 @@ task "build", "Build the stack from source files", ->
 			appContents[index] = fileContents
 			process() if --remaining is 0
 	process = ->
+		fs.mkdir("dist")
 		fs.writeFile "dist/qoffeesip.coffee", appContents.join("\n\n"), "utf8", (err) ->
 			throw err if err
 			# and compile it
