@@ -24,6 +24,7 @@ task "doc", "Generate Docco documentation.", ->
 # Build the stack
 # File which are going to be compiled
 appFiles = [
+	"RTC/adapter.coffee"
 	"RTC/rtc.coffee"
 	"src/parser.coffee"
 	"src/siptransaction.coffee"
