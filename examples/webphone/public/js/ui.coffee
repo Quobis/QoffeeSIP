@@ -280,7 +280,7 @@ class UI extends Spine.Controller
 			@$registerButton.addClass "disabled"
 
 		# Both video and audio on, let to true what you need
-		hackno_Route_ACK_BYE = true
+		hackno_Route_ACK_BYE = false
 
 		@qs = new QS
 			server: sipServer
@@ -288,8 +288,8 @@ class UI extends Spine.Controller
 			stunServer: stunServer
 			mediaElements: @mediaElements
 			onopen: onopen
-			hackno_Route_ACK_BYE: true
-			hackContact_ACK_MESSAGES: true
+			hackno_Route_ACK_BYE: false
+			hackContact_ACK_MESSAGES: false
 			hackUserPhone: false
 			mediaConstraints: {audio: true, video: not onlyAudio}
 

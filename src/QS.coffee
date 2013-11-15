@@ -283,4 +283,5 @@ class QS extends Spine.Controller
 		@sipStack.rtc.insertDTMF tone
 
 
-window.QS = QS
+window.QS            = QS
+window.Concretestack = QS

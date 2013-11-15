@@ -54,9 +54,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.createPeerConnection = __bind(this.createPeerConnection, this);
 
-      this.start = __bind(this.start, this);
+      this.addIceServer = __bind(this.addIceServer, this);
 
-      this.browserSupport = __bind(this.browserSupport, this);
+      this.start = __bind(this.start, this);
 
       var key, value, _ref;
       console.log("[INFO] RTC constructor");
@@ -77,80 +77,30 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           video: true
         };
       }
-      this.browserSupport();
-      this.iceServers = [];
-      if (this.stunServer != null) {
-        this.iceServers.push(this.stunServer);
-      }
-      if (this.turnServer != null) {
-        this.iceServers.push(this.turnServer);
-      }
       this.isVideoActive = true;
       this.isAudioActive = true;
+      this.iceServers = [];
     }
 
-    RTC.prototype.browserSupport = function() {
-      var _this = this;
-      if (navigator.mozGetUserMedia) {
-        this.browser = "firefox";
-        this.getUserMedia = navigator.mozGetUserMedia.bind(navigator);
-        this.PeerConnection = mozRTCPeerConnection;
-        this.RTCSessionDescription = mozRTCSessionDescription;
-        this.attachStream = function($d, stream) {
-          if (!$d) {
-            return;
-          }
-          console.log("[INFO] attachStream");
-          $d.attr('src', window.URL.createObjectURL(stream));
-          return $d.get(0).play();
-        };
-        MediaStream.prototype.getVideoTracks = function() {
-          return [];
-        };
-        MediaStream.prototype.getAudioTracks = function() {
-          return [];
-        };
-      }
-      if (navigator.webkitGetUserMedia) {
-        this.browser = "chrome";
-        this.getUserMedia = navigator.webkitGetUserMedia.bind(navigator);
-        this.PeerConnection = webkitRTCPeerConnection;
-        this.RTCSessionDescription = RTCSessionDescription;
-        this.attachStream = function($d, stream) {
-          var url;
-          if (!($d != null)) {
-            return;
-          }
-          console.log("[INFO] attachStream");
-          url = webkitURL.createObjectURL(stream);
-          return $d.attr('src', url);
-        };
-        if (!webkitMediaStream.prototype.getVideoTracks) {
-          webkitMediaStream.prototype.getVideoTracks = function() {
-            return this.videoTracks;
-          };
+    RTC.prototype.pcOptions = {
+      optional: [
+        {
+          DtlsSrtpKeyAgreement: true
+        }, {
+          RtpDataChannels: true
         }
-        if (!webkitMediaStream.prototype.getAudioTracks) {
-          webkitMediaStream.prototype.getAudioTracks = function() {
-            return this.audioTracks;
-          };
-        }
-        if (!webkitRTCPeerConnection.prototype.getLocalStreams) {
-          webkitRTCPeerConnection.prototype.getLocalStreams = function() {
-            return this.localStreams;
-          };
-          return webkitRTCPeerConnection.prototype.getRemoteStreams = function() {
-            return this.remoteStreams;
-          };
-        }
-      }
+      ]
     };
 
     RTC.prototype.start = function() {
       console.log("PeerConnection starting");
-      this.noMoreCandidates = this.browser === "firefox";
+      this.noMoreCandidates = navigator.mozGetUserMedia != null;
       this.dtmfSender = null;
       return this.createPeerConnection();
+    };
+
+    RTC.prototype.addIceServer = function(url, username, password) {
+      return this.iceServers.push(RTCAdapter.createIceServer(url, username, password));
     };
 
     RTC.prototype.createPeerConnection = function() {
@@ -158,9 +108,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       console.log("[INFO] createPeerConnection");
       console.log("[MEDIA] ICE servers");
       console.log(this.iceServers);
-      this.pc = new this.PeerConnection({
+      this.pc = new RTCAdapter.RTCPeerConnection({
         "iceServers": this.iceServers
-      });
+      }, this.pcOptions);
       this.pc.onaddstream = function(event) {
         console.log("[MEDIA] Stream added");
         _this.remotestream = event.stream;
@@ -188,20 +138,18 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           }
         }
       };
-      if (this.browser === "chrome") {
-        this.pc.onicechange = function(event) {
-          return console.log("[INFO] icestate changed -> " + _this.pc.iceState);
-        };
-        this.pc.onstatechange = function(event) {
-          return console.log("[INFO] peerconnectionstate changed -> " + _this.pc.readyState);
-        };
-        this.pc.onopen = function() {
-          return console.log("[MEDIA] peerconnection opened");
-        };
-        this.pc.onclose = function() {
-          return console.log("[INFO] peerconnection closed");
-        };
-      }
+      this.pc.onicechange = function() {
+        return console.log("[INFO] icestate changed -> " + _this.pc.iceState);
+      };
+      this.pc.onstatechange = function() {
+        return console.log("[INFO] peerconnectionstate changed -> " + _this.pc.readyState);
+      };
+      this.pc.onopen = function() {
+        return console.log("[MEDIA] peerconnection opened");
+      };
+      this.pc.onclose = function() {
+        return console.log("[INFO] peerconnection closed");
+      };
       return this.createStream();
     };
 
@@ -214,22 +162,22 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         this.pc.addStream(this.localstream);
         return this.attachStream(this.$dom1, this.localstream);
       } else {
-        gumSuccess = function(stream) {
+        gumSuccess = function(localstream) {
           var _ref;
-          _this.localstream = stream;
+          _this.localstream = localstream;
           console.log("[INFO] getUserMedia successed");
           _this.pc.addStream(_this.localstream);
           _this.attachStream(_this.$dom1, _this.localstream);
           _this.trigger("localstream", _this.localstream);
           console.log("localstream", _this.localstream);
-          return _ref = [stream.getVideoTracks().length > 0, stream.getAudioTracks().length > 0], _this.isVideoActive = _ref[0], _this.isAudioActive = _ref[1], _ref;
+          return _ref = [_this.localstream.getVideoTracks().length > 0, _this.localstream.getAudioTracks().length > 0], _this.isVideoActive = _ref[0], _this.isAudioActive = _ref[1], _ref;
         };
         gumFail = function(error) {
           console.error(error);
           console.error("GetUserMedia error");
           return _this.trigger("error", "getUserMedia");
         };
-        return this.getUserMedia(this.mediaConstraints, gumSuccess, gumFail);
+        return RTCAdapter.getUserMedia(this.mediaConstraints, gumSuccess, gumFail);
       }
     };
 
@@ -286,7 +234,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         console.log(_this.pc.remoteDescription);
         return typeof callback === "function" ? callback() : void 0;
       };
-      description = new this.RTCSessionDescription({
+      description = new RTCAdapter.RTCSessionDescription({
         type: type,
         sdp: sdp
       });
@@ -396,6 +344,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     RTC.prototype.insertDTMF = function(tone) {};
+
+    RTC.prototype.attachStream = function($d, stream) {
+      return RTCAdapter.attachMediaStream($d[0], stream);
+    };
 
     return RTC;
 
@@ -2075,5 +2027,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
   })(Spine.Controller);
 
   window.QS = QS;
+
+  window.Concretestack = QS;
 
 }).call(this);
