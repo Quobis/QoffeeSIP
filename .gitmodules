@@ -1,3 +1,6 @@
 [submodule "RTC"]
 	path = RTC
 	url = https://github.com/Quobis/RTC.git
+[submodule "external/RTC"]
+	path = external/RTC
+	url = https://github.com/Quobis/RTC.git
