@@ -1,8 +1,8 @@
-{exec} = require "child_process"
-fs = require "fs"
+{exec}  = require "child_process"
+fs      = require "fs"
 
 # Paths to npm downloaded binaries
-doccob = "node_modules/docco/bin/docco"
+doccob  = "node_modules/docco/bin/docco"
 coffeeb = "node_modules/coffee-script/bin/coffee"
 
 
