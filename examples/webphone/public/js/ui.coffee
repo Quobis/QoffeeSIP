@@ -157,10 +157,10 @@ class UI extends Spine.Controller
 	# Put a chat message in the chat and scroll to the bottom.
 	# TODO: We should take care of HTML content in the message, for example a script tag.
 	renderInstantMessage: (from, text) =>
-		message={}
+		message         = {}
 		message.content = @linkify text
 		message.content = @emoticonify text
-		message.from = from
+		message.from    = from
 		# If sending message...
 		if from is @register.ext
 #			contact = message.to
@@ -178,8 +178,8 @@ class UI extends Spine.Controller
 		# Avoid [Object object] notifications.
 		return if typeof(msg) isnt "string"
 		args =
-			message: {text: msg}
-			type: type
+			message : {text: msg}
+			type    : type
 		@$notifications.notify(args).show()
 
 	infoManager: (info, data) =>
@@ -217,23 +217,23 @@ class UI extends Spine.Controller
 
 		# Save user in local storage.
 		User.create
-			user: $("#user-reg").val()
-			password: $("#pass-reg").val()
-			sipServer: $("#server-reg").val()
-			userPriv: $("#user-reg-priv").val()
-			audioSession: $("#only-audio").is(":checked")
-			stunServer: $("#stun-server").val()
-			turnServer: $("#stun-server").val()
-			turnCredential: $("#turn-server-credential").val()
+			user           : $("#user-reg").val()
+			password       : $("#pass-reg").val()
+			sipServer      : $("#server-reg").val()
+			userPriv       : $("#user-reg-priv").val()
+			audioSession   : $("#only-audio").is(":checked")
+			stunServer     : $("#stun-server").val()
+			turnServer     : $("#stun-server").val()
+			turnCredential : $("#turn-server-credential").val()
 
 		[@register.ext, @register.domain] = $("#user-reg").val().split "@"
 		# Trick to speed up tests.
-		@register.pass = $("#pass-reg").val() or @register.ext
-		server         = $("#server-reg").val()
+		@register.pass     = $("#pass-reg").val() or @register.ext
+		server             = $("#server-reg").val()
 		@register.userPriv = $("#user-reg-priv").val()
-		onlyAudio      = $("#only-audio").is(":checked")
-		stunServer     = url: "stun:" + $("#stun-server").val()
-		turnServer     = 
+		onlyAudio          = $("#only-audio").is(":checked")
+		stunServer         = url: "stun:" + $("#stun-server").val()
+		turnServer         = 
 			url: "turn:" + $("#turn-server").val()
 			credential: $("#turn-server-credential").val()
 
@@ -248,21 +248,21 @@ class UI extends Spine.Controller
 			((/\w+)*)								# Path
 			///
 
-		line = serverRE.exec server
-		sipServer        = {}
+		line                = serverRE.exec server
+		sipServer           = {}
 		sipServer.transport = line[1]
 		sipServer.ip        = line[2]
 		sipServer.port      = line[4]
 		sipServer.path      = line[5] or ""
 
 		onopen = =>
-			@qs.on "qs-ringing", @cbRinging
-			@qs.on "qs-calling", @cbCalling
-			@qs.on "qs-end-call", @cbEndCall
-			@qs.on "qs-lost-call", @cbEndCall
-			@qs.on "qs-established", @cbEstablished
-			@qs.on "qs-instant-message", @renderInstantMessage
-			@qs.on "qs-register-success", @cbRegisterSuccess
+			@qs.on "qs-ringing"          , @cbRinging
+			@qs.on "qs-calling"          , @cbCalling
+			@qs.on "qs-end-call"         , @cbEndCall
+			@qs.on "qs-lost-call"        , @cbEndCall
+			@qs.on "qs-established"      , @cbEstablished
+			@qs.on "qs-instant-message"  , @renderInstantMessage
+			@qs.on "qs-register-success" , @cbRegisterSuccess
 
 # NOT IMPLEMENT IN THIS WEBPHONE			
 #			@qs.on "qs-presence-update", @presenceUpdate 
@@ -277,20 +277,22 @@ class UI extends Spine.Controller
 		hackno_Route_ACK_BYE = true
 
 		@qs = new QS
-			server: sipServer
-			turnServer: turnServer
-			stunServer: stunServer
-			mediaElements: @mediaElements
-			onopen: onopen
-			hackno_Route_ACK_BYE: true
-			hackContact_ACK_MESSAGES: true
-			hackUserPhone: false
-			mediaConstraints: {audio: true, video: not onlyAudio}
+			server                   : sipServer
+			turnServer               : turnServer
+			stunServer               : stunServer
+			mediaElements            : @mediaElements
+			onopen                   : onopen
+			hackno_Route_ACK_BYE     : true
+			hackContact_ACK_MESSAGES : true
+			hackUserPhone            : false
+			mediaConstraints         : {audio: true, video: not onlyAudio}
 
+		@qs.on "qs-ready", onopen
 		@qs.on "qs-localstream", =>
 			@$mediaLocal.removeClass "hidden" 	 # if @api.mediaConstraints.video
 		# @api.on "remotestream", => @$mediaRemote.removeClass "hidden" if @api.mediaConstraints.video
 
+		@qs.start()
 
 	callSubmit: (e) =>
 		# Get extension and domain to call.

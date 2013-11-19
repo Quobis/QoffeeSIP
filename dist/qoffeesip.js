@@ -932,7 +932,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         }
         if ((_ref1 = this.rtc) != null) {
           _ref1.bind("remotestream", function(remotestream) {
-            console.log(_this.currentCall);
             return _this.trigger("remotestream", {
               callId: _this.currentCall.callId,
               stream: remotestream,
@@ -1595,10 +1594,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this.currentCall = _.first(this.getTransactions({
         callId: callid
       }));
-      console.log(this.currentCall);
-      console.log(callid);
-      console.log(this._transactions);
-      window.t = this._transactions;
       ok = _.clone(this.currentCall);
       ok.meth = "OK";
       this.sendWithSDP(this.createMessage(ok), "answer", this.currentCall.content);
@@ -1729,7 +1724,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     SipStack.prototype.setState = function(state, data) {
       this.state = state;
-      console.log("[INFO] New state  " + this.states[this.state] + ("(" + this.state + ")"), data);
+      console.log("[INFO] New state  " + this.states[this.state] + ("(" + this.state + ")"));
       return this.trigger("new-state", this.state, data);
     };
 
@@ -1891,7 +1886,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     QS.prototype.onopen = function() {
-      return this.trigger("ready");
+      return this.trigger("qs-ready");
     };
 
     QS.prototype.cbInstantMessage = function(data) {

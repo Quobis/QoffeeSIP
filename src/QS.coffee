@@ -63,7 +63,7 @@ class QS extends Spine.Controller
 		@sipStack.start()
 	
 	onopen: () =>
-		@trigger "ready"
+		@trigger "qs-ready"
 
 	cbInstantMessage: (data) =>
 		lines    = data.content.split(/\n/)
