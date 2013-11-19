@@ -55,7 +55,9 @@ class SipStack extends Spine.Controller
 		"CALL STABLISHED (caller)", 
 		"CALL STABLISHED (callee)",
 		"HANGING", 
-		"CANCELLING"]
+		"CANCELLING",
+		"UNREGISTERING"
+		]
 
 	responsePhrases:
 		100: "Trying"
@@ -235,15 +237,15 @@ class SipStack extends Spine.Controller
 								@send @createMessage newRegister
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@unregister = () =>
+								clearInterval @t
 								# Hangup before reregistering.
 								@hangup @currentCall.branch if @currentCall
 								console.log "[INFO] unregistering"
 								transaction = @getTransaction message
 								transaction.expires = 0
-								clearInterval @t
 								message = @createMessage transaction
 								@send message
-								@setState 0, message # Offline
+								@setState 11, message # Offline
 							@gruu = message.gruu
 
 						# Unsusccessful register.
@@ -273,20 +275,20 @@ class SipStack extends Spine.Controller
 							# Manage reregisters.
 							transaction.expires = message.proposedExpires
 							@reRegister = () =>
-								newRegister = @getTransaction transaction
+								newRegister             = @getTransaction transaction
 								newRegister.cseq.number += 1
 								@send @createMessage newRegister
 							@t    = setInterval(@reRegister, transaction.expires*1000)
 							@unregister = () =>
+								clearInterval @t
 								# Hangup before reregistering.
 								@hangup @currentCall.branch if @currentCall
 								console.log "[INFO] unregistering"
-								transaction = @getTransaction message
+								transaction         = @getTransaction message
 								transaction.expires = 0
-								clearInterval @t
-								message = @createMessage transaction
+								message             = @createMessage transaction
 								@send message
-								@setState 0, message # Offline							
+								@setState 11, message # Offline							
 							@gruu = message.gruu
 						# Unsusccessful register.
 						when 401
@@ -450,6 +452,21 @@ class SipStack extends Spine.Controller
 					@rtc?.close()
 					@setState 3, message # Registered
 					@currentCall = null
+
+				# UNREGISTERING
+				when 11
+					return unless @getTransaction message
+					switch message.response
+						when 200
+							@setState 0						
+						when 401, 407
+							return unless message.responseCode in [401,407]
+							unregister = @getTransaction message
+							_.extend unregister, _.pick message, "realm", "nonce", "toTag"
+							unregister.proxyAuth = message.responseCode is 407
+							unregister.auth      = message.responseCode is 401
+							@send @createMessage unregister
+							@setState 0
 
 
 			# # End of Finite State Machine
