@@ -20,6 +20,9 @@ class SipStack extends Spine.Controller
 	getTransaction: (message) =>
 		@_transactions[message.branch]
 
+	getTransactions: (filter) =>
+		_.where(@_transactions, filter)
+
 	# branch :: String
 	deleteTransaction: (message) =>
 		@_transactions = _.omit @_transactions, message.branch
@@ -89,7 +92,11 @@ class SipStack extends Spine.Controller
 				stunServer: @stunServer
 
 			@rtc?.bind "localstream", (localstream) => @trigger "localstream", localstream
-			@rtc?.bind "remotestream", (remotestream) => @trigger "remotestream", remotestream
+			@rtc?.bind "remotestream", (remotestream) =>
+				@trigger "remotestream",
+					callId  : @currentCall.callId
+					stream  : remotestream
+					uid 	: "-"
 
 
 		@sipServer = @server.ip
@@ -118,6 +125,7 @@ class SipStack extends Spine.Controller
 		@hackUserPhone ?= false
 		console.log("Creating QS with @hackViaTCP= #{@hackViaTCP} @hackIpContact=#{@hackIpContact} @hackno_Route_ACK_BYE=#{@hackno_Route_ACK_BYE} @hackContact_ACK_MESSAGES=#{@hackContact_ACK_MESSAGES} @hackUserPhone=#{@hackUserPhone}")	
 
+	start: () =>
 		# A new websocket connection is created.
 		console.log("#{@transport}://#{@sipServer}:#{@port}#{@path}")
 		try
@@ -383,7 +391,7 @@ class SipStack extends Spine.Controller
 										ack.meth = "ACK"
 										ack.vias = message.vias
 										@send @createMessage ack
-										@setState 3
+										@setState 3, message
 										# Remove the current invite transaction.
 										@deleteTransaction "INVITE"
 										@currentCall = message
@@ -712,17 +720,18 @@ class SipStack extends Spine.Controller
 		message = @createMessage transaction
 		@sendWithSDP message, "offer", null
 
-	answer: (branch) =>
-		ok = _.clone @getTransaction {branch}
+	answer: (callid) =>
+		@currentCall = _.first @getTransactions {callId : callid}
+		ok = _.clone @currentCall
 		# TODO: meth is not the same as reason phrase.
 		# Distinguish between meth and reason phrase.
 		ok.meth = "OK"
 		# Media
 		# This function will be executed when API.answer is called.
-		@sendWithSDP (@createMessage ok), "answer", @getTransaction({branch}).content
+		@sendWithSDP (@createMessage ok), "answer", @currentCall.content
 		@setState 4, ok
 
-	hangup: (branch) =>
+	hangup: (callid) =>
 		# It is possible to call hangup before the INVITE has been sent (PeerConnection 
 		# is still getting ICE candidates), so we must unbind "sdp" event to avoid 
 		# sending CANCEL before INVITE.
@@ -732,7 +741,7 @@ class SipStack extends Spine.Controller
 		swap = (d, p1, p2)-> [d[p1], d[p2]] = [d[p2], d[p1]]
 
 		# We need the INVITE request that has originated the dialog.
-		invite = @getTransaction {branch}
+		invite = _.first @getTransactions {callId : callid}
 
 		switch @state
 			when 5

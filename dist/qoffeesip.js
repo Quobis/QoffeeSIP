@@ -825,6 +825,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this._transactions[message.branch];
     };
 
+    SipStack.prototype.getTransactions = function(filter) {
+      return _.where(this._transactions, filter);
+    };
+
     SipStack.prototype.deleteTransaction = function(message) {
       return this._transactions = _.omit(this._transactions, message.branch);
     };
@@ -893,6 +897,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.getDigest = __bind(this.getDigest, this);
 
+      this.start = __bind(this.start, this);
+
       this.error = __bind(this.error, this);
 
       this.warning = __bind(this.warning, this);
@@ -902,6 +908,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this.checkDialog = __bind(this.checkDialog, this);
 
       this.deleteTransaction = __bind(this.deleteTransaction, this);
+
+      this.getTransactions = __bind(this.getTransactions, this);
 
       this.getTransaction = __bind(this.getTransaction, this);
 
@@ -924,7 +932,12 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         }
         if ((_ref1 = this.rtc) != null) {
           _ref1.bind("remotestream", function(remotestream) {
-            return _this.trigger("remotestream", remotestream);
+            console.log(_this.currentCall);
+            return _this.trigger("remotestream", {
+              callId: _this.currentCall.callId,
+              stream: remotestream,
+              uid: "-"
+            });
           });
         }
       }
@@ -951,6 +964,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         this.hackUserPhone = false;
       }
       console.log("Creating QS with @hackViaTCP= " + this.hackViaTCP + " @hackIpContact=" + this.hackIpContact + " @hackno_Route_ACK_BYE=" + this.hackno_Route_ACK_BYE + " @hackContact_ACK_MESSAGES=" + this.hackContact_ACK_MESSAGES + " @hackUserPhone=" + this.hackUserPhone);
+    }
+
+    SipStack.prototype.start = function() {
+      var _this = this;
       console.log("" + this.transport + "://" + this.sipServer + ":" + this.port + this.path);
       try {
         this.websocket = new WebSocket("" + this.transport + "://" + this.sipServer + ":" + this.port + this.path, "sip");
@@ -967,7 +984,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         return _this.onopen();
       };
       this.websocket.onmessage = function(evt) {
-        var ack, busy, instantMessage, message, ok, register, ringing, transaction, _ref10, _ref11, _ref12, _ref13, _ref14, _ref7, _ref8, _ref9;
+        var ack, busy, instantMessage, message, ok, register, ringing, transaction, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
         message = Parser.parse(evt.data);
         _this.info("Input message", message);
         if ((_this.state > 2) && (message.cseq.meth === "REGISTER")) {
@@ -1009,7 +1026,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
               _this.deleteTransaction(message);
               break;
             default:
-              if ((_ref7 = message.responseCode) !== 401 && _ref7 !== 407) {
+              if ((_ref = message.responseCode) !== 401 && _ref !== 407) {
                 return;
               }
               if (!_this.getTransaction(message)) {
@@ -1023,7 +1040,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           }
           return;
         }
-        if ((3 < (_ref8 = _this.state) && _ref8 < 9)) {
+        if ((3 < (_ref1 = _this.state) && _ref1 < 9)) {
           if (message.meth === "INVITE") {
             _this.info("another-incoming-call", message);
             busy = _.clone(message);
@@ -1044,8 +1061,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             switch (message.responseCode) {
               case 200:
                 _this.info("register-success", message);
-                if ((_ref9 = _this.rtc) != null) {
-                  _ref9.start();
+                if ((_ref2 = _this.rtc) != null) {
+                  _ref2.start();
                 }
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires || 3600;
@@ -1092,8 +1109,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             switch (message.responseCode) {
               case 200:
                 _this.info("register-success", message);
-                if ((_ref10 = _this.rtc) != null) {
-                  _ref10.start();
+                if ((_ref3 = _this.rtc) != null) {
+                  _ref3.start();
                 }
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires;
@@ -1171,8 +1188,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                     return transaction.contact = message.contact;
                   case 200:
                     _this.info("Establishing call", message);
-                    if ((_ref11 = _this.rtc) != null) {
-                      _ref11.receiveAnswer(message.content);
+                    if ((_ref4 = _this.rtc) != null) {
+                      _ref4.receiveAnswer(message.content);
                     }
                     _.extend(transaction, _.pick(message, "from", "to", "fromTag", "toTag"));
                     ack = new SipTransaction(message);
@@ -1205,7 +1222,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                       ack.meth = "ACK";
                       ack.vias = message.vias;
                       _this.send(_this.createMessage(ack));
-                      _this.setState(3);
+                      _this.setState(3, message);
                       _this.deleteTransaction("INVITE");
                       return _this.currentCall = message;
                     }
@@ -1254,8 +1271,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 transaction.meth = "OK";
                 ok = _.clone(transaction);
                 _this.send(_this.createMessage(ok));
-                if ((_ref12 = _this.rtc) != null) {
-                  _ref12.close();
+                if ((_ref5 = _this.rtc) != null) {
+                  _ref5.close();
                 }
                 return _this.setState(3, message);
             }
@@ -1266,8 +1283,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             _this.info("HANGING UP", message);
             _this.info("Call ended", message);
-            if ((_ref13 = _this.rtc) != null) {
-              _ref13.close();
+            if ((_ref6 = _this.rtc) != null) {
+              _ref6.close();
             }
             _this.setState(3, message);
             return _this.currentCall = null;
@@ -1277,17 +1294,17 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             _this.info("HANGING UP", message);
             _this.info("Call ended", message);
-            if ((_ref14 = _this.rtc) != null) {
-              _ref14.close();
+            if ((_ref7 = _this.rtc) != null) {
+              _ref7.close();
             }
             _this.setState(3, message);
             return _this.currentCall = null;
         }
       };
-      this.websocket.onclose = function(evt) {
+      return this.websocket.onclose = function(evt) {
         return _this.info("websocket closed");
       };
-    }
+    };
 
     SipStack.prototype.getDigest = function(transaction) {
       var ha1, ha2, sol;
@@ -1573,19 +1590,22 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.sendWithSDP(message, "offer", null);
     };
 
-    SipStack.prototype.answer = function(branch) {
+    SipStack.prototype.answer = function(callid) {
       var ok;
-      ok = _.clone(this.getTransaction({
-        branch: branch
+      this.currentCall = _.first(this.getTransactions({
+        callId: callid
       }));
+      console.log(this.currentCall);
+      console.log(callid);
+      console.log(this._transactions);
+      window.t = this._transactions;
+      ok = _.clone(this.currentCall);
       ok.meth = "OK";
-      this.sendWithSDP(this.createMessage(ok), "answer", this.getTransaction({
-        branch: branch
-      }).content);
+      this.sendWithSDP(this.createMessage(ok), "answer", this.currentCall.content);
       return this.setState(4, ok);
     };
 
-    SipStack.prototype.hangup = function(branch) {
+    SipStack.prototype.hangup = function(callid) {
       var busy, bye, cancel, invite, swap, _ref, _ref1, _ref2;
       if ((_ref = this.rtc) != null) {
         _ref.unbind("sdp");
@@ -1594,9 +1614,9 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         var _ref1;
         return _ref1 = [d[p2], d[p1]], d[p1] = _ref1[0], d[p2] = _ref1[1], _ref1;
       };
-      invite = this.getTransaction({
-        branch: branch
-      });
+      invite = _.first(this.getTransactions({
+        callId: callid
+      }));
       switch (this.state) {
         case 5:
           cancel = new SipTransaction({
@@ -1709,7 +1729,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     SipStack.prototype.setState = function(state, data) {
       this.state = state;
-      console.log("[INFO] New state  " + this.states[this.state] + ("(" + this.state + ")"));
+      console.log("[INFO] New state  " + this.states[this.state] + ("(" + this.state + ")"), data);
       return this.trigger("new-state", this.state, data);
     };
 
@@ -1777,6 +1797,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this.cbStateChange = __bind(this.cbStateChange, this);
 
       this.cbInstantMessage = __bind(this.cbInstantMessage, this);
+
+      this.onopen = __bind(this.onopen, this);
+
+      this.start = __bind(this.start, this);
       QS.__super__.constructor.apply(this, arguments);
       this.lastState = "";
       this.stateflow = [];
@@ -1861,6 +1885,14 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         }
       });
     }
+
+    QS.prototype.start = function() {
+      return this.sipStack.start();
+    };
+
+    QS.prototype.onopen = function() {
+      return this.trigger("ready");
+    };
 
     QS.prototype.cbInstantMessage = function(data) {
       var chattext, header, lines;
@@ -2003,32 +2035,24 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     QS.prototype.on = function(eventName, callback) {
-      var _ref;
       if (this.customEvents[eventName] != null) {
         if (this.customEventsReverse[this.customEvents[eventName].stack].counter === 0) {
           this.customEventsReverse[this.customEvents[eventName].stack].counter += 1;
           this.sipStack.bind(this.customEvents[eventName].stack, this.customEvents[eventName].cb);
         }
-      } else {
-        if (_ref = !eventName, __indexOf.call(this.mappedEvents, _ref) >= 0) {
-          return;
-        }
+      } else if (__indexOf.call(this.mappedEvents, eventName) >= 0) {
         this.sipStack.bind(this.libEvents[eventName].stack, this.libEvents[eventName].cb);
       }
       return this.bind(eventName, callback);
     };
 
     QS.prototype.off = function(eventName, callback) {
-      var _ref;
       if (this.customEvents[eventName] != null) {
         if (this.customEventsReverse[this.customEvents[eventName].stack].counter !== 0) {
           this.customEventsReverse[this.customEvents[eventName].stack].counter -= 1;
           this.sipStack.unbind(this.customEvents[eventName].stack, this.customEvents[eventName].cb);
         }
-      } else {
-        if (_ref = !eventName, __indexOf.call(this.mappedEvents, _ref) >= 0) {
-          return;
-        }
+      } else if (__indexOf.call(this.mappedEvents, eventName) >= 0) {
         this.sipStack.unbind(this.libEvents[eventName].stack, this.libEvents[eventName].cb);
       }
       return this.unbind(eventName, callback);
@@ -2066,7 +2090,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.sipStack.rtc.attachStream($d, stream);
     };
 
-    QS.prototype.insertDTMF = function(tone) {
+    QS.prototype.insertDTMF = function(callid, tone) {
       return this.sipStack.rtc.insertDTMF(tone);
     };
 
@@ -2075,5 +2099,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
   })(Spine.Controller);
 
   window.QS = QS;
+
+  window.Concretestack = QS;
 
 }).call(this);

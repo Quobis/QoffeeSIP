@@ -59,6 +59,12 @@ class QS extends Spine.Controller
 			mediaElements: @mediaElements
 			onopen: @onopen or -> false
 
+	start: () =>
+		@sipStack.start()
+	
+	onopen: () =>
+		@trigger "ready"
+
 	cbInstantMessage: (data) =>
 		lines    = data.content.split(/\n/)
 		header   = JSON.parse lines[0]
@@ -220,8 +226,7 @@ class QS extends Spine.Controller
 			if @customEventsReverse[@customEvents[eventName].stack].counter is 0
 				@customEventsReverse[@customEvents[eventName].stack].counter += 1
 				@sipStack.bind @customEvents[eventName].stack, @customEvents[eventName].cb
-		else
-			return if not eventName in @mappedEvents
+		else if eventName in @mappedEvents
 			@sipStack.bind @libEvents[eventName].stack, @libEvents[eventName].cb
 
 		@bind eventName, callback
@@ -233,8 +238,7 @@ class QS extends Spine.Controller
 			if @customEventsReverse[@customEvents[eventName].stack].counter isnt 0
 				@customEventsReverse[@customEvents[eventName].stack].counter -= 1
 				@sipStack.unbind @customEvents[eventName].stack, @customEvents[eventName].cb
-		else
-			return if not eventName in @mappedEvents
+		else if eventName in @mappedEvents
 			@sipStack.unbind @libEvents[eventName].stack, @libEvents[eventName].cb
 
 		@unbind eventName, callback
@@ -279,8 +283,9 @@ class QS extends Spine.Controller
 	attachStream: ($d, stream) =>
 		@sipStack.rtc.attachStream $d, stream
 
-	insertDTMF: (tone) =>
+	insertDTMF: (callid, tone) =>
 		@sipStack.rtc.insertDTMF tone
 
 
 window.QS = QS
+window.Concretestack = QS
