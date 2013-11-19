@@ -47,17 +47,23 @@ class QS extends Spine.Controller
 
 		
 		@sipStack = new SipStack
-			server: @server
-			stunServer: @stunServer
-			turnServer: @turnServer
-			hackViaTCP: @hackViaTCP
-			hackIpContact: @hackIpContact
-			hackno_Route_ACK_BYE: @hackno_Route_ACK_BYE
-			hackContact_ACK_MESSAGES: @hackContact_ACK_MESSAGES
-			hackUserPhone: @hackUserPhone
-			mediaConstraints: @mediaConstraints
-			mediaElements: @mediaElements
-			onopen: @onopen or -> false
+			server                   : @server
+			stunServer               : @stunServer
+			turnServer               : @turnServer
+			hackViaTCP               : @hackViaTCP
+			hackIpContact            : @hackIpContact
+			hackno_Route_ACK_BYE     : @hackno_Route_ACK_BYE
+			hackContact_ACK_MESSAGES : @hackContact_ACK_MESSAGES
+			hackUserPhone            : @hackUserPhone
+			mediaConstraints         : @mediaConstraints
+			mediaElements            : @mediaElements
+			onopen                   : @onopen
+
+	start: () =>
+		@sipStack.start()
+
+	onopen: () =>
+		@trigger "qs-ready"
 
 	cbInstantMessage: (data) =>
 		lines    = data.content.split(/\n/)
@@ -169,7 +175,7 @@ class QS extends Spine.Controller
 	#### updatePresenceState
 	updatePresenceState: (uri2, state, answerme = false) =>
 		@lastState = state
-		content = JSON.stringify({presenceState: state, answerme: Boolean(answerme)}) + "\n"
+		content    = JSON.stringify({presenceState: state, answerme: Boolean(answerme)}) + "\n"
 		@sipStack.sendInstantMessage uri2, content
 
 	#### updateMediaState
@@ -220,8 +226,7 @@ class QS extends Spine.Controller
 			if @customEventsReverse[@customEvents[eventName].stack].counter is 0
 				@customEventsReverse[@customEvents[eventName].stack].counter += 1
 				@sipStack.bind @customEvents[eventName].stack, @customEvents[eventName].cb
-		else
-			return if not eventName in @mappedEvents
+		else if eventName in @mappedEvents
 			@sipStack.bind @libEvents[eventName].stack, @libEvents[eventName].cb
 
 		@bind eventName, callback

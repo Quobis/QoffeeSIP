@@ -287,15 +287,17 @@ class UI extends Spine.Controller
 			turnServer: turnServer
 			stunServer: stunServer
 			mediaElements: @mediaElements
-			onopen: onopen
 			hackno_Route_ACK_BYE: false
 			hackContact_ACK_MESSAGES: false
 			hackUserPhone: false
 			mediaConstraints: {audio: true, video: not onlyAudio}
 
 		@qs.on "qs-localstream", =>
-			@$mediaLocal.removeClass "hidden" 	 # if @api.mediaConstraints.video
-		# @api.on "remotestream", => @$mediaRemote.removeClass "hidden" if @api.mediaConstraints.video
+			@$mediaLocal.removeClass "hidden"
+
+		@qs.on "qs-ready", onopen
+
+		@qs.start()
 
 
 	callSubmit: (e) =>
