@@ -85,10 +85,10 @@ class SipStack extends Spine.Controller
 		super
 		if @mediaConstraints.audio + @mediaConstraints.video > 0
 			@rtc = new RTC
-				mediaElements: @mediaElements
-				mediaConstraints: @mediaConstraints
-				turnServer: @turnServer
-				stunServer: @stunServer
+				mediaElements    : @mediaElements
+				mediaConstraints : @mediaConstraints
+				turnServer       : @turnServer
+				stunServer       : @stunServer
 
 			@rtc?.bind "localstream", (localstream) => @trigger "localstream", localstream
 			@rtc?.bind "remotestream", (remotestream) => @trigger "remotestream", remotestream
@@ -242,9 +242,9 @@ class SipStack extends Spine.Controller
 								# Hangup before reregistering.
 								@hangup @currentCall.branch if @currentCall
 								console.log "[INFO] unregistering"
-								transaction = @getTransaction message
+								transaction         = @getTransaction message
 								transaction.expires = 0
-								message = @createMessage transaction
+								message             = @createMessage transaction
 								@send message
 								@setState 11, message # Offline
 							@gruu = message.gruu
@@ -264,7 +264,7 @@ class SipStack extends Spine.Controller
 				# ### REGISTERING (after challenging)
 				when 2
 					return if not @getTransaction message
-					transaction = @getTransaction message
+					transaction      = @getTransaction message
 					transaction.vias = message.vias
 
 					switch message.responseCode
@@ -528,14 +528,14 @@ class SipStack extends Spine.Controller
 
 		transaction.ltFrom = ""
 		transaction.gtFrom = ""
-		transaction.ltTo = ""
-		transaction.gtTo= ""
+		transaction.ltTo   = ""
+		transaction.gtTo   = ""
 
 		if @hackUserPhone
-			transaction.ltFrom = "<"
-			transaction.gtFrom = ">"
-			transaction.ltTo = "<"
-			transaction.gtTo= ">"
+			transaction.ltFrom    = "<"
+			transaction.gtFrom    = ">"
+			transaction.ltTo      = "<"
+			transaction.gtTo      = ">"
 			transaction.UserPhone = ";user=phone"
 		else 
 			transaction.UserPhone = ""
@@ -575,8 +575,8 @@ class SipStack extends Spine.Controller
 					data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
 			when "BYE", "ACK"
 				if not @hackno_Route_ACK_BYE
-									if transaction.cseq.meth isnt "MESSAGE"
-											data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
+					if transaction.cseq.meth isnt "MESSAGE"
+						data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
 		# Via
 		if _.isArray(transaction.vias)# and transaction.meth isnt "ACK"
 			data += (transaction.vias.join "\r\n") + "\r\n"
@@ -656,9 +656,9 @@ class SipStack extends Spine.Controller
 			when "ACK", "MESSAGE"
 				if @hackContact_ACK_MESSAGES
 					if @gruu
-							data += "Contact: <#{@gruu};ob>\r\n"
+						data += "Contact: <#{@gruu};ob>\r\n"
 					else
-							data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws;ob>\r\n"
+						data += "Contact: <sip:#{transaction.ext}@#{address};transport=ws;ob>\r\n"
 				
 		switch transaction.meth
 			when "REGISTER"
@@ -719,11 +719,11 @@ class SipStack extends Spine.Controller
 
 	call: (uri2) =>
 		transaction = new SipTransaction
-			meth: "INVITE",
-			uri: @ext,
-			pass : @pass,
-			uri2 : uri2
-			userAuthName: @userAuthName
+			meth         : "INVITE",
+			uri          : @ext,
+			pass         : @pass,
+			uri2         : uri2
+			userAuthName : @userAuthName
 	
 		@addTransaction transaction
 		@setState 5, transaction
@@ -755,11 +755,11 @@ class SipStack extends Spine.Controller
 		switch @state
 			when 5
 				cancel = new SipTransaction
-					meth: "CANCEL",
-					ext : @ext
-					domain : @domain
-					ext2 : invite.ext2
-					domain2: invite.domain2
+					meth    : "CANCEL",
+					ext     : @ext
+					domain  : @domain
+					ext2    : invite.ext2
+					domain2 : invite.domain2
 
 				_.extend cancel, _.pick invite, "callId", "fromTag", "from", "to", "cseq", "domainName", "branch"
 				@send @createMessage cancel
@@ -767,8 +767,8 @@ class SipStack extends Spine.Controller
 
 			when 6
 				busy = new SipTransaction
-					meth: "Busy here"
-					ext : @ext
+					meth : "Busy here"
+					ext  : @ext
 					ext2 : invite.ext
 
 				_.extend busy, _.pick invite, "callId", "fromTag", "from", "to", "cseq", "domainName", "branch", "vias"
@@ -777,8 +777,8 @@ class SipStack extends Spine.Controller
 
 			when 7
 				bye = new SipTransaction
-					meth: "BYE"
-					ext : @ext
+					meth : "BYE"
+					ext  : @ext
 					ext2 : invite.ext2
 				_.extend bye, _.pick invite, "callId", "contact", "fromTag", "toTag", "from", "to", "cseq"
 				@send @createMessage bye
@@ -788,8 +788,8 @@ class SipStack extends Spine.Controller
 
 			when 8
 				bye = new SipTransaction
-					meth: "BYE"
-					ext : @ext
+					meth : "BYE"
+					ext  : @ext
 					ext2 : invite.ext
 				_.extend bye, _.pick invite, "callId", "contact", "fromTag", "toTag", "from", "to", "cseq", "vias"
 				swap bye, "fromTag", "toTag"
@@ -830,11 +830,11 @@ class SipStack extends Spine.Controller
 
 	sendInstantMessage: (uri2, text) =>
 		message = new SipTransaction 
-			meth: "MESSAGE"
-			ext: @ext
-			pass: @pass
-			uri2: uri2
-			content: text
+			meth    : "MESSAGE"
+			ext     : @ext
+			pass    : @pass
+			uri2    : uri2
+			content : text
 	
 		@addTransaction message
 		@send @createMessage message

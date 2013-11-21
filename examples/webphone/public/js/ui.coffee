@@ -82,9 +82,9 @@ class UI extends Spine.Controller
 		for file in e.originalEvent.dataTransfer.files
 			url = URL.createObjectURL file
 			message =
-				from: @register.ext
-				to: @ext2
-				content: $("#chat > .messages").append("<img src=#{url}>")
+				from    : @register.ext
+				to      : @ext2
+				content : $("#chat > .messages").append("<img src=#{url}>")
 			@renderInstantMessage @register.ext message
 		@toggleActiveClass(e)
 		false
@@ -119,33 +119,33 @@ class UI extends Spine.Controller
 	linkify: (inputText) ->
 		# URLs starting with http://, https://, or ftp://
 		replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim
-		replacedText = inputText.replace replacePattern1, '<a href="$1" target="_blank">$1</a>'
-
+		replacedText    = inputText.replace replacePattern1, '<a href="$1" target="_blank">$1</a>'
+		
 		# URLs starting with www. (without // before it, or it'd re-link the ones done above)
 		replacePattern2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim
-		replacedText = replacedText.replace replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>'
-
+		replacedText    = replacedText.replace replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>'
+		
 		# # Change email addresses to mailto:: links
 		replacePattern3 = /(\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,6})/gim
-		replacedText = replacedText.replace replacePattern3, '<a href="mailto:$1">$1</a>'
+		replacedText    = replacedText.replace replacePattern3, '<a href="mailto:$1">$1</a>'
 
 		return replacedText
 
 	emoticonify: (inputText) ->
 		substitutions =
-			angry:		/X\-?\(/gim				# :(
-			blink:		/;-?\)/gim				# ;)
-			blush:		/:-?\$/gim				# :$
-			cheerful:	/(:-?D)|(\^\^)/gim		# :D ^^
-			confused:	/:-?S/gim				# :S
-			cry:		/;-?\(/gim				# ;)
-			happy: 		/:-?\)/gim				# :)
-			laugh:		/X-?D/gim				# XD
-			sad: 		/:-?\(/gim				# :(
-			serious:	/:-?\|/gim				# :|
-			sunglasses: /B-?\)/gim				# B)
-			surprised:	/:-?O/gim				# :O
-			tongue: 	/:-?P/gim				# :P
+			angry      : 	/X\-?\(/gim				# :(
+			blink      : 	/;-?\)/gim				# ;)
+			blush      : 	/:-?\$/gim				# :$
+			cheerful   : 	/(:-?D)|(\^\^)/gim		# :D ^^
+			confused   : 	/:-?S/gim				# :S
+			cry        : 	/;-?\(/gim				# ;)
+			happy      : 	/:-?\)/gim				# :)
+			laugh      : 	/X-?D/gim				# XD
+			sad        : 	/:-?\(/gim				# :(
+			serious    : 	/:-?\|/gim				# :|
+			sunglasses :	/B-?\)/gim				# B)
+			surprised  : 	/:-?O/gim				# :O
+			tongue     : 	/:-?P/gim				# :P
 
 		replacedText = inputText
 		for key, pattern of substitutions
@@ -157,10 +157,10 @@ class UI extends Spine.Controller
 	# Put a chat message in the chat and scroll to the bottom.
 	# TODO: We should take care of HTML content in the message, for example a script tag.
 	renderInstantMessage: (from, text) =>
-		message={}
+		message         = {}
 		message.content = @linkify text
 		message.content = @emoticonify text
-		message.from = from
+		message.from    = from
 		# If sending message...
 		if from is @register.ext
 #			contact = message.to
@@ -178,8 +178,8 @@ class UI extends Spine.Controller
 		# Avoid [Object object] notifications.
 		return if typeof(msg) isnt "string"
 		args =
-			message: {text: msg}
-			type: type
+			message : {text: msg}
+			type    : type
 		@$notifications.notify(args).show()
 
 	infoManager: (info, data) =>
@@ -217,14 +217,14 @@ class UI extends Spine.Controller
 
 		# Save user in local storage.
 		User.create
-			user: $("#user-reg").val()
-			password: $("#pass-reg").val()
-			sipServer: $("#server-reg").val()
-			userPriv: $("#user-reg-priv").val()
-			audioSession: $("#only-audio").is(":checked")
-			stunServer: $("#stun-server").val()
-			turnServer: $("#stun-server").val()
-			turnCredential: $("#turn-server-credential").val()
+			user           : $("#user-reg").val()
+			password       : $("#pass-reg").val()
+			sipServer      : $("#server-reg").val()
+			userPriv       : $("#user-reg-priv").val()
+			audioSession   : $("#only-audio").is(":checked")
+			stunServer     : $("#stun-server").val()
+			turnServer     : $("#stun-server").val()
+			turnCredential : $("#turn-server-credential").val()
 
 		[@register.ext, @register.domain] = $("#user-reg").val().split "@"
 		# Trick to speed up tests.
@@ -262,13 +262,13 @@ class UI extends Spine.Controller
 			sipServer.transport = "ws"
 
 		onopen = =>
-			@qs.on "qs-ringing", @cbRinging
-			@qs.on "qs-calling", @cbCalling
-			@qs.on "qs-end-call", @cbEndCall
-			@qs.on "qs-lost-call", @cbEndCall
-			@qs.on "qs-established", @cbEstablished
-			@qs.on "qs-instant-message", @renderInstantMessage
-			@qs.on "qs-register-success", @cbRegisterSuccess
+			@qs.on "qs-ringing"          , @cbRinging
+			@qs.on "qs-calling"          , @cbCalling
+			@qs.on "qs-end-call"         , @cbEndCall
+			@qs.on "qs-lost-call"        , @cbEndCall
+			@qs.on "qs-established"      , @cbEstablished
+			@qs.on "qs-instant-message"  , @renderInstantMessage
+			@qs.on "qs-register-success" , @cbRegisterSuccess
 
 # NOT IMPLEMENT IN THIS WEBPHONE			
 #			@qs.on "qs-presence-update", @presenceUpdate 
@@ -283,14 +283,14 @@ class UI extends Spine.Controller
 		hackno_Route_ACK_BYE = false
 
 		@qs = new QS
-			server: sipServer
-			turnServer: turnServer
-			stunServer: stunServer
-			mediaElements: @mediaElements
-			hackno_Route_ACK_BYE: false
-			hackContact_ACK_MESSAGES: false
-			hackUserPhone: false
-			mediaConstraints: {audio: true, video: not onlyAudio}
+			server                   : sipServer
+			turnServer               : turnServer
+			stunServer               : stunServer
+			mediaElements            : @mediaElements
+			hackno_Route_ACK_BYE     : false
+			hackContact_ACK_MESSAGES : false
+			hackUserPhone            : false
+			mediaConstraints         : {audio: true, video: not onlyAudio}
 
 		@qs.on "qs-localstream", =>
 			@$mediaLocal.removeClass "hidden"
@@ -369,9 +369,9 @@ class UI extends Spine.Controller
 		@$chat.show()
 		@$chat.find("form").submit =>
 			message =
-				from: @register.ext
-				to: @ext2
-				content: @$chat.find("input:first").val()
+				from    : @register.ext
+				to      : @ext2
+				content : @$chat.find("input:first").val()
 			@$chat.find("input:first").val ""
 			@qs.chat @ext2, @register.domain, message.content
 			@renderInstantMessage @register.ext, message.content
@@ -420,11 +420,11 @@ class UI extends Spine.Controller
 		@previousState = @state
 
 	cbRinging: (message) =>
-		@ext2 = message.ext
+		@ext2    = message.ext
 		@domain2 = message.to.split("@")[1]
 		@updateStatus "Incoming call from #{@ext2}"
-		@answer = => @qs.answer message.branch
-		@hangup = => @qs.hangup message.branch
+		@answer  = => @qs.answer message.branch
+		@hangup  = => @qs.hangup message.branch
 		@nextForm @$formIncomingCall
 		document.getElementById("sound-ringing").play()
 		if window.autoanswering
