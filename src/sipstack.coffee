@@ -20,6 +20,9 @@ class SipStack extends Spine.Controller
 	getTransaction: (message) =>
 		@_transactions[message.branch]
 
+	getTransactions: (filter) =>
+		_.where(@_transactions, filter)
+
 	# branch :: String
 	deleteTransaction: (message) =>
 		@_transactions = _.omit @_transactions, message.branch
@@ -47,15 +50,17 @@ class SipStack extends Spine.Controller
 
 	# TODO: Use constants instead of number and strings.
 	states:
-		["OFFLINE",
-		"REGISTERING (before challenge)",
-		"REGISTERING (after challenge)", 
-		"REGISTERED", "INCOMING CALL", 
-		"CALLING", "RINGING",
-		"CALL STABLISHED (caller)", 
-		"CALL STABLISHED (callee)",
-		"HANGING", 
-		"CANCELLING",
+		["OFFLINE"
+		"REGISTERING (before challenge)"
+		"REGISTERING (after challenge)" 
+		"REGISTERED"
+		"INCOMING CALL" 
+		"CALLING"
+		"RINGING"
+		"CALL STABLISHED (caller)" 
+		"CALL STABLISHED (callee)"
+		"HANGING" 
+		"CANCELLING"
 		"UNREGISTERING"
 		]
 
@@ -90,9 +95,12 @@ class SipStack extends Spine.Controller
 				turnServer       : @turnServer
 				stunServer       : @stunServer
 
-			@rtc?.bind "localstream", (localstream) => @trigger "localstream", localstream
-			@rtc?.bind "remotestream", (remotestream) => @trigger "remotestream", remotestream
-
+			@rtc?.bind "localstream"  , (localstream)  => @trigger "localstream", localstream
+			@rtc?.bind "remotestream", (remotestream) =>
+				@trigger "remotestream",
+					callId : @currentCall.callId
+					stream : remotestream
+					uid    : "-"
 
 		@sipServer = @server.ip
 		@port      = @server.port
@@ -109,15 +117,15 @@ class SipStack extends Spine.Controller
 
 		# Hacks
 		# Some SIP servers need TCP as via transport instead of WS/WSS.
-		@hackViaTCP    ?= false
+		@hackViaTCP               ?= false
 		# Some SIP server try to resolve our random domain. Use a random IP.
-		@hackIpContact ?= false
+		@hackIpContact            ?= false
 		#Some vendors need doesn't support receiving Route headers in ACK and BYE
-		@hackno_Route_ACK_BYE ?= false
+		@hackno_Route_ACK_BYE     ?= false
 		#Some IMS cores needs to receive Contact in in-session messages to acept them
 		@hackContact_ACK_MESSAGES ?= false
 		#To send all To and R-URI with user=phone
-		@hackUserPhone ?= false
+		@hackUserPhone            ?= false
 		console.log("Creating QS with @hackViaTCP= #{@hackViaTCP} @hackIpContact=#{@hackIpContact} @hackno_Route_ACK_BYE=#{@hackno_Route_ACK_BYE} @hackContact_ACK_MESSAGES=#{@hackContact_ACK_MESSAGES} @hackUserPhone=#{@hackUserPhone}")	
 
 	start: () =>
@@ -161,11 +169,11 @@ class SipStack extends Spine.Controller
 					# Here we receive a 401 for a REGISTER we sent.
 					# Once processed, we send an authenticated REGISTER.
 					when 401, 407
-						register      =  @getTransaction message
-						register.vias = message.vias
+						register             =  @getTransaction message
+						register.vias        =  message.vias
 						register.cseq.number += 1
 						_.extend register, _.pick message, "realm", "nonce", "toTag"
-						register.auth = true
+						register.auth        =  true
 						@send @createMessage register
 						return
 
@@ -177,9 +185,9 @@ class SipStack extends Spine.Controller
 						console.log "[MESSAGE] #{message.content}"
 						console.log message
 						instantMessage =
-							from: message.from,
-							to: message.ext2,
-							content: message.content
+							from    : message.from
+							to      : message.ext2
+							content : message.content
 						@trigger "instant-message", instantMessage
 						@send @createMessage new SipTransaction _.extend message, {meth: "OK"}
 					
@@ -236,7 +244,7 @@ class SipStack extends Spine.Controller
 								newRegister = @getTransaction transaction
 								newRegister.cseq.number += 1
 								@send @createMessage newRegister
-							@t    = setInterval(@reRegister, transaction.expires*1000)
+							@t = setInterval(@reRegister, transaction.expires*1000)
 							@unregister = () =>
 								clearInterval @t
 								# Hangup before reregistering.
@@ -332,7 +340,7 @@ class SipStack extends Spine.Controller
 				# ### CALLING
 				when 5
 					return if not @getTransaction message
-					transaction = @getTransaction message
+					transaction  = @getTransaction message
 					@currentCall = message
 					switch message.type
 						when "response"
@@ -358,8 +366,8 @@ class SipStack extends Spine.Controller
 									@setState 7, message
 
 								when 401, 407
-									@info  "AUTH", message 			if message.responseCode is 401
-									@info  "PROXY-AUTH", message 	if message.responseCode is 407
+									@info  "AUTH"       , message 	if message.responseCode is 401
+									@info  "PROXY-AUTH" , message 	if message.responseCode is 407
 
 									# Send ACK.
 									# Omit "nonce" to avoid to put a authentication header in this ACK.
@@ -386,7 +394,7 @@ class SipStack extends Spine.Controller
 										ack.meth = "ACK"
 										ack.vias = message.vias
 										@send @createMessage ack
-										@setState 3
+										@setState 3, message
 										# Remove the current invite transaction.
 										@deleteTransaction "INVITE"
 										@currentCall = message
@@ -462,7 +470,7 @@ class SipStack extends Spine.Controller
 							@setState 0						
 						when 401, 407
 							return unless message.responseCode in [401,407]
-							unregister = @getTransaction message
+							unregister           = @getTransaction message
 							_.extend unregister, _.pick message, "realm", "nonce", "toTag"
 							unregister.proxyAuth = message.responseCode is 407
 							unregister.auth      = message.responseCode is 401
@@ -482,14 +490,15 @@ class SipStack extends Spine.Controller
 		if transaction.qop is "auth"
 			ha1 = CryptoJS.MD5 "#{transaction.userAuthName}:#{transaction.realm}:#{transaction.pass}"
 			console.log "HA1 = md5(#{transaction.userAuthName}:#{transaction.realm}:#{transaction.pass})"			
-
 		else
 			ha1 = CryptoJS.MD5 "#{transaction.userAuthName}:#{transaction.realm}:#{transaction.pass}"
 			console.log "HA1 = md5(#{transaction.userAuthName}:#{transaction.realm}:#{transaction.pass})"
 		console.log "HA1 = #{ha1}"
+
 		ha2 = CryptoJS.MD5 "#{transaction.meth}:#{transaction.requestUri}"
 		console.log "HA2 = md5(#{transaction.meth}:#{transaction.requestUri})"
 		console.log "HA2 = #{ha2}"
+
 		if transaction.qop is "auth"
 			sol = CryptoJS.MD5 "#{ha1}:#{transaction.nonce}:#{transaction.ncHex}:#{transaction.cnonce}:auth:#{ha2}"
 			console.log "response = md5(#{ha1}:#{transaction.nonce}:#{transaction.ncHex}:#{transaction.cnonce}:auth:#{ha2})"
@@ -672,8 +681,8 @@ class SipStack extends Spine.Controller
 		if transaction.nonce?
 			opaque = ""
 			opaque = ",opaque=\"#{transaction.opaque}\"" if transaction.opaque?
-			qop = ""
-			qop = ",qop=#{transaction.qop},cnonce=\"#{transaction.cnonce}\",nc=#{transaction.ncHex}" if transaction.qop?
+			qop    = ""
+			qop    = ",qop=#{transaction.qop},cnonce=\"#{transaction.cnonce}\",nc=#{transaction.ncHex}" if transaction.qop?
 
 			if transaction.auth is true
 				if transaction.cseq.meth is "REGISTER"
@@ -683,7 +692,7 @@ class SipStack extends Spine.Controller
 				data += "Authorization:"
 			if transaction.proxyAuth is true
 				authUri = transaction.uri2
-				data += "Proxy-Authorization:"
+				data    += "Proxy-Authorization:"
 			transaction.response = @getDigest transaction
 			
 			data += " Digest username=\"#{transaction.userAuthName}\",realm=\"#{transaction.realm}\","
@@ -730,17 +739,19 @@ class SipStack extends Spine.Controller
 		message = @createMessage transaction
 		@sendWithSDP message, "offer", null
 
-	answer: (branch) =>
-		ok = _.clone @getTransaction {branch}
+	answer: (callId) =>
+		console.log "Answer #{callId}"
+		@currentCall = _.first @getTransactions {callId}
+		ok           = _.clone @currentCall
 		# TODO: meth is not the same as reason phrase.
 		# Distinguish between meth and reason phrase.
 		ok.meth = "OK"
 		# Media
 		# This function will be executed when API.answer is called.
-		@sendWithSDP (@createMessage ok), "answer", @getTransaction({branch}).content
+		@sendWithSDP (@createMessage ok), "answer", @currentCall.content
 		@setState 4, ok
 
-	hangup: (branch) =>
+	hangup: (callId) =>
 		# It is possible to call hangup before the INVITE has been sent (PeerConnection 
 		# is still getting ICE candidates), so we must unbind "sdp" event to avoid 
 		# sending CANCEL before INVITE.
@@ -750,12 +761,12 @@ class SipStack extends Spine.Controller
 		swap = (d, p1, p2)-> [d[p1], d[p2]] = [d[p2], d[p1]]
 
 		# We need the INVITE request that has originated the dialog.
-		invite = @getTransaction {branch}
+		invite = _.first @getTransactions {callId}
 
 		switch @state
 			when 5
 				cancel = new SipTransaction
-					meth    : "CANCEL",
+					meth    : "CANCEL"
 					ext     : @ext
 					domain  : @domain
 					ext2    : invite.ext2

@@ -13,24 +13,24 @@ class QS extends Spine.Controller
 		
 		# 1 to 1 relation with SipStack's events.
 		@mappedEvents = [
-			'qs-instant-message',
-			'qs-localstream',
-			'qs-remotestream',
-			'qs-register-fail',
-			'qs-register-success',
+			'qs-instant-message'
+			'qs-localstream'
+			'qs-remotestream'
+			'qs-register-fail'
+			'qs-register-success'
 			'qs-another-incoming-call'] # -- !!!
 
 
 		# 1 to many relation with SipsStack's event.
 		@customEvents =
-			'qs-ringing'           : {stack:'new-state', cb: @cbStateChange}
-			'qs-calling'           : {stack:'new-state', cb: @cbStateChange}
-			'qs-end-call'          : {stack:'new-state', cb: @cbStateChange}
-			'qs-lost-call'         : {stack:'new-state', cb: @cbStateChange}
-			'qs-established'       : {stack:'new-state', cb: @cbStateChange}
-			'qs-instant-message'   : {stack:'instant-message', cb: @cbInstantMessage}
-			'qs-presence-update'   : {stack:'instant-message', cb: @cbInstantMessage}
-			'qs-mediastate-update' : {stack:'instant-message', cb: @cbInstantMessage}
+			'qs-ringing'           : {stack:'new-state'       , cb: @cbStateChange}
+			'qs-calling'           : {stack:'new-state'       , cb: @cbStateChange}
+			'qs-end-call'          : {stack:'new-state'       , cb: @cbStateChange}
+			'qs-lost-call'         : {stack:'new-state'       , cb: @cbStateChange}
+			'qs-established'       : {stack:'new-state'       , cb: @cbStateChange}
+			'qs-instant-message'   : {stack:'instant-message' , cb: @cbInstantMessage}
+			'qs-presence-update'   : {stack:'instant-message' , cb: @cbInstantMessage}
+			'qs-mediastate-update' : {stack:'instant-message' , cb: @cbInstantMessage}
 
 
 		@customEventsReverse =
@@ -39,11 +39,11 @@ class QS extends Spine.Controller
 
 
 		@libEvents =
-			'qs-localstream'           : {stack:'localstream', cb: @cbLocalstream}
-			'qs-remotestream'          : {stack:'remotestream', cb: @cbRemotestream}
-			'qs-register-fail'         : {stack:'register-fail', cb: @cbRegisterFail}
-			'qs-register-success'      : {stack:'register-success', cb: @cbRegisterSuccess}
-			'qs-another-incoming-call' : {stack:"another-incoming-call", cb: @cbAnotherIncomingCall}
+			'qs-localstream'           : {stack:'localstream'           , cb: @cbLocalstream}
+			'qs-remotestream'          : {stack:'remotestream'          , cb: @cbRemotestream}
+			'qs-register-fail'         : {stack:'register-fail'         , cb: @cbRegisterFail}
+			'qs-register-success'      : {stack:'register-success'      , cb: @cbRegisterSuccess}
+			'qs-another-incoming-call' : {stack:"another-incoming-call" , cb: @cbAnotherIncomingCall}
 
 		
 		@sipStack = new SipStack
@@ -63,7 +63,9 @@ class QS extends Spine.Controller
 		@sipStack.start()
 
 	onopen: () =>
+		@trigger "ready"
 		@trigger "qs-ready"
+
 
 	cbInstantMessage: (data) =>
 		lines    = data.content.split(/\n/)
@@ -238,8 +240,7 @@ class QS extends Spine.Controller
 			if @customEventsReverse[@customEvents[eventName].stack].counter isnt 0
 				@customEventsReverse[@customEvents[eventName].stack].counter -= 1
 				@sipStack.unbind @customEvents[eventName].stack, @customEvents[eventName].cb
-		else
-			return if not eventName in @mappedEvents
+		else if not eventName in @mappedEvents
 			@sipStack.unbind @libEvents[eventName].stack, @libEvents[eventName].cb
 
 		@unbind eventName, callback
@@ -284,7 +285,7 @@ class QS extends Spine.Controller
 	attachStream: ($d, stream) =>
 		@sipStack.rtc.attachStream $d, stream
 
-	insertDTMF: (tone) =>
+	insertDTMF: (callid, tone) =>
 		@sipStack.rtc.insertDTMF tone
 
 
