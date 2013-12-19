@@ -138,7 +138,7 @@ class QS extends Spine.Controller
 			when 5
 				@stateflow.push 5
 				@trigger 'qs-calling',
-					userid : message.ext
+					userid : message.ext2
 					callid : message.callId
 
 			when 6
