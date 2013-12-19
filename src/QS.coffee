@@ -16,8 +16,9 @@ class QS extends Spine.Controller
 			'qs-instant-message'
 			'qs-localstream'
 			'qs-remotestream'
-			'qs-register-fail'
+			'qs-register-error'
 			'qs-register-success'
+			'qs-unregister-success'
 			'qs-another-incoming-call'] # -- !!!
 
 
@@ -41,8 +42,9 @@ class QS extends Spine.Controller
 		@libEvents =
 			'qs-localstream'           : {stack:'localstream'           , cb: @cbLocalstream}
 			'qs-remotestream'          : {stack:'remotestream'          , cb: @cbRemotestream}
-			'qs-register-fail'         : {stack:'register-fail'         , cb: @cbRegisterFail}
+			'qs-register-error'         : {stack:'register-fail'         , cb: @cbRegisterFail}
 			'qs-register-success'      : {stack:'register-success'      , cb: @cbRegisterSuccess}
+			'qs-unregister-success'    : {stack:'unregister-success'    , cb: @cbUnregisterSuccess}
 			'qs-another-incoming-call' : {stack:"another-incoming-call" , cb: @cbAnotherIncomingCall}
 
 		
@@ -72,13 +74,20 @@ class QS extends Spine.Controller
 		chattext = lines[1]
 
 		if header.hasOwnProperty "presenceState"
-			@trigger 'qs-presence-update', data.from, header.presenceState, header.answerme
+			@trigger 'qs-presence-update',
+				userid   : data.from
+				state    : header.presenceState
+				answerme : header.answerme
 
 		if header.hasOwnProperty "mediaState"
-			@trigger 'qs-mediastate-update', header.mediaState.video
+			@trigger 'qs-mediastate-update',
+				userid : data.from
+				video  : header.mediaState.video
 
 		if chattext.length
-			@trigger 'qs-instant-message', data.from, chattext
+			@trigger 'qs-instant-message',
+				userid : data.from
+				text   : chattext
 
 	cbStateChange: (@state, message) =>
 		console.warn @stateflow
@@ -86,48 +95,62 @@ class QS extends Spine.Controller
 			when 3
 				if _.isEqual(@stateflow, [5,78,9])
 					console.warn "outgoing call, answered, caller hangs up"
-					@trigger 'qs-end-call', message
+					@trigger 'qs-end-call',
+						callid : message.callId
+
 				else if _.isEqual(@stateflow, [5,78])
 					console.warn "outgoing call, answered, callee hangs up"
-					@trigger 'qs-end-call', message
-					
+					@trigger 'qs-end-call',
+						callid : message.callId
+
 				else if _.isEqual(@stateflow, [6,78])
 					console.warn "incoming call, answered, caller hangs up"
-					@trigger 'qs-end-call', message
+					@trigger 'qs-end-call',
+						callid : message.callId
 
 				else if _.isEqual(@stateflow, [6,78,9])
 					console.warn "incoming call, answered, callee hangs up"
-					@trigger 'qs-end-call', message
+					@trigger 'qs-end-call',
+						callid : message.callId
 
 				else if _.isEqual(@stateflow, [5,10])
 					console.warn "outgoing call, not answered, hangup by caller or callee"
-					@trigger 'qs-lost-call', message
+					@trigger 'qs-lost-call',
+						callid : message.callId
 
 				else if _.isEqual(@stateflow, [5])
 					console.warn "outgoing call, not answered, hangup by callee"
-					@trigger 'qs-lost-call', message
+					@trigger 'qs-lost-call',
+						callid : message.callId
 
 				else if _.isEqual(@stateflow, [6])
 					console.warn "incoming call, not answered, hang it up by caller"
-					@trigger 'qs-lost-call', message
+					@trigger 'qs-lost-call',
+						callid : message.callId
 
 				else if _.isEqual(@stateflow, [6,9])
 					console.warn "incoming call, not answered, hang it up by callee"
-					@trigger 'qs-lost-call', message
+					@trigger 'qs-lost-call',
+						callid : message.callId
 
 				@stateflow = []
 
 			when 5
 				@stateflow.push 5
-				@trigger 'qs-calling', message
+				@trigger 'qs-calling',
+					userid : message.ext
+					callid : message.callId
 
 			when 6
 				@stateflow.push 6
-				@trigger 'qs-ringing', message
+				@trigger 'qs-ringing',
+					userid : message.ext
+					callid : message.callId
 
 			when 7,8
 				@stateflow.push 78
-				@trigger 'qs-established', message
+				@trigger 'qs-established',
+					callid : message.callId
 
 			when 9
 				@stateflow.push 9
@@ -190,19 +213,24 @@ class QS extends Spine.Controller
 		@sipStack.sendInstantMessage uri2, content
 
 	cbLocalstream: (localstream) =>
-		@trigger "qs-localstream", localstream
+		@trigger "qs-localstream",
+			stream : localstream
 
 	cbRemotestream: (remotestream) =>
 		@trigger "qs-remotestream", remotestream
 
 	cbAnotherIncomingCall: (data) =>
-		@trigger "qs-another-incoming-call", data
+		@trigger "qs-another-incoming-call",
+			userid : data.from
 
 	cbRegisterFail: () =>
-		@trigger 'qs-register-fail'
+		@trigger 'qs-register-error'
 
 	cbRegisterSuccess: () =>
 		@trigger 'qs-register-success'
+
+	cbUnregisterSuccess: () =>
+		@trigger 'qs-unregister-success'
 
 	#### on
 	# Subscribe to *eventName*. *callback* will be called when *eventName* occurs
@@ -210,7 +238,7 @@ class QS extends Spine.Controller
 	# +   qs-instant-message.
 	# +   qs-localstream.
 	# +   qs-remotestream.
-	# +   qs-register-fail.
+	# +   qs-register-error.
 	# +   qs-register-success.
 	# +   qs-ringing
 	# +   qs-calling

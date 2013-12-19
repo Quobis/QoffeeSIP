@@ -30,11 +30,11 @@ $ ->
 
 		qs = new QS options
 
-		qs.on "qs-established", (message) ->
-			$("#hangup").submit -> qs.hangup message.branch
+		qs.on "qs-established", (evt) ->
+			$("#hangup").submit -> qs.hangup evt.callid
 		
-		qs.on "qs-end-call", () ->
+		qs.on "qs-end-call", (evt) ->
 			$("#hangup").off "submit"
 
-		qs.on "qs-ringing", (message) ->
-			qs.answer message.branch
+		qs.on "qs-ringing", (evt) ->
+			qs.answer evt.callid

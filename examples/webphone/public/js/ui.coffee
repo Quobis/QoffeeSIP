@@ -85,7 +85,9 @@ class UI extends Spine.Controller
 				from    : @register.ext
 				to      : @ext2
 				content : $("#chat > .messages").append("<img src=#{url}>")
-			@renderInstantMessage @register.ext message
+			@renderInstantMessage
+				userid : @register.ext
+				text   : message
 		@toggleActiveClass(e)
 		false
 
@@ -156,13 +158,13 @@ class UI extends Spine.Controller
 
 	# Put a chat message in the chat and scroll to the bottom.
 	# TODO: We should take care of HTML content in the message, for example a script tag.
-	renderInstantMessage: (from, text) =>
+	renderInstantMessage: (evt) =>
 		message         = {}
-		message.content = @linkify text
-		message.content = @emoticonify text
-		message.from    = from
+		message.content = @linkify evt.text
+		message.content = @emoticonify evt.text
+		message.from    = evt.userid
 		# If sending message...
-		if from is @register.ext
+		if evt.userid is @register.ext
 #			contact = message.to
 			type = "label-success"
 		# If receive message...
@@ -358,7 +360,7 @@ class UI extends Spine.Controller
 
 	updateStatus: (msg) => @$status.text msg
 
-	cbEstablished: (message) =>
+	cbEstablished: (evt) =>
 		@updateStatus "Call established with #{@ext2}"
 		$("#remote-legend").text "Remote extension is #{@ext2}"
 		@stopSounds()
@@ -374,7 +376,9 @@ class UI extends Spine.Controller
 				content : @$chat.find("input:first").val()
 			@$chat.find("input:first").val ""
 			@qs.chat @ext2, @register.domain, message.content
-			@renderInstantMessage @register.ext, message.content
+			@renderInstantMessage
+				userid : @register.ext
+				text   : message.content
 
 		@previousState = @state
 	
@@ -413,18 +417,18 @@ class UI extends Spine.Controller
 		@previousState = @state
 
 
-	cbCalling: (message) =>
+	cbCalling: (evt) =>
 		@updateStatus "Calling #{@ext2}"
 		document.getElementById("sound-calling").play()
-		@hangup = => @qs.hangup message.branch
+		@hangup = => @qs.hangup evt.callid
 		@previousState = @state
 
-	cbRinging: (message) =>
-		@ext2    = message.ext
-		@domain2 = message.to.split("@")[1]
+	cbRinging: (evt) =>
+		@ext2    = evt.userid.split("@")[0]
+		@domain2 = evt.userid.split("@")[1]
 		@updateStatus "Incoming call from #{@ext2}"
-		@answer  = => @qs.answer message.branch
-		@hangup  = => @qs.hangup message.branch
+		@answer  = => @qs.answer evt.callid
+		@hangup  = => @qs.hangup evt.callid
 		@nextForm @$formIncomingCall
 		document.getElementById("sound-ringing").play()
 		if window.autoanswering
@@ -432,11 +436,11 @@ class UI extends Spine.Controller
 		@previousState = @state
 
 
-	cbEndCall: (message) =>
+	cbEndCall: (evt) =>
 		@updateStatus "Hanging up"
 		@stopTimer()
 		@stopSounds() if @previousState > 3
-		callback = => 
+		callback = =>
 			@stopTimer()
 			@$videos.removeClass "active"
 			@$mediaRemote.addClass "hidden"

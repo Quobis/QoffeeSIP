@@ -98,7 +98,7 @@ class SipStack extends Spine.Controller
 			@rtc?.bind "localstream"  , (localstream)  => @trigger "localstream", localstream
 			@rtc?.bind "remotestream", (remotestream) =>
 				@trigger "remotestream",
-					callId : @currentCall.callId
+					callid : @currentCall.callId
 					stream : remotestream
 					uid    : "-"
 
@@ -158,7 +158,7 @@ class SipStack extends Spine.Controller
 			# This way we avoid replicating code for every status >= 2.
 
 			# Re-register manager. 
-			if (@state > 2) and (message.cseq.meth is "REGISTER")
+			if 11 > @state > 2 and (message.cseq.meth is "REGISTER")
 				return if not @getTransaction message
 				switch message.responseCode
 					# Here we receive a 200 OK for a REGISTER we sent.
@@ -248,7 +248,7 @@ class SipStack extends Spine.Controller
 							@unregister = () =>
 								clearInterval @t
 								# Hangup before reregistering.
-								@hangup @currentCall.branch if @currentCall
+								@hangup @currentCall.callId if @currentCall
 								console.log "[INFO] unregistering"
 								transaction         = @getTransaction message
 								transaction.expires = 0
@@ -291,7 +291,7 @@ class SipStack extends Spine.Controller
 							@unregister = () =>
 								clearInterval @t
 								# Hangup before reregistering.
-								@hangup @currentCall.branch if @currentCall
+								@hangup @currentCall.callId if @currentCall
 								console.log "[INFO] unregistering"
 								transaction         = @getTransaction message
 								transaction.expires = 0
@@ -465,9 +465,10 @@ class SipStack extends Spine.Controller
 				# UNREGISTERING
 				when 11
 					return unless @getTransaction message
-					switch message.response
+					switch message.responseCode
 						when 200
-							@setState 0						
+							@info "unregister-success", message
+							@setState 0
 						when 401, 407
 							return unless message.responseCode in [401,407]
 							unregister           = @getTransaction message
@@ -475,6 +476,7 @@ class SipStack extends Spine.Controller
 							unregister.proxyAuth = message.responseCode is 407
 							unregister.auth      = message.responseCode is 401
 							@send @createMessage unregister
+							@info "unregister-success", message
 							@setState 0
 
 
