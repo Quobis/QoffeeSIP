@@ -12,55 +12,55 @@ class User extends Spine.Model
 # Class to manage UI.
 class UI extends Spine.Controller
 	events:
-		"submit form": "submitForm"
-		"submit #form-register": "registerSubmit"
-		"submit #form-call": "callSubmit"
-		"click #answer": "answerClick"
-		"click #answer": "answerClick"
-		"click #cancel": "hangupClick"
-		"click #hangup-established": "hangupClick"
-		"click #hangup": "hangupClick"
-		"click #fullscreen": "fullscreen"
-		"click .toggleMuteAudio": "toggleMuteAudio"
-		"click .toggleMuteVideo": "toggleMuteVideo"
-		"click #expert": "toggleExpertMode"
-		"dragenter .dropbox": "dragEnter"
-		"dragleave .dropbox": "toggleActiveClass"
-		"drop .dropbox": "onDrop"
+		"submit form"               : "submitForm"
+		"submit #form-register"     : "registerSubmit"
+		"submit #form-call"         : "callSubmit"
+		"click #answer"             : "answerClick"
+		"click #answer"             : "answerClick"
+		"click #cancel"             : "hangupClick"
+		"click #hangup-established" : "hangupClick"
+		"click #hangup"             : "hangupClick"
+		"click #fullscreen"         : "fullscreen"
+		"click .toggleMuteAudio"    : "toggleMuteAudio"
+		"click .toggleMuteVideo"    : "toggleMuteVideo"
+		"click #expert"             : "toggleExpertMode"
+		"dragenter .dropbox"        : "dragEnter"
+		"dragleave .dropbox"        : "toggleActiveClass"
+		"drop .dropbox"             : "onDrop"
 
 	elements:
-		"#status": "$status"
+		"#status"                : "$status"
 
-		"#form-register": "$formRegister"
-		"#form-call": "$formCall"
-		"#form-calling": "$formCalling"
-		"#form-incoming-call": "$formIncomingCall"
-		"#form-established-call": "$formEstablishedCall"
+		"#form-register"         : "$formRegister"
+		"#form-call"             : "$formCall"
+		"#form-calling"          : "$formCalling"
+		"#form-incoming-call"    : "$formIncomingCall"
+		"#form-established-call" : "$formEstablishedCall"
 
-		"#answer": "$answerButton"
-		"#hangup": "$hangupButton"
+		"#answer"                : "$answerButton"
+		"#hangup"                : "$hangupButton"
 
-		"#notifications": "$notifications"
+		"#notifications"         : "$notifications"
 
-		"video": "$videos"
-		"#media-local": "$mediaLocal"
-		"#media-remote": "$mediaRemote"
+		"video"                  : "$videos"
+		"#media-local"           : "$mediaLocal"
+		"#media-remote"          : "$mediaRemote"
 
-		"#register": "$registerButton"
-		"#call": "$callButton"
-		"#chat": "$chat"
-		".messages": "$messages"
-		".dropbox": "$dropbox"
-		"#timer": "$timer"
+		"#register"              : "$registerButton"
+		"#call"                  : "$callButton"
+		"#chat"                  : "$chat"
+		".messages"              : "$messages"
+		".dropbox"               : "$dropbox"
+		"#timer"                 : "$timer"
 
-		".slide": "$slides"
-		".media": "$media"
+		".slide"                 : "$slides"
+		".media"                 : "$media"
 
-		"#sound-ringing": "$soundRinging"
-		"#sound-calling": "$soundCalling"
+		"#sound-ringing"         : "$soundRinging"
+		"#sound-calling"         : "$soundCalling"
 
-		"#expert": "$expert"
-		"#expert-options": "$expertOptions"
+		"#expert"                : "$expert"
+		"#expert-options"        : "$expertOptions"
 
 
 	dragEnter: (e) =>
@@ -105,7 +105,7 @@ class UI extends Spine.Controller
 		# Object to store data bout register.
 		@register = {}
 		User.fetch()
-		user = User.last()
+		user      = User.last()
 		if user
 			$("#user-reg").val user.user
 			$("#pass-reg").val user.password
@@ -271,6 +271,10 @@ class UI extends Spine.Controller
 			@qs.on "qs-established"      , @cbEstablished
 			@qs.on "qs-instant-message"  , @renderInstantMessage
 			@qs.on "qs-register-success" , @cbRegisterSuccess
+			@qs.on "qs-localstream"      , (evt) => @qs.attachStream @mediaElements.local,  evt.stream
+			@qs.on "qs-remotestream"     , (evt) => @qs.attachStream @mediaElements.remote, evt.stream
+			@
+
 
 # NOT IMPLEMENT IN THIS WEBPHONE			
 #			@qs.on "qs-presence-update", @presenceUpdate 
@@ -288,7 +292,6 @@ class UI extends Spine.Controller
 			server                   : sipServer
 			turnServer               : turnServer
 			stunServer               : stunServer
-			mediaElements            : @mediaElements
 			hackno_Route_ACK_BYE     : false
 			hackContact_ACK_MESSAGES : false
 			hackUserPhone            : false

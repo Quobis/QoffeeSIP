@@ -95,7 +95,7 @@ class SipStack extends Spine.Controller
 				turnServer       : @turnServer
 				stunServer       : @stunServer
 
-			@rtc?.bind "localstream"  , (localstream)  => @trigger "localstream", localstream
+			@rtc?.bind "localstream"  , (localstream)  => @trigger "localstream", stream: localstream
 			@rtc?.bind "remotestream", (remotestream) =>
 				@trigger "remotestream",
 					callid : @currentCall.callId

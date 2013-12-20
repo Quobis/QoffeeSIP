@@ -42,7 +42,7 @@ class QS extends Spine.Controller
 		@libEvents =
 			'qs-localstream'           : {stack:'localstream'           , cb: @cbLocalstream}
 			'qs-remotestream'          : {stack:'remotestream'          , cb: @cbRemotestream}
-			'qs-register-error'         : {stack:'register-fail'         , cb: @cbRegisterFail}
+			'qs-register-error'        : {stack:'register-fail'         , cb: @cbRegisterFail}
 			'qs-register-success'      : {stack:'register-success'      , cb: @cbRegisterSuccess}
 			'qs-unregister-success'    : {stack:'unregister-success'    , cb: @cbUnregisterSuccess}
 			'qs-another-incoming-call' : {stack:"another-incoming-call" , cb: @cbAnotherIncomingCall}
@@ -58,7 +58,6 @@ class QS extends Spine.Controller
 			hackContact_ACK_MESSAGES : @hackContact_ACK_MESSAGES
 			hackUserPhone            : @hackUserPhone
 			mediaConstraints         : @mediaConstraints
-			mediaElements            : @mediaElements
 			onopen                   : @onopen
 
 	start: () =>
@@ -212,16 +211,14 @@ class QS extends Spine.Controller
 		content =  JSON.stringify({presenceState: @lastState}) + "\n" + text
 		@sipStack.sendInstantMessage uri2, content
 
-	cbLocalstream: (localstream) =>
-		@trigger "qs-localstream",
-			stream : localstream
+	cbLocalstream: (evt) =>
+		@trigger "qs-localstream", evt
 
-	cbRemotestream: (remotestream) =>
-		@trigger "qs-remotestream", remotestream
+	cbRemotestream: (evt) =>
+		@trigger "qs-remotestream", evt
 
 	cbAnotherIncomingCall: (data) =>
-		@trigger "qs-another-incoming-call",
-			userid : data.from
+		@trigger "qs-another-incoming-call", userid : data.from
 
 	cbRegisterFail: () =>
 		@trigger 'qs-register-error'

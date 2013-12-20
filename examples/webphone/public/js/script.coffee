@@ -13,8 +13,8 @@ $ ->
 
     conf =
         mediaElements:
-            localMedia: $("#media-local")
-            remoteMedia: $("#media-remote")
+            local  : $("#media-local")
+            remote : $("#media-remote")
         el: "body"
 
     new UI conf
