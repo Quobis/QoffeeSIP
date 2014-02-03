@@ -735,11 +735,11 @@ class SipStack extends Spine.Controller
 			pass         : @pass,
 			uri2         : uri2
 			userAuthName : @userAuthName
-	
 		@addTransaction transaction
-		@setState 5, transaction
+		# @setState 5, transaction
 		message = @createMessage transaction
-		@sendWithSDP message, "offer", null
+		@sendWithSDP message, "offer", null, => @setState 5, transaction
+
 
 	answer: (callId) =>
 		console.log "Answer #{callId}"
@@ -750,8 +750,7 @@ class SipStack extends Spine.Controller
 		ok.meth = "OK"
 		# Media
 		# This function will be executed when API.answer is called.
-		@sendWithSDP (@createMessage ok), "answer", @currentCall.content
-		@setState 4, ok
+		@sendWithSDP (@createMessage ok), "answer", @currentCall.content, => @setState 4, ok
 
 	hangup: (callId) =>
 		# It is possible to call hangup before the INVITE has been sent (PeerConnection 
@@ -825,7 +824,7 @@ class SipStack extends Spine.Controller
 			console.log "[INFO] Not sending data"
 
 	# Async send
-	sendWithSDP: (data, type, sdp) =>
+	sendWithSDP: (data, type, sdp, cb = ->) =>
 		@rtc?.start()
 		@rtc?.bind "sdp", (sdp) =>
 			# Temporal sdp modification
@@ -835,11 +834,13 @@ class SipStack extends Spine.Controller
 			data += sdp
 			@send data
 			@rtc?.unbind "sdp"
+			do cb
 
-		if type is "offer"
-			@rtc?.createOffer()
-		if type is "answer"
-			@rtc?.receiveOffer sdp, => @rtc?.createAnswer()
+		switch type
+			when "offer"
+				@rtc?.createOffer()
+			when "answer"
+				@rtc?.receiveOffer sdp, => @rtc?.createAnswer()
 
 	sendInstantMessage: (uri2, text) =>
 		message = new SipTransaction 
