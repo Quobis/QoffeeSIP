@@ -90,7 +90,7 @@ class Parser
 
 	@parseRecordRoutes: (pkt) ->
 		recordRouteRE = /Record-Route\:/i
-		recordRoutes  = _.filter pkt.split("\r\n"), (line) -> recordRouteRE.test line
+		recordRoutes  = _.map (_.filter pkt.split("\r\n"), (line) -> recordRouteRE.test line), (rr) -> (rr.split ":")[1]
 		return {recordRoutes}
 
 	@parseFrom: (pkt) ->

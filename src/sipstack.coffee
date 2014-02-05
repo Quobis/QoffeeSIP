@@ -355,12 +355,15 @@ class SipStack extends Spine.Controller
 								when 180
 									# Update INVITE transaction's contact.
 									transaction.contact = message.contact
+									@inviteRecordRoutes = message.recordRoutes
 
 								when 200
 									@info "Establishing call", message
+									@inviteRecordRoutes = message.recordRoutes
 									@rtc?.receiveAnswer message.content
 									_.extend transaction, _.pick message, "from", "to", "fromTag", "toTag"
 									ack      = new SipTransaction message
+									ack.recordRoutesToRoutes @inviteRecordRoutes
 									ack.meth = "ACK"
 									@send @createMessage ack
 									@setState 7, message
@@ -393,6 +396,7 @@ class SipStack extends Spine.Controller
 										ack      = new SipTransaction _.omit message, "nonce"
 										ack.meth = "ACK"
 										ack.vias = message.vias
+										ack.recordRoutesToRoutes @inviteRecordRoutes
 										@send @createMessage ack
 										@setState 3, message
 										# Remove the current invite transaction.
@@ -587,7 +591,10 @@ class SipStack extends Spine.Controller
 			when "BYE", "ACK"
 				if not @hackno_Route_ACK_BYE
 					if transaction.cseq.meth isnt "MESSAGE"
-						data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
+						if transaction.route.length
+							data += "Route: " + line + "\r\n" for line in _.reverse(transaction.route).reduceRight((a,b) -> a + b)
+						else
+							data += "Route: <sip:#{@sipServer}:#{@port};transport=ws;lr=on>\r\n"
 		# Via
 		if _.isArray(transaction.vias)# and transaction.meth isnt "ACK"
 			data += (transaction.vias.join "\r\n") + "\r\n"
@@ -772,7 +779,7 @@ class SipStack extends Spine.Controller
 					domain  : @domain
 					ext2    : invite.ext2
 					domain2 : invite.domain2
-
+				cancel.recordRoutesToRoutes @inviteRecordRoutes
 				_.extend cancel, _.pick invite, "callId", "fromTag", "from", "to", "cseq", "domainName", "branch"
 				@send @createMessage cancel
 				@setState 10
@@ -792,6 +799,7 @@ class SipStack extends Spine.Controller
 					meth : "BYE"
 					ext  : @ext
 					ext2 : invite.ext2
+				bye.recordRoutesToRoutes @inviteRecordRoutes
 				_.extend bye, _.pick invite, "callId", "contact", "fromTag", "toTag", "from", "to", "cseq"
 				@send @createMessage bye
 				@addTransaction bye
@@ -803,6 +811,7 @@ class SipStack extends Spine.Controller
 					meth : "BYE"
 					ext  : @ext
 					ext2 : invite.ext
+				bye.recordRoutesToRoutes @inviteRecordRoutes
 				_.extend bye, _.pick invite, "callId", "contact", "fromTag", "toTag", "from", "to", "cseq", "vias"
 				swap bye, "fromTag", "toTag"
 				swap bye, "from", "to"

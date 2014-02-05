@@ -129,5 +129,8 @@ class SipTransaction
 			@nc    = 1
 			@ncHex = "00000001"
 
+	recordRoutesToRoutes : (rr) ->
+		@route = rr
+
 # Exports the SipTransaction class.
 window.SipTransaction = SipTransaction
