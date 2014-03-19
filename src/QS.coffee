@@ -174,6 +174,11 @@ class QS extends Spine.Controller
 	# Returns and array of strings (i.e: ['audio','chat'])
 	capabilities: =>
 		return ['audio','video','chat','presence']
+	
+	#### version
+	# Get stack version
+	version: () ->
+		[{ name : "QoffeeSIP", version : "v0.8.0"}]
 
 	#### call
 	# Call to extension *ext*
