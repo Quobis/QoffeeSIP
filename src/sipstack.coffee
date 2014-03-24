@@ -92,8 +92,7 @@ class SipStack extends Spine.Controller
 			@rtc = new RTC
 				mediaElements    : @mediaElements
 				mediaConstraints : @mediaConstraints
-				turnServer       : @turnServer
-				stunServer       : @stunServer
+				iceServer       : @iceServer
 
 			@rtc?.bind "localstream"  , (localstream)  => @trigger "localstream", stream: localstream
 			@rtc?.bind "remotestream", (remotestream) =>

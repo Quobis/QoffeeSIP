@@ -10,7 +10,7 @@ class QS extends Spine.Controller
 		super
 		@lastState = ""
 		@stateflow = []
-		
+
 		# 1 to 1 relation with SipStack's events.
 		@mappedEvents = [
 			'qs-instant-message'
@@ -33,11 +33,9 @@ class QS extends Spine.Controller
 			'qs-presence-update'   : {stack:'instant-message' , cb: @cbInstantMessage}
 			'qs-mediastate-update' : {stack:'instant-message' , cb: @cbInstantMessage}
 
-
 		@customEventsReverse =
 			'new-state'       : {counter: 0}
 			'instant-message' : {counter: 0}
-
 
 		@libEvents =
 			'qs-localstream'           : {stack:'localstream'           , cb: @cbLocalstream}
@@ -47,11 +45,10 @@ class QS extends Spine.Controller
 			'qs-unregister-success'    : {stack:'unregister-success'    , cb: @cbUnregisterSuccess}
 			'qs-another-incoming-call' : {stack:"another-incoming-call" , cb: @cbAnotherIncomingCall}
 
-		
+
 		@sipStack = new SipStack
 			server                   : @server
-			stunServer               : @stunServer
-			turnServer               : @turnServer
+			iceServer                : @iceServer
 			hackViaTCP               : @hackViaTCP
 			hackIpContact            : @hackIpContact
 			hackno_Route_ACK_BYE     : @hackno_Route_ACK_BYE
