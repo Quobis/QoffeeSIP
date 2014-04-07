@@ -88,18 +88,17 @@ class SipStack extends Spine.Controller
 	# - onopen :: function
 	constructor: () ->
 		super
-		if @mediaConstraints.audio + @mediaConstraints.video > 0
-			@rtc = new RTC
-				mediaElements    : @mediaElements
-				mediaConstraints : @mediaConstraints
-				iceServer       : @iceServer
+		@rtc = new RTC
+			mediaElements    : @mediaElements
+			mediaConstraints : @mediaConstraints
+			iceServer       : @iceServer
 
-			@rtc?.bind "localstream"  , (localstream)  => @trigger "localstream", stream: localstream
-			@rtc?.bind "remotestream", (remotestream) =>
-				@trigger "remotestream",
-					callid : @currentCall.callId
-					stream : remotestream
-					uid    : "-"
+		@rtc?.bind "localstream"  , (localstream)  => @trigger "localstream", stream: localstream
+		@rtc?.bind "remotestream", (remotestream) =>
+			@trigger "remotestream",
+				callid : @currentCall.callId
+				stream : remotestream
+				uid    : "-"
 
 		@sipServer = @server.ip
 		@port      = @server.port
