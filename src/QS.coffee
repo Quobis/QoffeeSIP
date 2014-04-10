@@ -15,7 +15,9 @@ class QS extends Spine.Controller
 		@mappedEvents = [
 			'qs-instant-message'
 			'qs-localstream'
+			'qs-localstream-screen'
 			'qs-remotestream'
+			'qs-remotestream-screen'
 			'qs-register-error'
 			'qs-register-success'
 			'qs-unregister-success'
