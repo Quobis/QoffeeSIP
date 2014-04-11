@@ -1,7 +1,7 @@
 ##
 # Copyright (C) Quobis
 # Project site: https://github.com/Quobis/QoffeeSIP
-# 
+#
 # Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 ##
 
@@ -10,7 +10,7 @@ class QS extends Spine.Controller
 		super
 		@lastState = ""
 		@stateflow = []
-		
+
 		# 1 to 1 relation with SipStack's events.
 		@mappedEvents = [
 			'qs-instant-message'
@@ -43,13 +43,15 @@ class QS extends Spine.Controller
 
 		@libEvents =
 			'qs-localstream'           : {stack:'localstream'           , cb: @cbLocalstream}
+			'qs-localstream-screen'    : {stack:'localstream-screen'    , cb: @cbLocalstreamScreen}
 			'qs-remotestream'          : {stack:'remotestream'          , cb: @cbRemotestream}
+			'qs-remotestream-screen'   : {stack:'remotestream-screen'   , cb: @cbRemotestreamScreen}
 			'qs-register-error'        : {stack:'register-fail'         , cb: @cbRegisterFail}
 			'qs-register-success'      : {stack:'register-success'      , cb: @cbRegisterSuccess}
 			'qs-unregister-success'    : {stack:'unregister-success'    , cb: @cbUnregisterSuccess}
 			'qs-another-incoming-call' : {stack:"another-incoming-call" , cb: @cbAnotherIncomingCall}
 
-		
+
 		@sipStack = new SipStack
 			server                   : @server
 			stunServer               : @stunServer
@@ -163,11 +165,11 @@ class QS extends Spine.Controller
 	# Register the user
 	#
 	# Params:
-	# 
+	#
 	# +   *uri* mandatory `ext@domain` or just `ext`.
 	# +   *pass* optional
 	# +   *domain* optional
-	# 
+	#
 	register: (uri, pass = "", userAuthName) =>
 		@sipStack.register uri, pass, userAuthName
 
@@ -188,7 +190,7 @@ class QS extends Spine.Controller
 		# in the QoffeeSIP world, 'callid' is 'branch'
 		@sipStack.answer callid
 
-	#### hangup	
+	#### hangup
 	hangup: (callid) =>
 		# in the QoffeeSIP world, 'callid' is 'branch'
 		@sipStack.hangup callid
@@ -216,8 +218,14 @@ class QS extends Spine.Controller
 	cbLocalstream: (evt) =>
 		@trigger "qs-localstream", evt
 
+	cbLocalstreamScreen: (evt) =>
+		@trigger "qs-localstream-screen", evt
+
 	cbRemotestream: (evt) =>
 		@trigger "qs-remotestream", evt
+
+	cbRemotestreamScreen: (evt) =>
+		@trigger "qs-remotestream-screen", evt
 
 	cbAnotherIncomingCall: (data) =>
 		@trigger "qs-another-incoming-call", userid : data.from
@@ -233,7 +241,7 @@ class QS extends Spine.Controller
 
 	#### on
 	# Subscribe to *eventName*. *callback* will be called when *eventName* occurs
-	# 
+	#
 	# +   qs-instant-message.
 	# +   qs-localstream.
 	# +   qs-remotestream.
@@ -246,7 +254,7 @@ class QS extends Spine.Controller
 	# +   qs-established
 	# +   qs-presence-update
 	# +   qs-mediastate-update
-	# 
+	#
 	on: (eventName, callback) =>
 		# check if eventName is a specific event of the API which is not define
 		# in the underlying stack
@@ -307,7 +315,7 @@ class QS extends Spine.Controller
 		@sipStack.rtc.mediaState()
 
 	#### attachStream
-	# Attach media stream		
+	# Attach media stream
 	attachStream: ($d, stream) =>
 		@sipStack.rtc.attachStream $d, stream
 
