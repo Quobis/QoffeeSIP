@@ -35,11 +35,9 @@ class QS extends Spine.Controller
 			'qs-presence-update'   : {stack:'instant-message' , cb: @cbInstantMessage}
 			'qs-mediastate-update' : {stack:'instant-message' , cb: @cbInstantMessage}
 
-
 		@customEventsReverse =
 			'new-state'       : {counter: 0}
 			'instant-message' : {counter: 0}
-
 
 		@libEvents =
 			'qs-localstream'           : {stack:'localstream'           , cb: @cbLocalstream}
@@ -54,8 +52,7 @@ class QS extends Spine.Controller
 
 		@sipStack = new SipStack
 			server                   : @server
-			stunServer               : @stunServer
-			turnServer               : @turnServer
+			iceServer                : @iceServer
 			hackViaTCP               : @hackViaTCP
 			hackIpContact            : @hackIpContact
 			hackno_Route_ACK_BYE     : @hackno_Route_ACK_BYE
@@ -178,6 +175,11 @@ class QS extends Spine.Controller
 	# Returns and array of strings (i.e: ['audio','chat'])
 	capabilities: =>
 		return ['audio','video','chat','presence']
+
+	#### version
+	# Get stack version
+	version: () ->
+		[{ name : "QoffeeSIP", version : "v0.8.0"}]
 
 	#### call
 	# Call to extension *ext*

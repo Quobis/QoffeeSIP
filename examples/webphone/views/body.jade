@@ -1,5 +1,5 @@
 //-
-//- Copyright (C) Quobis
+//- Copyrightf (C) Quobis
 //- Project site: https://github.com/Quobis/QoffeeSIP
 //- 
 //- Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
@@ -34,11 +34,10 @@ body(class="container")
 						audio(id="sound-ringing", class="sound")
 							source(src="audio/ringing.ogg", type="audio/ogg", preload loop)
 							source(src="audio/ringing.mp3", type="audio/mpeg")
-
 						form(id="form-register", class="slide")					
 							input(id="user-reg", name="user", class="input span12", type="text", placeholder="User", autofocus, required, autocomplete)
 							input(id="pass-reg", name="pass", class="input span12", type="password", placeholder="Pass", autocomplete)
-							input(id="server-reg", class="input span12", type="text", placeholder="Server (ws://ip:port/path)", type="url")
+							input(id="server-reg", class="input span12", type="text", placeholder="Server (ws://ip:port/path)")
 							div(id="expert-options", class="controls controls-row hidden")
 								input(id="user-reg-priv", class="input span12", type="text", placeholder="Private ID (IMS)", autocomplete)
 								input(id="turn-server", class="input span6", type="text", placeholder="Turn server")
@@ -95,4 +94,4 @@ body(class="container")
 				img(src="img/qoffeesip.png")
 			, a Javascript SIP stack developed by&nbsp
 			a(href="http://www.quobis.com", target="_blank") Quobis
-			.
+

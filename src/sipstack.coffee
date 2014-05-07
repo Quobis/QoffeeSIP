@@ -265,7 +265,6 @@ class SipStack extends Spine.Controller
 
 						# Unsusccessful register.
 						when 401, 407
-							alert "asd"
 							@setState 2, message
 							transaction.cseq.number += 1
 							transaction = _.extend transaction, _.pick message, "realm", "nonce", "toTag", "qop", "opaque"
