@@ -215,6 +215,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.triggerSDP = __bind(this.triggerSDP, this);
 
+      this.createScreenStream = __bind(this.createScreenStream, this);
+
       this.createStream = __bind(this.createStream, this);
 
       this.createPeerConnection = __bind(this.createPeerConnection, this);
@@ -222,6 +224,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this.addIceServer = __bind(this.addIceServer, this);
 
       this.getStats = __bind(this.getStats, this);
+
+      this.getRemoteStreamEventName = __bind(this.getRemoteStreamEventName, this);
 
       this.start = __bind(this.start, this);
 
@@ -234,7 +238,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if ((_ref = this.mediaConstraints) == null) {
         this.mediaConstraints = {
           audio: true,
-          video: true
+          video: true,
+          screensharing: false
         };
       }
       this.isVideoActive = true;
@@ -253,6 +258,18 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           RtpDataChannels: true
         }
       ]
+    };
+
+    RTC.prototype.screenConstraints = {
+      audio: false,
+      video: {
+        mandatory: {
+          chromeMediaSource: 'screen',
+          maxWidth: 1280,
+          maxHeight: 720
+        },
+        optional: []
+      }
     };
 
     RTC.prototype.start = function() {
@@ -281,9 +298,18 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return _.extend(dict, properties);
     };
 
+    RTC.prototype.getRemoteStreamEventName = function(stream) {
+      if (stream.getAudioTracks().length) {
+        return "remotestream";
+      } else {
+        return "remotestream-screen";
+      }
+    };
+
     RTC.prototype.getStats = function(cb) {
-      var _this = this;
-      if (!((this.pc != null) && (this.remotestream != null) && (cb != null))) {
+      var _ref,
+        _this = this;
+      if (!((this.pc != null) && ((_ref = this.pc.readyState) === "stable" || _ref === "active") && (cb != null))) {
         return;
       }
       return this.pc.getStats(function(rawStats) {
@@ -326,9 +352,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         "iceServers": this.iceServers
       }, this.pcOptions);
       this.pc.onaddstream = function(event) {
+        var remotestream;
         console.log("[MEDIA] Stream added");
-        _this.remotestream = event.stream;
-        if (RTCAdapter.webrtcDetectedBrowser === "chrome") {
+        remotestream = event.stream;
+        if (RTCAdapter.webrtcDetectedBrowser === "chrome" && !(_this.dtmfSender != null)) {
           _this.dtmfSender = _this.pc.createDTMFSender(_this.localstream.getAudioTracks()[0]);
           _this.dtmfSender.ontonechange = function(dtmf) {
             console.log(dtmf);
@@ -336,7 +363,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           };
           window.test = _this.insertDTMF;
         }
-        return _this.trigger("remotestream", _this.remotestream);
+        return _this.trigger(_this.getRemoteStreamEventName(remotestream), remotestream);
       };
       iceGatheringEndCb = function() {
         console.log("[INFO] No more ice candidates");
@@ -379,7 +406,10 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this.pc.onclose = function() {
         return console.log("[INFO] peerconnection closed");
       };
-      return this.createStream();
+      this.createStream();
+      if (this.mediaConstraints.screensharing) {
+        return this.createScreenStream();
+      }
     };
 
     RTC.prototype.createStream = function() {
@@ -408,10 +438,38 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }
     };
 
+    RTC.prototype.createScreenStream = function() {
+      var gumFail, gumSuccess,
+        _this = this;
+      if (webrtcDetectedBrowser !== 'chrome') {
+        return;
+      }
+      console.log("[INFO] createScreenStream");
+      if (this.localScreenStream != null) {
+        console.log("[INFO] Using media previously got.");
+        return this.pc.addStream(this.localScreenStream);
+      } else {
+        gumSuccess = function(localScreenStream) {
+          _this.localScreenStream = localScreenStream;
+          console.log("[INFO] getUserMedia successed");
+          _this.pc.addStream(_this.localScreenStream);
+          _this.trigger("localstream-screen", _this.localScreenStream);
+          return console.log("localstream-screen", _this.localScreenStream);
+        };
+        gumFail = function(error) {
+          console.error(error);
+          console.error("GetUserMedia error");
+          return _this.trigger("error", "getUserMedia");
+        };
+        return RTCAdapter.getUserMedia(this.screenConstraints, gumSuccess, gumFail);
+      }
+    };
+
     RTC.prototype.triggerSDP = function() {
       var sdp;
-      console.log("[MEDIA]");
+      console.log("[SDP]");
       sdp = this.pc.localDescription.sdp;
+      console.log(sdp);
       return this.trigger("sdp", sdp);
     };
 
@@ -485,7 +543,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
     RTC.prototype.close = function() {
       try {
-        return this.pc.close();
+        this.pc.close();
+        return this.dtmfSender = null;
       } catch (e) {
         console.error("[ERROR] Error closing peerconnection");
         return console.error(e);
@@ -1098,7 +1157,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.addTransaction = __bind(this.addTransaction, this);
 
-      var _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6,
+      var _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8,
         _this = this;
       SipStack.__super__.constructor.apply(this, arguments);
       if (this.mediaConstraints.audio + this.mediaConstraints.video > 0) {
@@ -1115,10 +1174,26 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           });
         }
         if ((_ref1 = this.rtc) != null) {
-          _ref1.bind("remotestream", function(remotestream) {
+          _ref1.bind("localstream-screen", function(localstreamScreen) {
+            return _this.trigger("localstream-screen", {
+              stream: localstreamScreen
+            });
+          });
+        }
+        if ((_ref2 = this.rtc) != null) {
+          _ref2.bind("remotestream", function(remotestream) {
             return _this.trigger("remotestream", {
               callid: _this.currentCall.callId,
               stream: remotestream,
+              uid: "-"
+            });
+          });
+        }
+        if ((_ref3 = this.rtc) != null) {
+          _ref3.bind("remotestream-screen", function(remotestreamScreen) {
+            return _this.trigger("remotestream-screen", {
+              callid: _this.currentCall.callId,
+              stream: remotestreamScreen,
               uid: "-"
             });
           });
@@ -1131,19 +1206,19 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this._transactions = {};
       this._instantMessages = {};
       this.setState(0);
-      if ((_ref2 = this.hackViaTCP) == null) {
+      if ((_ref4 = this.hackViaTCP) == null) {
         this.hackViaTCP = false;
       }
-      if ((_ref3 = this.hackIpContact) == null) {
+      if ((_ref5 = this.hackIpContact) == null) {
         this.hackIpContact = false;
       }
-      if ((_ref4 = this.hackno_Route_ACK_BYE) == null) {
+      if ((_ref6 = this.hackno_Route_ACK_BYE) == null) {
         this.hackno_Route_ACK_BYE = false;
       }
-      if ((_ref5 = this.hackContact_ACK_MESSAGES) == null) {
+      if ((_ref7 = this.hackContact_ACK_MESSAGES) == null) {
         this.hackContact_ACK_MESSAGES = false;
       }
-      if ((_ref6 = this.hackUserPhone) == null) {
+      if ((_ref8 = this.hackUserPhone) == null) {
         this.hackUserPhone = false;
       }
       console.log("Creating QS with @hackViaTCP= " + this.hackViaTCP + " @hackIpContact=" + this.hackIpContact + " @hackno_Route_ACK_BYE=" + this.hackno_Route_ACK_BYE + " @hackContact_ACK_MESSAGES=" + this.hackContact_ACK_MESSAGES + " @hackUserPhone=" + this.hackUserPhone);
@@ -1273,7 +1348,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
               case 407:
                 _this.setState(2, message);
                 transaction.cseq.number += 1;
-                _.extend(transaction, _.pick(message, "realm", "nonce", "toTag", "qop", "opaque"));
+                transaction = _.extend(transaction, _.pick(message, "realm", "nonce", "toTag", "qop", "opaque"));
                 transaction.auth = true;
                 if (transaction.qop === "auth") {
                   transaction.updateCnonceNcHex();
@@ -1983,7 +2058,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.cbAnotherIncomingCall = __bind(this.cbAnotherIncomingCall, this);
 
+      this.cbRemotestreamScreen = __bind(this.cbRemotestreamScreen, this);
+
       this.cbRemotestream = __bind(this.cbRemotestream, this);
+
+      this.cbLocalstreamScreen = __bind(this.cbLocalstreamScreen, this);
 
       this.cbLocalstream = __bind(this.cbLocalstream, this);
 
@@ -2015,7 +2094,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       QS.__super__.constructor.apply(this, arguments);
       this.lastState = "";
       this.stateflow = [];
-      this.mappedEvents = ['qs-instant-message', 'qs-localstream', 'qs-remotestream', 'qs-register-error', 'qs-register-success', 'qs-unregister-success', 'qs-another-incoming-call'];
+      this.mappedEvents = ['qs-instant-message', 'qs-localstream', 'qs-localstream-screen', 'qs-remotestream', 'qs-remotestream-screen', 'qs-register-error', 'qs-register-success', 'qs-unregister-success', 'qs-another-incoming-call'];
       this.customEvents = {
         'qs-ringing': {
           stack: 'new-state',
@@ -2063,9 +2142,17 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           stack: 'localstream',
           cb: this.cbLocalstream
         },
+        'qs-localstream-screen': {
+          stack: 'localstream-screen',
+          cb: this.cbLocalstreamScreen
+        },
         'qs-remotestream': {
           stack: 'remotestream',
           cb: this.cbRemotestream
+        },
+        'qs-remotestream-screen': {
+          stack: 'remotestream-screen',
+          cb: this.cbRemotestreamScreen
         },
         'qs-register-error': {
           stack: 'register-fail',
@@ -2272,8 +2359,16 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.trigger("qs-localstream", evt);
     };
 
+    QS.prototype.cbLocalstreamScreen = function(evt) {
+      return this.trigger("qs-localstream-screen", evt);
+    };
+
     QS.prototype.cbRemotestream = function(evt) {
       return this.trigger("qs-remotestream", evt);
+    };
+
+    QS.prototype.cbRemotestreamScreen = function(evt) {
+      return this.trigger("qs-remotestream-screen", evt);
     };
 
     QS.prototype.cbAnotherIncomingCall = function(data) {
