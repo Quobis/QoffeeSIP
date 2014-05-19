@@ -81,6 +81,26 @@ class SipStack extends Spine.Controller
 		500: "Server Internal Error"
 		503: "Service Unavaliable"
 
+	createRTC: () =>
+		@rtc = new RTC
+			mediaElements    : @mediaElements
+			mediaConstraints : @mediaConstraints
+			turnServer       : @turnServer
+			stunServer       : @stunServer
+
+		@rtc.bind "localstream" , (localstream) => @trigger "localstream", stream: localstream
+		@rtc.bind "localstream-screen" , (localstreamScreen) => @trigger "localstream-screen", stream: localstreamScreen
+		@rtc.bind "remotestream" , (remotestream) =>
+			@trigger "remotestream" ,
+				callid : @currentCall.callId
+				stream : remotestream
+				uid    : "-"
+		@rtc.bind "remotestream-screen" , (remotestreamScreen) =>
+			@trigger "remotestream-screen" ,
+				callid : @currentCall.callId
+				stream : remotestreamScreen
+				uid    : "-"
+		return @rtc
 	# Arguments for SipStack constructor:
 	# - mediaElements :: {localMedia :: DOM Element, remoteMedia :: DOM Element}
 	# - mediaContraints :: {audio: bool, video: bool}
@@ -88,25 +108,6 @@ class SipStack extends Spine.Controller
 	# - onopen :: function
 	constructor: () ->
 		super
-		if @mediaConstraints.audio + @mediaConstraints.video > 0
-			@rtc = new RTC
-				mediaElements    : @mediaElements
-				mediaConstraints : @mediaConstraints
-				turnServer       : @turnServer
-				stunServer       : @stunServer
-
-			@rtc?.bind "localstream" , (localstream) => @trigger "localstream", stream: localstream
-			@rtc?.bind "localstream-screen" , (localstreamScreen) => @trigger "localstream-screen", stream: localstreamScreen
-			@rtc?.bind "remotestream" , (remotestream) =>
-				@trigger "remotestream" ,
-					callid : @currentCall.callId
-					stream : remotestream
-					uid    : "-"
-			@rtc?.bind "remotestream-screen" , (remotestreamScreen) =>
-				@trigger "remotestream-screen" ,
-					callid : @currentCall.callId
-					stream : remotestreamScreen
-					uid    : "-"
 
 		@sipServer = @server.ip
 		@port      = @server.port
@@ -241,7 +242,6 @@ class SipStack extends Spine.Controller
 						# Successful register.
 						when 200
 							@info "register-success", message
-							@rtc?.start()
 							@setState 3, message
 							# Manage reregisters. Important: @t should be clean on unregistering.
 							transaction.expires = message.proposedExpires or 3600
@@ -285,7 +285,6 @@ class SipStack extends Spine.Controller
 						# Successful register.
 						when 200
 							@info "register-success", message
-							@rtc?.start()
 							@setState 3, message
 							# Manage reregisters.
 							transaction.expires = message.proposedExpires
@@ -364,7 +363,7 @@ class SipStack extends Spine.Controller
 
 								when 200
 									@info "Establishing call", message
-									@rtc?.receiveAnswer message.content
+									@rtc.receiveAnswer message.content
 									_.extend transaction, _.pick message, "from", "to", "fromTag", "toTag"
 									ack      = new SipTransaction message
 									ack.meth = "ACK"
@@ -447,7 +446,7 @@ class SipStack extends Spine.Controller
 							# Send OK
 							ok = _.clone transaction
 							@send @createMessage ok
-							@rtc?.close()
+							@rtc.close()
 							@setState 3, message
 
 				# ### HANGING UP
@@ -456,7 +455,7 @@ class SipStack extends Spine.Controller
 					return if not @getTransaction message
 					@info "HANGING UP", message
 					@info "Call ended", message
-					@rtc?.close()
+					@rtc.close()
 					@setState 3, message # Registered
 					@currentCall = null
 
@@ -831,8 +830,8 @@ class SipStack extends Spine.Controller
 
 	# Async send
 	sendWithSDP: (data, type, sdp, cb = ->) =>
-		@rtc?.start()
-		@rtc?.bind "sdp", (sdp) =>
+		@createRTC()
+		@rtc.bind "sdp", (sdp) =>
 			# Temporal sdp modification
 			# sdp = sdp.split("m=video")[0]
 			# Media
@@ -844,9 +843,9 @@ class SipStack extends Spine.Controller
 
 		switch type
 			when "offer"
-				@rtc?.createOffer()
+				@rtc.createOffer()
 			when "answer"
-				@rtc?.receiveOffer sdp, => @rtc?.createAnswer()
+				@rtc.receiveOffer sdp, => @rtc.createAnswer()
 
 	sendInstantMessage: (uri2, text) =>
 		message = new SipTransaction

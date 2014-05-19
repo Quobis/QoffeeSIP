@@ -67,7 +67,6 @@ class QS extends Spine.Controller
 	onopen: () =>
 		@trigger "qs-ready"
 
-
 	cbInstantMessage: (data) =>
 		lines    = data.content.split(/\n/)
 		header   = JSON.parse lines[0]
