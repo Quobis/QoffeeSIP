@@ -455,7 +455,7 @@ class SipStack extends Spine.Controller
 					return if not @getTransaction message
 					@info "HANGING UP", message
 					@info "Call ended", message
-					@rtc.close()
+					@rtc?.close()
 					@setState 3, message # Registered
 					@currentCall = null
 

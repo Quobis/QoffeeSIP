@@ -135,6 +135,30 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     webrtcDetectedVersion: webrtcDetectedVersion
   };
 
+  Promise.of = function(value) {
+    return new Promise(function(resolve, reject) {
+      return resolve(value);
+    });
+  };
+
+  Promise.prototype.map = function(f) {
+    var _this = this;
+    return new Promise(function(resolve, _) {
+      return _this.then(function(a) {
+        return resolve(f(a));
+      });
+    });
+  };
+
+  Promise.prototype.rejectedMap = function(f) {
+    var _this = this;
+    return new Promise(function(_, reject) {
+      return _this.then(function(a) {
+        return reject(f(a));
+      });
+    });
+  };
+
   AugumentedStatsResponse = (function() {
 
     function AugumentedStatsResponse(response) {
@@ -215,6 +239,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.triggerSDP = __bind(this.triggerSDP, this);
 
+      this.createScreenStream = __bind(this.createScreenStream, this);
+
       this.createStream = __bind(this.createStream, this);
 
       this.createPeerConnection = __bind(this.createPeerConnection, this);
@@ -222,6 +248,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this.addIceServer = __bind(this.addIceServer, this);
 
       this.getStats = __bind(this.getStats, this);
+
+      this.getRemoteStreamEventName = __bind(this.getRemoteStreamEventName, this);
 
       this.start = __bind(this.start, this);
 
@@ -234,7 +262,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       if ((_ref = this.mediaConstraints) == null) {
         this.mediaConstraints = {
           audio: true,
-          video: true
+          video: true,
+          screensharing: false
         };
       }
       this.isVideoActive = true;
@@ -255,11 +284,35 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       ]
     };
 
+    RTC.prototype.screenConstraints = {
+      audio: false,
+      video: {
+        mandatory: {
+          chromeMediaSource: 'screen',
+          maxWidth: 1280,
+          maxHeight: 720
+        },
+        optional: []
+      }
+    };
+
     RTC.prototype.start = function() {
-      console.log("PeerConnection starting");
-      this.noMoreCandidates = navigator.mozGetUserMedia != null;
-      this.dtmfSender = null;
-      return this.createPeerConnection();
+      var _this = this;
+      if (this.pc != null) {
+        return Promise.of(this.pc);
+      }
+      return new Promise(function(resolve, reject) {
+        var localStreamPromise;
+        _this.pc = _this.createPeerConnection();
+        console.log("PeerConnection starting");
+        _this.noMoreCandidates = navigator.mozGetUserMedia != null;
+        _this.dtmfSender = null;
+        localStreamPromise = _this.createStream();
+        return localStreamPromise.then(function(stream) {
+          _this.pc.addStream(stream);
+          return resolve(_this.pc);
+        });
+      });
     };
 
     RTC.prototype.dumpStats = function(obj) {
@@ -281,9 +334,18 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return _.extend(dict, properties);
     };
 
+    RTC.prototype.getRemoteStreamEventName = function(stream) {
+      if (stream.getAudioTracks().length) {
+        return "remotestream";
+      } else {
+        return "remotestream-screen";
+      }
+    };
+
     RTC.prototype.getStats = function(cb) {
-      var _this = this;
-      if (!((this.pc != null) && (this.remotestream != null) && (cb != null))) {
+      var _ref,
+        _this = this;
+      if (!((this.pc != null) && ((_ref = this.pc.readyState) === "stable" || _ref === "active") && (cb != null))) {
         return;
       }
       return this.pc.getStats(function(rawStats) {
@@ -316,36 +378,29 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.iceServers.push(RTCAdapter.createIceServer(url, username, password));
     };
 
-    RTC.prototype.createPeerConnection = function() {
-      var iceGatheringEndCb,
+    RTC.prototype.createPeerConnection = function(locastream) {
+      var iceGatheringEndCb, pc,
         _this = this;
       console.log("[INFO] createPeerConnection");
       console.log("[MEDIA] ICE servers");
       console.log(this.iceServers);
-      this.pc = new RTCAdapter.RTCPeerConnection({
+      pc = new RTCAdapter.RTCPeerConnection({
         "iceServers": this.iceServers
       }, this.pcOptions);
-      this.pc.onaddstream = function(event) {
+      pc.onaddstream = function(event) {
+        var remotestream;
         console.log("[MEDIA] Stream added");
-        _this.remotestream = event.stream;
-        if (RTCAdapter.webrtcDetectedBrowser === "chrome") {
-          _this.dtmfSender = _this.pc.createDTMFSender(_this.localstream.getAudioTracks()[0]);
-          _this.dtmfSender.ontonechange = function(dtmf) {
-            console.log(dtmf);
-            return console.log("[INFO] DTMF send - " + dtmf.tone);
-          };
-          window.test = _this.insertDTMF;
-        }
-        return _this.trigger("remotestream", _this.remotestream);
+        remotestream = event.stream;
+        return _this.trigger(_this.getRemoteStreamEventName(remotestream), remotestream);
       };
       iceGatheringEndCb = function() {
         console.log("[INFO] No more ice candidates");
         _this.noMoreCandidates = true;
-        if (_this.pc.localDescription != null) {
+        if (pc.localDescription != null) {
           return _this.triggerSDP();
         }
       };
-      this.pc.onicecandidate = function(evt) {
+      pc.onicecandidate = function(evt) {
         var candidate;
         console.log("[INFO] onicecandidate");
         if (evt.candidate) {
@@ -361,61 +416,95 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           return iceGatheringEndCb();
         }
       };
-      this.pc.oniceconnectionstatechange = function(evt) {
-        if (evt.currentTarget.iceGatheringState === 'complete' && _this.pc.iceConnectionState !== 'closed') {
+      pc.oniceconnectionstatechange = function(evt) {
+        if (evt.currentTarget.iceGatheringState === 'complete' && pc.iceConnectionState !== 'closed') {
           console.log("[INFO] iceGatheringState -> " + evt.currentTarget.iceGatheringState);
           return iceGatheringEndCb();
         }
       };
-      this.pc.onicechange = function() {
-        return console.log("[INFO] icestate changed -> " + _this.pc.iceState);
+      pc.onicechange = function() {
+        return console.log("[INFO] icestate changed -> " + pc.iceState);
       };
-      this.pc.onstatechange = function() {
-        return console.log("[INFO] peerconnectionstate changed -> " + _this.pc.readyState);
+      pc.onstatechange = function() {
+        return console.log("[INFO] peerconnectionstate changed -> " + pc.readyState);
       };
-      this.pc.onopen = function() {
+      pc.onopen = function() {
         return console.log("[MEDIA] peerconnection opened");
       };
-      this.pc.onclose = function() {
+      pc.onclose = function() {
         return console.log("[INFO] peerconnection closed");
       };
-      return this.createStream();
+      return pc;
     };
 
     RTC.prototype.createStream = function() {
-      var gumFail, gumSuccess,
-        _this = this;
-      console.log("[INFO] createStream");
-      if (this.localstream != null) {
-        console.log("[INFO] Using media previously got.");
-        return this.pc.addStream(this.localstream);
-      } else {
-        gumSuccess = function(localstream) {
-          var _ref;
-          _this.localstream = localstream;
-          console.log("[INFO] getUserMedia successed");
-          _this.pc.addStream(_this.localstream);
-          _this.trigger("localstream", _this.localstream);
-          console.log("localstream", _this.localstream);
-          return _ref = [_this.localstream.getVideoTracks().length > 0, _this.localstream.getAudioTracks().length > 0], _this.isVideoActive = _ref[0], _this.isAudioActive = _ref[1], _ref;
-        };
-        gumFail = function(error) {
-          console.error(error);
-          console.error("GetUserMedia error");
-          return _this.trigger("error", "getUserMedia");
-        };
-        return RTCAdapter.getUserMedia(this.mediaConstraints, gumSuccess, gumFail);
-      }
+      var _this = this;
+      return new Promise(function(resolve, reject) {
+        var gumFail, gumSuccess;
+        console.log("[INFO] createStream");
+        if (_this.localstream != null) {
+          console.log("[INFO] Using media previously got.");
+          return resolve(_this.localstream);
+        } else {
+          gumSuccess = function(localstream) {
+            var _ref;
+            _this.localstream = localstream;
+            console.log("[INFO] getUserMedia successed");
+            resolve(_this.localstream);
+            _this.trigger("localstream", _this.localstream);
+            console.log("localstream", _this.localstream);
+            return _ref = [_this.localstream.getVideoTracks().length > 0, _this.localstream.getAudioTracks().length > 0], _this.isVideoActive = _ref[0], _this.isAudioActive = _ref[1], _ref;
+          };
+          gumFail = function(error) {
+            reject(error);
+            console.error(error);
+            console.error("GetUserMedia error");
+            return _this.trigger("error", "getUserMedia");
+          };
+          return RTCAdapter.getUserMedia(_this.mediaConstraints, gumSuccess, gumFail);
+        }
+      });
+    };
+
+    RTC.prototype.createScreenStream = function() {
+      var _this = this;
+      return new Promise(function(resolve, reject) {
+        var gumFail, gumSuccess;
+        if (webrtcDetectedBrowser !== 'chrome') {
+          reject();
+        }
+        console.log("[INFO] createScreenStream");
+        if (_this.localScreenStream != null) {
+          console.log("[INFO] Using media previously got.");
+          return resolve(localScreenStream);
+        } else {
+          gumSuccess = function(localScreenStream) {
+            _this.localScreenStream = localScreenStream;
+            console.log("[INFO] getUserMedia successed");
+            resolve(_this.localScreenStream);
+            _this.trigger("localstream-screen", _this.localScreenStream);
+            return console.log("localstream-screen", _this.localScreenStream);
+          };
+          gumFail = function(error) {
+            reject(error);
+            console.error(error);
+            console.error("GetUserMedia error");
+            return _this.trigger("error", "getUserMedia");
+          };
+          return RTCAdapter.getUserMedia(_this.screenConstraints, gumSuccess, gumFail);
+        }
+      });
     };
 
     RTC.prototype.triggerSDP = function() {
       var sdp;
-      console.log("[MEDIA]");
+      console.log("[SDP]");
       sdp = this.pc.localDescription.sdp;
+      console.log(sdp);
       return this.trigger("sdp", sdp);
     };
 
-    RTC.prototype.setLocalDescription = function(sessionDescription, callback) {
+    RTC.prototype.setLocalDescription = function(sessionDescription) {
       var fail, success,
         _this = this;
       success = function() {
@@ -431,42 +520,49 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     RTC.prototype.createOffer = function() {
-      var error,
-        _this = this;
+      var _this = this;
       console.log("[INFO] createOffer");
-      error = function(e) {
-        return _this.trigger("error", "createOffer", e);
-      };
-      return this.pc.createOffer(this.setLocalDescription, error, {});
+      return this.start().then(function(pc) {
+        var error;
+        error = function(e) {
+          return _this.trigger("error", "createOffer", e);
+        };
+        return pc.createOffer(_this.setLocalDescription, error, {});
+      });
     };
 
     RTC.prototype.createAnswer = function() {
       var error,
         _this = this;
-      console.log("[INFO] createAnswer");
+      console.log("[INFO] Answer");
       error = function(e) {
-        return _this.trigger("error", "createAnswer", e);
+        return _this.trigger("error", "createOffer", e);
       };
       return this.pc.createAnswer(this.setLocalDescription, error, {});
     };
 
     RTC.prototype.receive = function(sdp, type, callback) {
-      var description, success,
-        _this = this;
-      success = function() {
-        console.log("[INFO] Remote description setted.");
-        console.log("[INFO] localDescription:");
-        console.log(_this.pc.localDescription);
-        console.log("[INFO] remotelocalDescription:");
-        console.log(_this.pc.remoteDescription);
-        return typeof callback === "function" ? callback() : void 0;
-      };
-      description = new RTCAdapter.RTCSessionDescription({
-        type: type,
-        sdp: sdp
-      });
-      return this.pc.setRemoteDescription(description, success, function() {
-        return _this.trigger("error", "setRemoteDescription", description);
+      var _this = this;
+      return this.start().then(function(pc) {
+        var description, success;
+        console.log("[INFO] receive!");
+        console.log(sdp, type, callback);
+        success = function() {
+          console.log("[INFO] Remote description setted.");
+          console.log("[INFO] localDescription:");
+          console.log(pc.localDescription);
+          console.log("[INFO] remotelocalDescription:");
+          console.log(pc.remoteDescription);
+          return typeof callback === "function" ? callback() : void 0;
+        };
+        description = new RTCAdapter.RTCSessionDescription({
+          type: type,
+          sdp: sdp
+        });
+        console.log(description);
+        return pc.setRemoteDescription(description, success, function() {
+          return _this.trigger("error", "setRemoteDescription", description);
+        });
       });
     };
 
@@ -478,14 +574,18 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.receive(sdp, "offer", callback);
     };
 
-    RTC.prototype.receiveAnswer = function(sdp) {
+    RTC.prototype.receiveAnswer = function(sdp, callback) {
+      if (callback == null) {
+        callback = null;
+      }
       console.log("[INFO] Received answer");
-      return this.receive(sdp, "answer");
+      return this.receive(sdp, "answer", callback);
     };
 
     RTC.prototype.close = function() {
       try {
-        return this.pc.close();
+        this.pc.close();
+        return this.dtmfSender = null;
       } catch (e) {
         console.error("[ERROR] Error closing peerconnection");
         return console.error(e);
@@ -576,7 +676,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       }
     };
 
-    RTC.prototype.attachStream = function($d, stream) {
+    RTC.attachStream = function($d, stream) {
       return RTCAdapter.attachMediaStream($d[0], stream);
     };
 
@@ -1059,6 +1159,41 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       503: "Service Unavaliable"
     };
 
+    SipStack.prototype.createRTC = function() {
+      var _this = this;
+      this.rtc = new RTC({
+        mediaElements: this.mediaElements,
+        mediaConstraints: this.mediaConstraints,
+        turnServer: this.turnServer,
+        stunServer: this.stunServer
+      });
+      this.rtc.bind("localstream", function(localstream) {
+        return _this.trigger("localstream", {
+          stream: localstream
+        });
+      });
+      this.rtc.bind("localstream-screen", function(localstreamScreen) {
+        return _this.trigger("localstream-screen", {
+          stream: localstreamScreen
+        });
+      });
+      this.rtc.bind("remotestream", function(remotestream) {
+        return _this.trigger("remotestream", {
+          callid: _this.currentCall.callId,
+          stream: remotestream,
+          uid: "-"
+        });
+      });
+      this.rtc.bind("remotestream-screen", function(remotestreamScreen) {
+        return _this.trigger("remotestream-screen", {
+          callid: _this.currentCall.callId,
+          stream: remotestreamScreen,
+          uid: "-"
+        });
+      });
+      return this.rtc;
+    };
+
     function SipStack() {
       this.setState = __bind(this.setState, this);
 
@@ -1082,6 +1217,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.start = __bind(this.start, this);
 
+      this.createRTC = __bind(this.createRTC, this);
+
       this.error = __bind(this.error, this);
 
       this.warning = __bind(this.warning, this);
@@ -1098,32 +1235,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.addTransaction = __bind(this.addTransaction, this);
 
-      var _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6,
-        _this = this;
+      var _ref, _ref1, _ref2, _ref3, _ref4;
       SipStack.__super__.constructor.apply(this, arguments);
-      if (this.mediaConstraints.audio + this.mediaConstraints.video > 0) {
-        this.rtc = new RTC({
-          mediaElements: this.mediaElements,
-          mediaConstraints: this.mediaConstraints,
-          iceServer: this.iceServer
-        });
-        if ((_ref = this.rtc) != null) {
-          _ref.bind("localstream", function(localstream) {
-            return _this.trigger("localstream", {
-              stream: localstream
-            });
-          });
-        }
-        if ((_ref1 = this.rtc) != null) {
-          _ref1.bind("remotestream", function(remotestream) {
-            return _this.trigger("remotestream", {
-              callid: _this.currentCall.callId,
-              stream: remotestream,
-              uid: "-"
-            });
-          });
-        }
-      }
       this.sipServer = this.server.ip;
       this.port = this.server.port;
       this.path = this.server.path || "";
@@ -1131,19 +1244,19 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       this._transactions = {};
       this._instantMessages = {};
       this.setState(0);
-      if ((_ref2 = this.hackViaTCP) == null) {
+      if ((_ref = this.hackViaTCP) == null) {
         this.hackViaTCP = false;
       }
-      if ((_ref3 = this.hackIpContact) == null) {
+      if ((_ref1 = this.hackIpContact) == null) {
         this.hackIpContact = false;
       }
-      if ((_ref4 = this.hackno_Route_ACK_BYE) == null) {
+      if ((_ref2 = this.hackno_Route_ACK_BYE) == null) {
         this.hackno_Route_ACK_BYE = false;
       }
-      if ((_ref5 = this.hackContact_ACK_MESSAGES) == null) {
+      if ((_ref3 = this.hackContact_ACK_MESSAGES) == null) {
         this.hackContact_ACK_MESSAGES = false;
       }
-      if ((_ref6 = this.hackUserPhone) == null) {
+      if ((_ref4 = this.hackUserPhone) == null) {
         this.hackUserPhone = false;
       }
       console.log("Creating QS with @hackViaTCP= " + this.hackViaTCP + " @hackIpContact=" + this.hackIpContact + " @hackno_Route_ACK_BYE=" + this.hackno_Route_ACK_BYE + " @hackContact_ACK_MESSAGES=" + this.hackContact_ACK_MESSAGES + " @hackUserPhone=" + this.hackUserPhone);
@@ -1167,7 +1280,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
         return _this.onopen();
       };
       this.websocket.onmessage = function(evt) {
-        var ack, busy, instantMessage, message, ok, register, ringing, transaction, unregister, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+        var ack, busy, instantMessage, message, ok, register, ringing, transaction, unregister, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
         message = Parser.parse(evt.data);
         _this.info("Input message", message);
         if ((11 > (_ref = _this.state) && _ref > 2) && (message.cseq.meth === "REGISTER")) {
@@ -1244,9 +1357,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             switch (message.responseCode) {
               case 200:
                 _this.info("register-success", message);
-                if ((_ref3 = _this.rtc) != null) {
-                  _ref3.start();
-                }
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires || 3600;
                 _this.reRegister = function() {
@@ -1273,7 +1383,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
               case 407:
                 _this.setState(2, message);
                 transaction.cseq.number += 1;
-                _.extend(transaction, _.pick(message, "realm", "nonce", "toTag", "qop", "opaque"));
+                transaction = _.extend(transaction, _.pick(message, "realm", "nonce", "toTag", "qop", "opaque"));
                 transaction.auth = true;
                 if (transaction.qop === "auth") {
                   transaction.updateCnonceNcHex();
@@ -1292,9 +1402,6 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             switch (message.responseCode) {
               case 200:
                 _this.info("register-success", message);
-                if ((_ref4 = _this.rtc) != null) {
-                  _ref4.start();
-                }
                 _this.setState(3, message);
                 transaction.expires = message.proposedExpires;
                 _this.reRegister = function() {
@@ -1371,9 +1478,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                     return transaction.contact = message.contact;
                   case 200:
                     _this.info("Establishing call", message);
-                    if ((_ref5 = _this.rtc) != null) {
-                      _ref5.receiveAnswer(message.content);
-                    }
+                    _this.rtc.receiveAnswer(message.content);
                     _.extend(transaction, _.pick(message, "from", "to", "fromTag", "toTag"));
                     ack = new SipTransaction(message);
                     ack.meth = "ACK";
@@ -1454,9 +1559,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 transaction.meth = "OK";
                 ok = _.clone(transaction);
                 _this.send(_this.createMessage(ok));
-                if ((_ref6 = _this.rtc) != null) {
-                  _ref6.close();
-                }
+                _this.rtc.close();
                 return _this.setState(3, message);
             }
             break;
@@ -1466,8 +1569,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             _this.info("HANGING UP", message);
             _this.info("Call ended", message);
-            if ((_ref7 = _this.rtc) != null) {
-              _ref7.close();
+            if ((_ref3 = _this.rtc) != null) {
+              _ref3.close();
             }
             _this.setState(3, message);
             return _this.currentCall = null;
@@ -1477,8 +1580,8 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
             }
             _this.info("HANGING UP", message);
             _this.info("Call ended", message);
-            if ((_ref8 = _this.rtc) != null) {
-              _ref8.close();
+            if ((_ref4 = _this.rtc) != null) {
+              _ref4.close();
             }
             _this.setState(3, message);
             return _this.currentCall = null;
@@ -1492,7 +1595,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
                 return _this.setState(0);
               case 401:
               case 407:
-                if ((_ref9 = message.responseCode) !== 401 && _ref9 !== 407) {
+                if ((_ref5 = message.responseCode) !== 401 && _ref5 !== 407) {
                   return;
                 }
                 unregister = _this.getTransaction(message);
@@ -1892,34 +1995,28 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
     };
 
     SipStack.prototype.sendWithSDP = function(data, type, sdp, cb) {
-      var _ref, _ref1, _ref2, _ref3,
-        _this = this;
+      var _this = this;
       if (cb == null) {
         cb = function() {};
       }
-      if ((_ref = this.rtc) != null) {
-        _ref.start();
-      }
-      if ((_ref1 = this.rtc) != null) {
-        _ref1.bind("sdp", function(sdp) {
-          var _ref2;
-          data += "Content-Length: " + sdp.length + "\r\n\r\n";
-          data += sdp;
-          _this.send(data);
-          if ((_ref2 = _this.rtc) != null) {
-            _ref2.unbind("sdp");
-          }
-          return cb();
-        });
-      }
+      this.createRTC();
+      this.rtc.bind("sdp", function(sdp) {
+        var _ref;
+        data += "Content-Length: " + sdp.length + "\r\n\r\n";
+        data += sdp;
+        _this.send(data);
+        if ((_ref = _this.rtc) != null) {
+          _ref.unbind("sdp");
+        }
+        return cb();
+      });
       switch (type) {
         case "offer":
-          return (_ref2 = this.rtc) != null ? _ref2.createOffer() : void 0;
+          return this.rtc.createOffer();
         case "answer":
-          return (_ref3 = this.rtc) != null ? _ref3.receiveOffer(sdp, function() {
-            var _ref4;
-            return (_ref4 = _this.rtc) != null ? _ref4.createAnswer() : void 0;
-          }) : void 0;
+          return this.rtc.receiveOffer(sdp, function() {
+            return _this.rtc.createAnswer();
+          });
       }
     };
 
@@ -1983,7 +2080,11 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 
       this.cbAnotherIncomingCall = __bind(this.cbAnotherIncomingCall, this);
 
+      this.cbRemotestreamScreen = __bind(this.cbRemotestreamScreen, this);
+
       this.cbRemotestream = __bind(this.cbRemotestream, this);
+
+      this.cbLocalstreamScreen = __bind(this.cbLocalstreamScreen, this);
 
       this.cbLocalstream = __bind(this.cbLocalstream, this);
 
@@ -2015,7 +2116,7 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       QS.__super__.constructor.apply(this, arguments);
       this.lastState = "";
       this.stateflow = [];
-      this.mappedEvents = ['qs-instant-message', 'qs-localstream', 'qs-remotestream', 'qs-register-error', 'qs-register-success', 'qs-unregister-success', 'qs-another-incoming-call'];
+      this.mappedEvents = ['qs-instant-message', 'qs-localstream', 'qs-localstream-screen', 'qs-remotestream', 'qs-remotestream-screen', 'qs-register-error', 'qs-register-success', 'qs-unregister-success', 'qs-another-incoming-call'];
       this.customEvents = {
         'qs-ringing': {
           stack: 'new-state',
@@ -2063,9 +2164,17 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
           stack: 'localstream',
           cb: this.cbLocalstream
         },
+        'qs-localstream-screen': {
+          stack: 'localstream-screen',
+          cb: this.cbLocalstreamScreen
+        },
         'qs-remotestream': {
           stack: 'remotestream',
           cb: this.cbRemotestream
+        },
+        'qs-remotestream-screen': {
+          stack: 'remotestream-screen',
+          cb: this.cbRemotestreamScreen
         },
         'qs-register-error': {
           stack: 'register-fail',
@@ -2272,8 +2381,16 @@ Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
       return this.trigger("qs-localstream", evt);
     };
 
+    QS.prototype.cbLocalstreamScreen = function(evt) {
+      return this.trigger("qs-localstream-screen", evt);
+    };
+
     QS.prototype.cbRemotestream = function(evt) {
       return this.trigger("qs-remotestream", evt);
+    };
+
+    QS.prototype.cbRemotestreamScreen = function(evt) {
+      return this.trigger("qs-remotestream-screen", evt);
     };
 
     QS.prototype.cbAnotherIncomingCall = function(data) {
