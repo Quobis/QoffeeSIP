@@ -49,24 +49,10 @@ class QS extends Spine.Controller
 			'qs-unregister-success'    : {stack:'unregister-success'    , cb: @cbUnregisterSuccess}
 			'qs-another-incoming-call' : {stack:"another-incoming-call" , cb: @cbAnotherIncomingCall}
 
-
 		@sipStack = new SipStack
-			server                   : @server
-			iceServer                : @iceServer
-			hackViaTCP               : @hackViaTCP
-			hackIpContact            : @hackIpContact
-			hackno_Route_ACK_BYE     : @hackno_Route_ACK_BYE
-			hackContact_ACK_MESSAGES : @hackContact_ACK_MESSAGES
-			hackUserPhone            : @hackUserPhone
-			mediaConstraints         : @mediaConstraints
-			onopen                   : @onopen
 
 	start: () =>
-		@sipStack.start()
-
-	onopen: () =>
 		@trigger "qs-ready"
-
 
 	cbInstantMessage: (data) =>
 		lines    = data.content.split(/\n/)
@@ -167,8 +153,19 @@ class QS extends Spine.Controller
 	# +   *pass* optional
 	# +   *domain* optional
 	#
-	register: (uri, pass = "", userAuthName) =>
-		@sipStack.register uri, pass, userAuthName
+	register: (options, uri, pass = "", userAuthName) =>
+		@sipStack.configure
+			server                   : options.server
+			iceServer                : options.iceServer
+			hackViaTCP               : options.hackViaTCP
+			hackIpContact            : options.hackIpContact
+			hackno_Route_ACK_BYE     : options.hackno_Route_ACK_BYE
+			hackContact_ACK_MESSAGES : options.hackContact_ACK_MESSAGES
+			hackUserPhone            : options.hackUserPhone
+			mediaConstraints         : options.mediaConstraints
+			onopen                   : () =>
+				@sipStack.register uri, pass, userAuthName
+		@sipStack.start()
 
 	#### capabilities
 	# Get stack capabilities
@@ -179,7 +176,7 @@ class QS extends Spine.Controller
 	#### version
 	# Get stack version
 	version: () ->
-		[{ name : "QoffeeSIP", version : "v0.8.0"}]
+		[{ name : "QoffeeSIP", version : "v0.9.0"}]
 
 	#### call
 	# Call to extension *ext*
@@ -262,8 +259,8 @@ class QS extends Spine.Controller
 		# in the underlying stack
 		if @customEvents[eventName]?
 			if @customEventsReverse[@customEvents[eventName].stack].counter is 0
-				@customEventsReverse[@customEvents[eventName].stack].counter += 1
 				@sipStack.bind @customEvents[eventName].stack, @customEvents[eventName].cb
+			@customEventsReverse[@customEvents[eventName].stack].counter += 1
 		else if eventName in @mappedEvents
 			@sipStack.bind @libEvents[eventName].stack, @libEvents[eventName].cb
 
@@ -275,6 +272,7 @@ class QS extends Spine.Controller
 		if @customEvents[eventName]?
 			if @customEventsReverse[@customEvents[eventName].stack].counter isnt 0
 				@customEventsReverse[@customEvents[eventName].stack].counter -= 1
+			if @customEventsReverse[@customEvents[eventName].stack].counter is 0
 				@sipStack.unbind @customEvents[eventName].stack, @customEvents[eventName].cb
 		else if not eventName in @mappedEvents
 			@sipStack.unbind @libEvents[eventName].stack, @libEvents[eventName].cb

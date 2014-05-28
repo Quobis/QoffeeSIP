@@ -82,12 +82,24 @@ class SipStack extends Spine.Controller
 		503: "Service Unavaliable"
 
 	# Arguments for SipStack constructor:
+	constructor: () ->
+		super
+
 	# - mediaElements :: {localMedia :: DOM Element, remoteMedia :: DOM Element}
 	# - mediaContraints :: {audio: bool, video: bool}
 	# - server :: {ip: string, port: number, path:: string, transport :: string}
 	# - onopen :: function
-	constructor: () ->
-		super
+	configure: (options) =>
+		@server                   = options.server
+		@iceServer                = options.iceServer
+		@hackViaTCP               = options.hackViaTCP
+		@hackIpContact            = options.hackIpContact
+		@hackno_Route_ACK_BYE     = options.hackno_Route_ACK_BYE
+		@hackContact_ACK_MESSAGES = options.hackContact_ACK_MESSAGES
+		@hackUserPhone            = options.hackUserPhone
+		@mediaConstraints         = options.mediaConstraints
+		@onopen                   = options.onopen
+
 		if @mediaConstraints.audio + @mediaConstraints.video > 0
 			@rtc = new RTC
 				mediaElements    : @mediaElements
