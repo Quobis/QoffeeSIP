@@ -81,10 +81,10 @@ class SipStack extends Spine.Controller
 		500: "Server Internal Error"
 		503: "Service Unavaliable"
 
-	createRTC: () =>
+	createRTC: (mediaConstraints) =>
 		@rtc = new RTC
 			mediaElements    : @mediaElements
-			mediaConstraints : @mediaConstraints
+			mediaConstraints : mediaConstraints or @mediaConstraints
 			turnServer       : @turnServer
 			stunServer       : @stunServer
 
@@ -733,7 +733,7 @@ class SipStack extends Spine.Controller
 		message = @createMessage transaction
 		@send message
 
-	call: (uri2) =>
+	call: (uri2, mediaConstraints = @mediaConstraints) =>
 		transaction = new SipTransaction
 			meth         : "INVITE",
 			uri          : @ext,
@@ -743,10 +743,10 @@ class SipStack extends Spine.Controller
 		@addTransaction transaction
 		# @setState 5, transaction
 		message = @createMessage transaction
-		@sendWithSDP message, "offer", null, => @setState 5, transaction
+		@sendWithSDP message, "offer", null, (=> @setState 5, transaction), mediaConstraints
 
 
-	answer: (callId) =>
+	answer: (callId, mediaConstraints = @mediaConstraints) =>
 		console.log "Answer #{callId}"
 		@currentCall = _.first @getTransactions {callId}
 		ok           = _.clone @currentCall
@@ -755,7 +755,7 @@ class SipStack extends Spine.Controller
 		ok.meth = "OK"
 		# Media
 		# This function will be executed when API.answer is called.
-		@sendWithSDP (@createMessage ok), "answer", @currentCall.content, => @setState 4, ok
+		@sendWithSDP (@createMessage ok), "answer", @currentCall.content, (=> @setState 4, ok), mediaConstraints
 
 	hangup: (callId) =>
 		# It is possible to call hangup before the INVITE has been sent (PeerConnection
@@ -829,8 +829,8 @@ class SipStack extends Spine.Controller
 			console.log "[INFO] Not sending data"
 
 	# Async send
-	sendWithSDP: (data, type, sdp, cb = ->) =>
-		@createRTC()
+	sendWithSDP: (data, type, sdp, cb = (->), mediaConstraints = @mediaConstraints) =>
+		@createRTC mediaConstraints
 		@rtc.bind "sdp", (sdp) =>
 			# Temporal sdp modification
 			# sdp = sdp.split("m=video")[0]

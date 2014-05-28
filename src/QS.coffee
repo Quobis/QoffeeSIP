@@ -182,14 +182,14 @@ class QS extends Spine.Controller
 
 	#### call
 	# Call to extension *ext*
-	call: (uri2) =>
-		 @sipStack.call uri2
+	call: (uri2, mediaConstraints) =>
+		 @sipStack.call uri2, mediaConstraints
 
 	#### answer
 	# Answer the call
-	answer: (callid) =>
+	answer: (callid, mediaConstraints) =>
 		# in the QoffeeSIP world, 'callid' is 'branch'
-		@sipStack.answer callid
+		@sipStack.answer callid, mediaConstraints
 
 	#### hangup
 	hangup: (callid) =>
