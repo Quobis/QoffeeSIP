@@ -102,12 +102,44 @@ class SipStack extends Spine.Controller
 				uid    : "-"
 		return @rtc
 	# Arguments for SipStack constructor:
+	constructor: () ->
+		super
+
 	# - mediaElements :: {localMedia :: DOM Element, remoteMedia :: DOM Element}
 	# - mediaContraints :: {audio: bool, video: bool}
 	# - server :: {ip: string, port: number, path:: string, transport :: string}
 	# - onopen :: function
-	constructor: () ->
-		super
+	configure: (options) =>
+		@server                   = options.server
+		@iceServer                = options.iceServer
+		@hackViaTCP               = options.hackViaTCP
+		@hackIpContact            = options.hackIpContact
+		@hackno_Route_ACK_BYE     = options.hackno_Route_ACK_BYE
+		@hackContact_ACK_MESSAGES = options.hackContact_ACK_MESSAGES
+		@hackUserPhone            = options.hackUserPhone
+		@mediaConstraints         = options.mediaConstraints
+		@onopen                   = options.onopen
+
+		if @mediaConstraints.audio + @mediaConstraints.video > 0
+			@rtc = new RTC
+				mediaElements    : @mediaElements
+				mediaConstraints : @mediaConstraints
+				iceServer        : @iceServer
+#				turnServer       : @turnServer
+#				stunServer       : @stunServer
+
+			@rtc?.bind "localstream" , (localstream) => @trigger "localstream", stream: localstream
+			@rtc?.bind "localstream-screen" , (localstreamScreen) => @trigger "localstream-screen", stream: localstreamScreen
+			@rtc?.bind "remotestream" , (remotestream) =>
+				@trigger "remotestream" ,
+					callid : @currentCall.callId
+					stream : remotestream
+					uid    : "-"
+			@rtc?.bind "remotestream-screen" , (remotestreamScreen) =>
+				@trigger "remotestream-screen" ,
+					callid : @currentCall.callId
+					stream : remotestreamScreen
+					uid    : "-"
 
 		@sipServer = @server.ip
 		@port      = @server.port
