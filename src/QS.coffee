@@ -163,7 +163,7 @@ class QS extends Spine.Controller
 	#### version
 	# Get stack version
 	version: () ->
-		[{ name : "QoffeeSIP", version : "v0.9.0"}]
+		[{ name : "QoffeeSIP", version : "v0.9.1"}]
 
 	#### call
 	# Call to extension *ext*
