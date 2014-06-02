@@ -11,19 +11,6 @@ class QS extends Spine.Controller
 		@lastState = ""
 		@stateflow = []
 
-		# 1 to 1 relation with SipStack's events.
-		@mappedEvents = [
-			'qs-instant-message'
-			'qs-localstream'
-			'qs-localstream-screen'
-			'qs-remotestream'
-			'qs-remotestream-screen'
-			'qs-register-error'
-			'qs-register-success'
-			'qs-unregister-success'
-			'qs-another-incoming-call'] # -- !!!
-
-
 		# 1 to many relation with SipsStack's event.
 		@customEvents =
 			'qs-ringing'           : {stack:'new-state'       , cb: @cbStateChange}
@@ -40,14 +27,14 @@ class QS extends Spine.Controller
 			'instant-message' : {counter: 0}
 
 		@libEvents =
-			'qs-localstream'           : {stack:'localstream'           , cb: @cbLocalstream}
-			'qs-localstream-screen'    : {stack:'localstream-screen'    , cb: @cbLocalstreamScreen}
-			'qs-remotestream'          : {stack:'remotestream'          , cb: @cbRemotestream}
-			'qs-remotestream-screen'   : {stack:'remotestream-screen'   , cb: @cbRemotestreamScreen}
-			'qs-register-error'        : {stack:'register-fail'         , cb: @cbRegisterFail}
-			'qs-register-success'      : {stack:'register-success'      , cb: @cbRegisterSuccess}
-			'qs-unregister-success'    : {stack:'unregister-success'    , cb: @cbUnregisterSuccess}
-			'qs-another-incoming-call' : {stack:"another-incoming-call" , cb: @cbAnotherIncomingCall}
+			'qs-localstream'           : {stack:'localstream'           , cb: @cbLocalstream, 	 count: 0}
+			'qs-localstream-screen'    : {stack:'localstream-screen'    , cb: @cbLocalstreamScreen,	 count: 0}
+			'qs-remotestream'          : {stack:'remotestream'          , cb: @cbRemotestream,	 count: 0}
+			'qs-remotestream-screen'   : {stack:'remotestream-screen'   , cb: @cbRemotestreamScreen, count: 0}
+			'qs-register-error'        : {stack:'register-fail'         , cb: @cbRegisterFail,	 count: 0}
+			'qs-register-success'      : {stack:'register-success'      , cb: @cbRegisterSuccess,	 count: 0}
+			'qs-unregister-success'    : {stack:'unregister-success'    , cb: @cbUnregisterSuccess,	 count: 0}
+			'qs-another-incoming-call' : {stack:"another-incoming-call" , cb: @cbAnotherIncomingCall,count: 0}
 
 		@sipStack = new SipStack
 
@@ -261,8 +248,10 @@ class QS extends Spine.Controller
 			if @customEventsReverse[@customEvents[eventName].stack].counter is 0
 				@sipStack.bind @customEvents[eventName].stack, @customEvents[eventName].cb
 			@customEventsReverse[@customEvents[eventName].stack].counter += 1
-		else if eventName in @mappedEvents
-			@sipStack.bind @libEvents[eventName].stack, @libEvents[eventName].cb
+		else if @libEvents[eventName]?
+			if @libEvents[eventName].count is 0
+				@sipStack.bind @libEvents[eventName].stack, @libEvents[eventName].cb
+			@libEvents[eventName].count++
 
 		@bind eventName, callback
 
@@ -274,8 +263,10 @@ class QS extends Spine.Controller
 				@customEventsReverse[@customEvents[eventName].stack].counter -= 1
 			if @customEventsReverse[@customEvents[eventName].stack].counter is 0
 				@sipStack.unbind @customEvents[eventName].stack, @customEvents[eventName].cb
-		else if not eventName in @mappedEvents
-			@sipStack.unbind @libEvents[eventName].stack, @libEvents[eventName].cb
+		else if @libEvents[eventName]?
+			@libEvents[eventName].count--
+			if @libEvents[eventName].count is 0
+				@sipStack.unbind @libEvents[eventName].stack, @libEvents[eventName].cb
 
 		@unbind eventName, callback
 
