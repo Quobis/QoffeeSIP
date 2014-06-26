@@ -1,7 +1,7 @@
 ##
 # Copyright (C) Quobis
 # Project site: https://github.com/Quobis/QoffeeSIP
-# 
+#
 # Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 ##
 
@@ -17,7 +17,7 @@ class Parser
 		# Exec de RE
 		line = re.exec pkt
 		if line?
-			result[key] = line[index]  for key, index of indexes when index < line.length					
+			result[key] = line[index]  for key, index of indexes when index < line.length
 		return result
 
 	@parse: (pkt) ->
@@ -25,10 +25,10 @@ class Parser
 		console.log pkt
 
 		message = {}
-		# Every message content the frame inside 
+		# Every message content the frame inside
 		# to allow parsering in the upper layers.
 		_.extend message, {frame: pkt}
-		_.extend message, @parseFirstLine pkt		
+		_.extend message, @parseFirstLine pkt
 		_.extend message, @parseVias pkt
 		_.extend message, @parseFrom pkt
 		_.extend message, @parseTo pkt
@@ -44,8 +44,8 @@ class Parser
 
 		console.log "[INFO] Parsed"
 		console.log message
-		
-		return message     
+
+		return message
 
 	@parseFirstLine: (pkt) ->
 		firstLine = pkt.split("\r\n")[0]
@@ -97,20 +97,25 @@ class Parser
 		#lineFromRE = /(From|^f):\s*(\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]*\"|[^<]*)\s*<?((sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?))([a-zA-Z0-9\-\.\!\%\*\+\`\'\~\;\=]*))>?(;tag=([a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+))?(;.*)*/
 		#return @getRegExprResult pkt, lineFromRE, {from: 5, ext: 6, fromTag: 10}
 		#verification URL: http://rubular.com/r/gytoL5gDUO
-		lineFromRE = /(From|^f):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/
-		
+		lineFromRE = /(From|^f):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>*]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/
+
 		if !((lineFrom = lineFromRE.exec pkt)?)
 			console.error "Error parsing From!!"
-		else 
+		else
 			#The URI (cand be a sip uri or tel uri) will only be in one of these variables
-			useruri = lineFrom[5]||lineFrom[6]||lineFrom[7] 
-			#display name can be present or not (undefined)
-			displayName = lineFrom[4] 
-			#we get the tag, an the rest of header parameters
-			tag= lineFrom[8] 
-			user = /sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?)/.exec(useruri)[2]
+			useruri     = lineFrom[5]||lineFrom[6]||lineFrom[7]
+			port = useruri.split("@")[1].split(":")[1].split(">")[0]
+			if parseInt(port, 10) > 65535
+				console.error "Error parsing From. Wrong port #{useruri}"
 
-		return {from: useruri, ext: user, fromTag: tag, displayNameFrom: displayName} 		
+			#display name can be present or not (undefined)
+			displayName = lineFrom[4]
+			#we get the tag, an the rest of header parameters
+			tag         = lineFrom[8]
+			user        = /sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?)/.exec(useruri)[2]
+
+
+		return {from: useruri, ext: user, fromTag: tag, displayNameFrom: displayName}
 
 	@parseTo: (pkt) ->
 		# verification URL: http://rubular.com/r/1HeCJoSSJn
@@ -118,16 +123,16 @@ class Parser
 		#return @getRegExprResult pkt, lineToRE, {to: 5, ext2: 6, toTag: 10}
 
 		lineToRE = /(To|^t):\s*(((\"[a-zA-Z0-9\-\.\!\%\*\+\`\'\~\s]+\"|[a-zA-Z0-9\-\.\!\%\*\+\`\'\~]+)\s*<([^>]*)>)|<([^>]*)>|([^;\r\n]*))(;.*)?/
-		
+
 		if !((lineTo = lineToRE.exec pkt)?)
 			console.error "Error parsing To!!"
-		else 
+		else
 			#The URI (cand be a sip uri or tel uri) will only be in one of these variables
-			useruri = lineTo[5]||lineTo[6]||lineTo[7] 
+			useruri = lineTo[5]||lineTo[6]||lineTo[7]
 			#display name can be present or not (undefined)
-			displayName = lineTo[4] 
+			displayName = lineTo[4]
 			#we get the tag, an the rest of header parameters
-			tag= lineTo[8] 
+			tag= lineTo[8]
 			user = /sips?:((.+)@[a-zA-Z0-9\.\-]+(\:[0-9]+)?)/.exec(useruri)[2]
 
 		return {to: useruri, ext2: user, toTag: tag, displayNameTo: displayName}
@@ -157,8 +162,8 @@ class Parser
 		gruuRE = /pub\-gruu=\"(.+?)\"/
 		result = @getRegExprResult pkt, contactRE, {contact: 3}
 		result2= @getRegExprResult pkt, contactRE, {contact: 8}
-		console.warn result 	
-		console.warn result2	
+		console.warn result
+		console.warn result2
 		return _.extend result, @getRegExprResult pkt, gruuRE, {gruu: 1}
 
 	# Challenge parser, it gets method from CSeq values.
@@ -174,7 +179,7 @@ class Parser
 		# security checks
 		# We use this RE to check if this fieldas are present in the message (not only in the line)
 		# some stacks use different consecutives lines to send Authroization headers.
-		realmRe  = /realm="([^\"^\\]+)"/ 
+		realmRe  = /realm="([^\"^\\]+)"/
 		nonceRe  = /nonce="([^\"^\\]+)"/
 		opaqueRe = /opaque="([^\"^\\]+)"/
 		qopRe    = /qop=\"(auth|auth-int)\"/
@@ -202,4 +207,4 @@ class Parser
 		return content: (pkt.split "\r\n\r\n")[1]
 
 # Exporting the Parser
-window.Parser = Parser
+window?.Parser = Parser
