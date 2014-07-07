@@ -24,7 +24,7 @@ task "doc", "Generate Docco documentation.", ->
 # Build the stack
 # File which are going to be compiled
 appFiles = [
-	"external/RTC/rtc.coffee"
+	"node_modules/RTC/rtc.coffee"
 	"src/parser.coffee"
 	"src/siptransaction.coffee"
 	"src/sipstack.coffee"
