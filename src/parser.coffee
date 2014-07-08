@@ -103,10 +103,12 @@ class Parser
 			console.error "Error parsing From!!"
 		else
 			#The URI (cand be a sip uri or tel uri) will only be in one of these variables
-			useruri     = lineFrom[5]||lineFrom[6]||lineFrom[7]
-			port = useruri.split("@")[1].split(":")[1].split(">")[0]
-			if parseInt(port, 10) > 65535
-				console.error "Error parsing From. Wrong port #{useruri}"
+			useruri = lineFrom[5]||lineFrom[6]||lineFrom[7]
+			realm	= useruri.split("@")[1]
+			if realm.indexOf(":") isnt -1
+				port = realm.split(":")[1].split(">")[0]
+				if parseInt(port, 10) > 65535
+					console.error "Error parsing From. Wrong port #{useruri}"
 
 			#display name can be present or not (undefined)
 			displayName = lineFrom[4]
