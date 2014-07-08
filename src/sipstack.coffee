@@ -8,7 +8,7 @@
 
 # This class contains almost all the SIP logic of QoffeeSIP stack.
 # It containts the FSM (Finite State Machine) and manages creation of request and responses.
-class SipStack extends Spine.Controller
+class SipStack extends EventClass
 	# ## Methods to store transactions and instant messages.
 
 	# *Transactions* id is the meth.
@@ -108,14 +108,14 @@ class SipStack extends Spine.Controller
 #				turnServer       : @turnServer
 #				stunServer       : @stunServer
 
-			@rtc?.bind "localstream" , (localstream) => @trigger "localstream", stream: localstream
-			@rtc?.bind "localstream-screen" , (localstreamScreen) => @trigger "localstream-screen", stream: localstreamScreen
-			@rtc?.bind "remotestream" , (remotestream) =>
+			@rtc?.on "localstream" , (localstream) => @trigger "localstream", stream: localstream
+			@rtc?.on "localstream-screen" , (localstreamScreen) => @trigger "localstream-screen", stream: localstreamScreen
+			@rtc?.on "remotestream" , (remotestream) =>
 				@trigger "remotestream" ,
 					callid : @currentCall.callId
 					stream : remotestream
 					uid    : "-"
-			@rtc?.bind "remotestream-screen" , (remotestreamScreen) =>
+			@rtc?.on "remotestream-screen" , (remotestreamScreen) =>
 				@trigger "remotestream-screen" ,
 					callid : @currentCall.callId
 					stream : remotestreamScreen
@@ -775,7 +775,7 @@ class SipStack extends Spine.Controller
 		# It is possible to call hangup before the INVITE has been sent (PeerConnection
 		# is still getting ICE candidates), so we must unbind "sdp" event to avoid
 		# sending CANCEL before INVITE.
-		@rtc?.unbind "sdp"
+		@rtc?.off "sdp"
 		# If user is the callee, fromTag of "INVITE" belongs to caller, ext2 in this method.
 		# Tags must be swapped.
 		swap = (d, p1, p2)-> [d[p1], d[p2]] = [d[p2], d[p1]]
@@ -845,14 +845,14 @@ class SipStack extends Spine.Controller
 	# Async send
 	sendWithSDP: (data, type, sdp, cb = ->) =>
 		@rtc?.start()
-		@rtc?.bind "sdp", (sdp) =>
+		@rtc?.on "sdp", (sdp) =>
 			# Temporal sdp modification
 			# sdp = sdp.split("m=video")[0]
 			# Media
 			data += "Content-Length: #{sdp.length}\r\n\r\n"
 			data += sdp
 			@send data
-			@rtc?.unbind "sdp"
+			@rtc?.off "sdp"
 			do cb
 
 		switch type

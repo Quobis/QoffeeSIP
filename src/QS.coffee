@@ -5,7 +5,7 @@
 # Licensed under GNU-LGPL-3.0-or-later (http://www.gnu.org/licenses/lgpl-3.0.html)
 ##
 
-class QS extends Spine.Controller
+class QS extends EventClass
 	constructor: (options) ->
 		super
 		@lastState = ""
@@ -163,7 +163,7 @@ class QS extends Spine.Controller
 	#### version
 	# Get stack version
 	version: () ->
-		[{ name : "QoffeeSIP", version : "v0.9.2"}]
+		[{ name : "QoffeeSIP", version : "v0.9.3"}]
 
 	#### call
 	# Call to extension *ext*
@@ -246,14 +246,14 @@ class QS extends Spine.Controller
 		# in the underlying stack
 		if @customEvents[eventName]?
 			if @customEventsReverse[@customEvents[eventName].stack].counter is 0
-				@sipStack.bind @customEvents[eventName].stack, @customEvents[eventName].cb
+				@sipStack.on @customEvents[eventName].stack, @customEvents[eventName].cb
 			@customEventsReverse[@customEvents[eventName].stack].counter += 1
 		else if @libEvents[eventName]?
 			if @libEvents[eventName].count is 0
-				@sipStack.bind @libEvents[eventName].stack, @libEvents[eventName].cb
+				@sipStack.on @libEvents[eventName].stack, @libEvents[eventName].cb
 			@libEvents[eventName].count++
 
-		@bind eventName, callback
+		super eventName, callback
 
 	#### off
 	# Unsubsbribe from event *eventName* with the associated callback *callback*
@@ -262,13 +262,13 @@ class QS extends Spine.Controller
 			if @customEventsReverse[@customEvents[eventName].stack].counter isnt 0
 				@customEventsReverse[@customEvents[eventName].stack].counter -= 1
 			if @customEventsReverse[@customEvents[eventName].stack].counter is 0
-				@sipStack.unbind @customEvents[eventName].stack, @customEvents[eventName].cb
+				@sipStack.off @customEvents[eventName].stack, @customEvents[eventName].cb
 		else if @libEvents[eventName]?
 			@libEvents[eventName].count--
 			if @libEvents[eventName].count is 0
-				@sipStack.unbind @libEvents[eventName].stack, @libEvents[eventName].cb
+				@sipStack.off @libEvents[eventName].stack, @libEvents[eventName].cb
 
-		@unbind eventName, callback
+		super eventName, callback
 
 	#### toggleMuteVideo
 	# Toggle between mute video on and off

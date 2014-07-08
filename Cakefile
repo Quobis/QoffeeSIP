@@ -24,7 +24,6 @@ task "doc", "Generate Docco documentation.", ->
 # Build the stack
 # File which are going to be compiled
 appFiles = [
-	"node_modules/RTC/rtc.coffee"
 	"src/parser.coffee"
 	"src/siptransaction.coffee"
 	"src/sipstack.coffee"
@@ -53,7 +52,7 @@ task "build", "Build the stack from source files", ->
 					fs.unlink "dist/qoffeesip.coffee", (err) ->
 						throw err if err
 						# add license advertisement
-						exec "cat LICENSE-min external/RTC/adapter.js > tmp.js; cat dist/qoffeesip.js >> tmp.js; mv tmp.js dist/qoffeesip.js", (err, stdout, stderr) ->
+						exec "cat LICENSE-min node_modules/RTC/rtc.js > tmp.js; cat dist/qoffeesip.js >> tmp.js; mv tmp.js dist/qoffeesip.js", (err, stdout, stderr) ->
 							throw err if err
 							# console.log stdout + stderr
 							console.log "All sources were compiled to dist/qoffeesip.js."
