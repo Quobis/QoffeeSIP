@@ -158,12 +158,12 @@ class QS extends EventClass
 	# Get stack capabilities
 	# Returns and array of strings (i.e: ['audio','chat'])
 	capabilities: =>
-		return ['audio','video','chat','presence']
+		return ['audio','video','chat','presence', 'screensharing']
 
 	#### version
 	# Get stack version
 	version: () ->
-		[{ name : "QoffeeSIP", version : "v0.9.3"}]
+		[{ name : "QoffeeSIP", version : "v0.9.4"}]
 
 	#### call
 	# Call to extension *ext*
