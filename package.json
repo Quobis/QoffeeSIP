@@ -26,7 +26,7 @@
 	"dependencies": {
 		"coffee-script": "1.4.x",
 		"docco":  "0.4.x",
-		"rtc" : "git://github.com/Quobis/RTC.git"
+		"rtc" : "git://github.com/Quobis/RTC.git#v2.1.0"
 	},
 	"engines": {
 		"node": "0.9.x",
