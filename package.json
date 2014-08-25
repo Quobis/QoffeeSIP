@@ -1,6 +1,6 @@
 {
 	"name": "QoffeeSIP",
-	"version": "0.9.4",
+	"version": "0.9.5",
 	"description":  "A Javascript SIP (over websockets) stack.",
 	"main" : "./dist/qoffeesip.js",
 	"author" : { 
