@@ -163,7 +163,7 @@ class QS extends EventClass
 	#### version
 	# Get stack version
 	version: () ->
-		[{ name : "QoffeeSIP", version : "v0.9.5"}]
+		[{ name : "QoffeeSIP", version : "v0.9.6"}]
 
 	#### call
 	# Call to extension *ext*

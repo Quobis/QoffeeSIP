@@ -108,14 +108,19 @@ class SipStack extends EventClass
 #				turnServer       : @turnServer
 #				stunServer       : @stunServer
 
-			@rtc?.on "localstream" , (localstream) => @trigger "localstream", stream: localstream
-			@rtc?.on "localstream-screen" , (localstreamScreen) => @trigger "localstream-screen", stream: localstreamScreen
 			@rtc?.on "remotestream" , (remotestream) =>
+				@trigger "localstream",
+					callid : @currentCall.callId
+					stream : @rtc.localstream
 				@trigger "remotestream" ,
 					callid : @currentCall.callId
 					stream : remotestream
 					uid    : "-"
 			@rtc?.on "remotestream-screen" , (remotestreamScreen) =>
+				if @rtc.localStreamScreen?
+					@trigger "localstream-screen",
+						callid : @currentCall.callId
+						stream : @rtc.localStreamScreen
 				@trigger "remotestream-screen" ,
 					callid : @currentCall.callId
 					stream : remotestreamScreen
@@ -254,7 +259,6 @@ class SipStack extends EventClass
 						# Successful register.
 						when 200
 							@info "register-success", message
-							@rtc?.start()
 							@setState 3, message
 							# Manage reregisters. Important: @t should be clean on unregistering.
 							transaction.expires = message.proposedExpires or 3600
@@ -298,7 +302,6 @@ class SipStack extends EventClass
 						# Successful register.
 						when 200
 							@info "register-success", message
-							@rtc?.start()
 							@setState 3, message
 							# Manage reregisters.
 							transaction.expires = message.proposedExpires
@@ -844,7 +847,6 @@ class SipStack extends EventClass
 
 	# Async send
 	sendWithSDP: (data, type, sdp, cb = ->) =>
-		@rtc?.start()
 		@rtc?.on "sdp", (sdp) =>
 			# Temporal sdp modification
 			# sdp = sdp.split("m=video")[0]
@@ -855,11 +857,22 @@ class SipStack extends EventClass
 			@rtc?.off "sdp"
 			do cb
 
-		switch type
-			when "offer"
-				@rtc?.createOffer()
-			when "answer"
-				@rtc?.receiveOffer sdp, => @rtc?.createAnswer()
+		av = new Promise (reject, resolve) =>
+			return resolve() if not (@mediaConstraints.audio or @mediaConstraints.video)
+			@rtc.once "localstream", resolve
+
+		screen = new Promise (reject, resolve) =>
+			return resolve() if not @mediaConstraints.screensharing
+			@rtc.once "localstream-screen", resolve
+
+		Promise.all([av, screen]).then () =>
+			switch type
+				when "offer"
+					@rtc?.createOffer()
+				when "answer"
+					@rtc?.receiveOffer sdp, => @rtc?.createAnswer()
+
+		@rtc?.start()
 
 	sendInstantMessage: (uri2, text) =>
 		message = new SipTransaction
