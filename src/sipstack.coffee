@@ -857,11 +857,11 @@ class SipStack extends EventClass
 			@rtc?.off "sdp"
 			do cb
 
-		av = new Promise (reject, resolve) =>
+		av = new Promise (resolve, reject) =>
 			return resolve() if not (@mediaConstraints.audio or @mediaConstraints.video)
 			@rtc.once "localstream", resolve
 
-		screen = new Promise (reject, resolve) =>
+		screen = new Promise (resolve, reject) =>
 			return resolve() if not @mediaConstraints.screensharing
 			@rtc.once "localstream-screen", resolve
 
