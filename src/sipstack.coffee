@@ -878,4 +878,15 @@ class SipStack extends EventClass
 		console.log  "[INFO] New state  " + @states[@state] + "(#{@state})"
 		@trigger "new-state", @state, data
 
+	startListeningAudioLevel : (stream) =>
+		@rtc?.startReportingAudioLevel(stream)
+		@rtc?.on "vumeter", @onAudioLevel
+		
+	stopListeningAudioLevel : () =>
+		@rtc?.stopReportingAudioLevel()
+		@rtc?.off "vumeter", @onAudioLevel
+	
+	onAudioLevel :  (evt) =>	
+		@trigger "vumeter", evt
+
 window.SipStack = SipStack

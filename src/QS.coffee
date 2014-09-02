@@ -313,6 +313,17 @@ class QS extends EventClass
 	insertDTMF: (callid, tone) =>
 		@sipStack.rtc.insertDTMF tone
 
+	startListeningAudioLevel : (stream) =>
+		@sipStack.startListeningAudioLevel(stream)
+		@sipStack.on "vumeter", @onAudioLevel
+		
+	stopListeningAudioLevel : () =>
+		@sipStack.stopListeningAudioLevel()
+		@sipStack.off "vumeter", @onAudioLevel
+
+	onAudioLevel :  (evt) =>
+		@trigger "vumeter", evt
+
 
 window.QS            = QS
 window.Concretestack = QS
