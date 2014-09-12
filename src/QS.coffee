@@ -158,7 +158,7 @@ class QS extends EventClass
 	# Get stack capabilities
 	# Returns and array of strings (i.e: ['audio','chat'])
 	capabilities: =>
-		return ['audio','video','chat','presence', 'screensharing']
+		return ['audio','video','chat','presence', 'screensharing','audio-level-reporting']
 
 	#### version
 	# Get stack version
