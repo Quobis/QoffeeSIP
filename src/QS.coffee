@@ -158,12 +158,12 @@ class QS extends EventClass
 	# Get stack capabilities
 	# Returns and array of strings (i.e: ['audio','chat'])
 	capabilities: =>
-		return ['audio','video','chat','presence', 'screensharing','audio-level-reporting']
+		return ['audio','video','im','presence', 'screensharing','audio-level-reporting']
 
 	#### version
 	# Get stack version
 	version: () ->
-		[{ name : "QoffeeSIP", version : "v0.9.4"}]
+		[{ name : "QoffeeSIP", version : "v0.9.6"}]
 
 	#### call
 	# Call to extension *ext*
@@ -196,8 +196,8 @@ class QS extends EventClass
 		content = JSON.stringify({presenceState: @sipStack.rtc.mediaState()}) + "\n"
 		@sipStack.sendInstantMessage uri2, content
 
-	#### chat
-	chat: (uri2, text) =>
+	#### IM
+	sendIm: (uri2, text) =>
 		content =  JSON.stringify({presenceState: @lastState}) + "\n" + text
 		@sipStack.sendInstantMessage uri2, content
 
